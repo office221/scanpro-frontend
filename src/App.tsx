@@ -4,12 +4,12 @@ import Login from './seiten/Login'
 import Dashboard from './seiten/Dashboard'
 
 function App() {
-  const [token] = useState(localStorage.getItem('token'))
+  const [token, setToken] = useState(localStorage.getItem('token'))
 
   return (
     <BrowserRouter>
       <Routes>
-     <Route path="/login" element={<Login onLogin={() => console.log("Login-Funktion aufgerufen")} />} />
+     <Route path="/login" element={<Login onLogin={() => setToken(localStorage.getItem('token'))} />} />
 <Route path="/dashboard" element={
   token ? <Dashboard onLogout={() => console.log("Logout-Funktion aufgerufen")} /> : <Navigate to="/login" />
 } />
