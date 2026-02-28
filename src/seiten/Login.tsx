@@ -22,6 +22,9 @@ export default function Login({ onLogin }: { onLogin: () => void })  {
   // Code-Felder
   const [code, setCode] = useState('')
 
+  // Angemeldet bleiben
+  const [angemeldetBleiben, setAngemeldetBleiben] = useState(true)
+
   // Registrieren
   const handleRegistrieren = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,6 +61,14 @@ export default function Login({ onLogin }: { onLogin: () => void })  {
     setFehler('')
     try {
       await authService.login(loginDaten.email, loginDaten.passwort)
+      if (!angemeldetBleiben) {
+        const token = localStorage.getItem('token')
+        const benutzer = localStorage.getItem('benutzer')
+        localStorage.removeItem('token')
+        localStorage.removeItem('benutzer')
+        sessionStorage.setItem('token', token || '')
+        sessionStorage.setItem('benutzer', benutzer || '')
+      }
       onLogin()
       navigate('/dashboard')
     } catch (err: any) {
@@ -226,6 +237,19 @@ export default function Login({ onLogin }: { onLogin: () => void })  {
                 <input style={styles.input} type="password" placeholder="Dein Passwort" required
                   value={loginDaten.passwort}
                   onChange={e => setLoginDaten({...loginDaten, passwort: e.target.value})} />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <input
+                  type="checkbox"
+                  id="angemeldetBleiben"
+                  checked={angemeldetBleiben}
+                  onChange={e => setAngemeldetBleiben(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: '#c8a96e', cursor: 'pointer' }}
+                />
+                <label htmlFor="angemeldetBleiben" style={{ fontSize: 13, color: '#aaa', cursor: 'pointer' }}>
+                  Angemeldet bleiben
+                </label>
               </div>
 
               <button style={styles.submitBtn} type="submit" disabled={laden}>
