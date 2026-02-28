@@ -22,6 +22,9 @@ export default function Einstellungen() {
   const [logoBase64, setLogoBase64] = useState('')
   const [logoBreite, setLogoBreite] = useState(100)
   const [logoHoehe, setLogoHoehe] = useState(100)
+  const [mahnungFrist1, setMahnungFrist1] = useState(14)
+  const [mahnungFrist2, setMahnungFrist2] = useState(7)
+  const [mahnungFrist3, setMahnungFrist3] = useState(5)
 
   useEffect(() => {
     api.get('/einstellungen').then(r => {
@@ -42,6 +45,9 @@ export default function Einstellungen() {
       setLogoBase64(d.logoBase64 || '')
       setLogoBreite(d.logoBreite || 100)
       setLogoHoehe(d.logoHoehe || 100)
+      setMahnungFrist1(d.mahnungFrist1 || 14)
+      setMahnungFrist2(d.mahnungFrist2 || 7)
+      setMahnungFrist3(d.mahnungFrist3 || 5)
     }).catch(() => {})
   }, [])
 
@@ -59,7 +65,8 @@ export default function Einstellungen() {
     try {
       await api.post('/einstellungen', {
         firma, strasse, plz, ort, land, telefon, email, website,
-        uid, iban, bic, bank, gerichtsstand, logoBase64, logoBreite, logoHoehe
+        uid, iban, bic, bank, gerichtsstand, logoBase64, logoBreite, logoHoehe,
+        mahnungFrist1, mahnungFrist2, mahnungFrist3
       })
       setGespeichert(true)
       setTimeout(() => setGespeichert(false), 3000)
@@ -296,6 +303,63 @@ export default function Einstellungen() {
             <label style={labelStyle}>Bank</label>
             <input style={inputStyle} placeholder="Raiffeisenbank"
               value={bank} onChange={e => setBank(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Mahnung Fristen */}
+      <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+        <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:4}}>
+          ⚠️ Mahnung – Zahlungsfristen
+        </div>
+        <div style={{fontSize:11, color:'#888', marginBottom:16}}>
+          Wie viele Tage hat der Kunde Zeit zu zahlen, nachdem eine Mahnung gesendet wurde?
+        </div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12}}>
+          <div>
+            <label style={labelStyle}>Zahlungserinnerung</label>
+            <div style={{display:'flex', alignItems:'center', gap:8}}>
+              <input
+                type="number"
+                min={1}
+                max={90}
+                style={{...inputStyle, width:'70px', textAlign:'center'}}
+                value={mahnungFrist1}
+                onChange={e => setMahnungFrist1(Number(e.target.value))}
+              />
+              <span style={{fontSize:12, color:'#888'}}>Tage</span>
+            </div>
+            <div style={{fontSize:10, color:'#aaa', marginTop:4}}>Stufe 1 – freundlich</div>
+          </div>
+          <div>
+            <label style={labelStyle}>Mahnung</label>
+            <div style={{display:'flex', alignItems:'center', gap:8}}>
+              <input
+                type="number"
+                min={1}
+                max={90}
+                style={{...inputStyle, width:'70px', textAlign:'center'}}
+                value={mahnungFrist2}
+                onChange={e => setMahnungFrist2(Number(e.target.value))}
+              />
+              <span style={{fontSize:12, color:'#888'}}>Tage</span>
+            </div>
+            <div style={{fontSize:10, color:'#aaa', marginTop:4}}>Stufe 2 – formal</div>
+          </div>
+          <div>
+            <label style={labelStyle}>Letzte Mahnung</label>
+            <div style={{display:'flex', alignItems:'center', gap:8}}>
+              <input
+                type="number"
+                min={1}
+                max={90}
+                style={{...inputStyle, width:'70px', textAlign:'center'}}
+                value={mahnungFrist3}
+                onChange={e => setMahnungFrist3(Number(e.target.value))}
+              />
+              <span style={{fontSize:12, color:'#888'}}>Tage</span>
+            </div>
+            <div style={{fontSize:10, color:'#aaa', marginTop:4}}>Stufe 3 – letzte Chance</div>
           </div>
         </div>
       </div>
