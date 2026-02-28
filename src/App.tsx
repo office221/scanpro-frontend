@@ -4,7 +4,7 @@ import Login from './seiten/Login'
 import Dashboard from './seiten/Dashboard'
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'))
+  const [token] = useState(localStorage.getItem('token'))
 
   return (
     <BrowserRouter>
