@@ -58,9 +58,18 @@ export default function Rechnungen() {
   const [bezahltModal, setBezahltModal] = useState<any>(null)
   const [bezahltDatum, setBezahltDatum] = useState(new Date().toISOString().split('T')[0])
   const [mahnungModal, setMahnungModal] = useState<any>(null)
+  const [mahnungFrist1, setMahnungFrist1] = useState(14)
+  const [mahnungFrist2, setMahnungFrist2] = useState(7)
+  const [mahnungFrist3, setMahnungFrist3] = useState(5)
 
   useEffect(() => {
     api.get('/kunden').then(r => setKunden(r.data))
+    api.get('/einstellungen').then(r => {
+      const d = r.data
+      setMahnungFrist1(d.mahnungFrist1 || 14)
+      setMahnungFrist2(d.mahnungFrist2 || 7)
+      setMahnungFrist3(d.mahnungFrist3 || 5)
+    }).catch(() => {})
     rechnungenLaden()
   }, [])
 
@@ -190,11 +199,13 @@ export default function Rechnungen() {
 
   const mahnungErstellen = async (stufe: number) => {
     const statusMap: any = { 1: 'Mahnung 1', 2: 'Mahnung 2', 3: 'Inkasso' }
+    const id = mahnungModal.id  // vor setMahnungModal(null) sichern
+    // window.open MUSS synchron aufgerufen werden (Browser blockiert Popups nach await)
+    mahnungPdfOeffnen(id, stufe)
+    setMahnungModal(null)
     try {
-      await api.put(`/rechnungen/${mahnungModal.id}/status`, { status: statusMap[stufe] })
+      await api.put(`/rechnungen/${id}/status`, { status: statusMap[stufe] })
       rechnungenLaden()
-      setMahnungModal(null)
-      mahnungPdfOeffnen(mahnungModal.id, stufe)
     } catch (e) {
       alert('Fehler beim Erstellen der Mahnung!')
     }
@@ -387,17 +398,17 @@ export default function Rechnungen() {
               <button onClick={() => mahnungErstellen(1)}
                 style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fef3c7', background:'#fffbeb', cursor:'pointer', textAlign:'left'}}>
                 <div style={{fontWeight:700, fontSize:14, color:'#92400e'}}>📩 Zahlungserinnerung</div>
-                <div style={{fontSize:12, color:'#a16207', marginTop:3}}>Freundliche Erinnerung · Frist: 14 Tage</div>
+                <div style={{fontSize:12, color:'#a16207', marginTop:3}}>Freundliche Erinnerung · Frist: {mahnungFrist1} Tage</div>
               </button>
               <button onClick={() => mahnungErstellen(2)}
                 style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fed7aa', background:'#fff7ed', cursor:'pointer', textAlign:'left'}}>
                 <div style={{fontWeight:700, fontSize:14, color:'#c2410c'}}>⚠️ Mahnung</div>
-                <div style={{fontSize:12, color:'#ea580c', marginTop:3}}>Formelle Mahnung · Frist: 7 Tage</div>
+                <div style={{fontSize:12, color:'#ea580c', marginTop:3}}>Formelle Mahnung · Frist: {mahnungFrist2} Tage</div>
               </button>
               <button onClick={() => mahnungErstellen(3)}
                 style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fecaca', background:'#fff5f5', cursor:'pointer', textAlign:'left'}}>
                 <div style={{fontWeight:700, fontSize:14, color:'#c0392b'}}>🔴 Letzte Mahnung</div>
-                <div style={{fontSize:12, color:'#e74c3c', marginTop:3}}>Letzte Mahnung vor rechtlichen Schritten · Frist: 5 Tage</div>
+                <div style={{fontSize:12, color:'#e74c3c', marginTop:3}}>Letzte Mahnung vor rechtlichen Schritten · Frist: {mahnungFrist3} Tage</div>
               </button>
             </div>
 
