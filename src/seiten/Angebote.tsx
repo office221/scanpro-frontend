@@ -151,7 +151,8 @@ export default function Angebote() {
 
   const pdfOeffnen = (id: number) => {
     const token = localStorage.getItem('token')
-    window.open(`http://localhost:3001/api/pdf/${id}?token=${token}`, '_blank')
+    const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:3001'
+    window.open(`${baseUrl}/api/pdf/${id}?token=${token}`, '_blank')
   }
 
   const statusFarbe = (status: string) => {
