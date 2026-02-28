@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Verbindung zum Backend
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api'
+  baseURL: process.env.REACT_APP_API_URL || 'https://scanpro-backend-production.up.railway.app/api'
 })
 
 // Token automatisch mitsenden
