@@ -57,6 +57,7 @@ export default function Rechnungen() {
   const [bearbeitenId, setBearbeitenId] = useState<number | null>(null)
   const [bezahltModal, setBezahltModal] = useState<any>(null)
   const [bezahltDatum, setBezahltDatum] = useState(new Date().toISOString().split('T')[0])
+  const [mahnungModal, setMahnungModal] = useState<any>(null)
 
   useEffect(() => {
     api.get('/kunden').then(r => setKunden(r.data))
@@ -179,6 +180,24 @@ export default function Rechnungen() {
     const token = localStorage.getItem('token')
     const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
     window.open(`${baseUrl}/api/pdf/${id}?token=${token}`, '_blank')
+  }
+
+  const mahnungPdfOeffnen = (id: number, stufe: number) => {
+    const token = localStorage.getItem('token')
+    const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
+    window.open(`${baseUrl}/api/pdf/${id}?token=${token}&mahnung=${stufe}`, '_blank')
+  }
+
+  const mahnungErstellen = async (stufe: number) => {
+    const statusMap: any = { 1: 'Mahnung 1', 2: 'Mahnung 2', 3: 'Inkasso' }
+    try {
+      await api.put(`/rechnungen/${mahnungModal.id}/status`, { status: statusMap[stufe] })
+      rechnungenLaden()
+      setMahnungModal(null)
+      mahnungPdfOeffnen(mahnungModal.id, stufe)
+    } catch (e) {
+      alert('Fehler beim Erstellen der Mahnung!')
+    }
   }
 
   // BERECHNUNGEN mit Rabatt & Skonto
@@ -320,6 +339,10 @@ export default function Rechnungen() {
                           style={{padding:'4px 10px', borderRadius:6, border:'1px solid #d1f5e0', background:'#f0fdf4', color:'#2d6a4f', fontSize:11, cursor:'pointer'}}
                           onClick={() => pdfOeffnen(r.id)}>📄 PDF</button>
                         <button
+                          style={{padding:'4px 10px', borderRadius:6, border:'1px solid #fef3c7', background:'#fffbeb', color:'#92400e', fontSize:11, cursor:'pointer'}}
+                          onClick={() => setMahnungModal(r)}
+                          title="Mahnung erstellen">⚠️</button>
+                        <button
                           style={{padding:'4px 10px', borderRadius:6, border:'1px solid #fde8e6', background:'white', color:'#c0392b', fontSize:11, cursor:'pointer'}}
                           onClick={() => rechnungLoeschen(r.id)}>🗑️</button>
                       </div>
@@ -349,6 +372,39 @@ export default function Rechnungen() {
                 style={{padding:12, background:'#f0ede8', color:'#888', border:'none', borderRadius:8, cursor:'pointer'}}
                 onClick={() => setBezahltModal(null)}>Abbrechen</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MAHNUNG MODAL */}
+      {mahnungModal && (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:300}}>
+          <div style={{background:'white', borderRadius:14, width:420, padding:28, boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
+            <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, marginBottom:4}}>⚠️ Mahnung erstellen</div>
+            <div style={{fontSize:13, color:'#888', marginBottom:24}}>Rechnung {mahnungModal.nummer} · € {parseFloat(mahnungModal.gesamt).toFixed(2)}</div>
+
+            <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:24}}>
+              <button onClick={() => mahnungErstellen(1)}
+                style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fef3c7', background:'#fffbeb', cursor:'pointer', textAlign:'left'}}>
+                <div style={{fontWeight:700, fontSize:14, color:'#92400e'}}>📩 Zahlungserinnerung</div>
+                <div style={{fontSize:12, color:'#a16207', marginTop:3}}>Freundliche Erinnerung · Frist: 14 Tage</div>
+              </button>
+              <button onClick={() => mahnungErstellen(2)}
+                style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fed7aa', background:'#fff7ed', cursor:'pointer', textAlign:'left'}}>
+                <div style={{fontWeight:700, fontSize:14, color:'#c2410c'}}>⚠️ Mahnung</div>
+                <div style={{fontSize:12, color:'#ea580c', marginTop:3}}>Formelle Mahnung · Frist: 7 Tage</div>
+              </button>
+              <button onClick={() => mahnungErstellen(3)}
+                style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fecaca', background:'#fff5f5', cursor:'pointer', textAlign:'left'}}>
+                <div style={{fontWeight:700, fontSize:14, color:'#c0392b'}}>🔴 Letzte Mahnung</div>
+                <div style={{fontSize:12, color:'#e74c3c', marginTop:3}}>Letzte Mahnung vor rechtlichen Schritten · Frist: 5 Tage</div>
+              </button>
+            </div>
+
+            <button onClick={() => setMahnungModal(null)}
+              style={{width:'100%', padding:12, background:'#f0ede8', color:'#888', border:'none', borderRadius:8, cursor:'pointer', fontSize:13}}>
+              Abbrechen
+            </button>
           </div>
         </div>
       )}
