@@ -107,7 +107,9 @@ export default function Rechnungen() {
       setSkontoAktiv(r.skontoProzent > 0)
       setSkontoProzent(r.skontoProzent || 2)
       setSkontoTage(r.skontoTage || 7)
-      setPositionen(posRes.data.length > 0 ? posRes.data : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+      setPositionen(posRes.data.length > 0
+        ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
+        : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
       setFormOffen(true)
     } catch (e) {
       alert('Fehler beim Laden der Rechnung!')
@@ -128,7 +130,9 @@ export default function Rechnungen() {
       setSkontoAktiv(rechnung.skontoProzent > 0)
       setSkontoProzent(rechnung.skontoProzent || 2)
       setSkontoTage(rechnung.skontoTage || 7)
-      setPositionen(posRes.data.length > 0 ? posRes.data : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+      setPositionen(posRes.data.length > 0
+        ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
+        : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
       setFormOffen(true)
     } catch (e) {
       alert('Fehler beim Duplizieren!')

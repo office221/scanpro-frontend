@@ -165,7 +165,7 @@ export default function Angebote() {
       setGueltigBis(a.gueltigBis?.split('T')[0] || '')
       setIstKleinunternehmer(a.istKleinunternehmer)
       setPositionen(posRes.data.length > 0
-        ? posRes.data
+        ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }]
       )
       setFormOffen(true)
