@@ -54,6 +54,8 @@ export default function Rechnungen() {
   const [skontoProzent, setSkontoProzent] = useState(2)
   const [skontoTage, setSkontoTage] = useState(7)
 
+  const [zahlungsModus, setZahlungsModus] = useState('standard')
+  const [zahlungsEigenText, setZahlungsEigenText] = useState('')
   const [bearbeitenId, setBearbeitenId] = useState<number | null>(null)
   const [bezahltModal, setBezahltModal] = useState<any>(null)
   const [bezahltDatum, setBezahltDatum] = useState(new Date().toISOString().split('T')[0])
@@ -90,7 +92,19 @@ export default function Rechnungen() {
     setSkontoAktiv(false)
     setSkontoProzent(2)
     setSkontoTage(7)
+    setZahlungsModus('standard')
+    setZahlungsEigenText('')
     setBearbeitenId(null)
+  }
+
+  const zahlungsModusErkennen = (wert: string | null) => {
+    if (!wert) return { modus: 'standard', eigen: '' }
+    if (wert === '__ausblenden__') return { modus: 'ausblenden', eigen: '' }
+    if (wert === 'Zahlbar innerhalb von 7 Tagen nach Rechnungserhalt.') return { modus: '7tage', eigen: '' }
+    if (wert === 'Zahlbar innerhalb von 14 Tagen nach Rechnungserhalt.') return { modus: '14tage', eigen: '' }
+    if (wert === 'Zahlbar innerhalb von 30 Tagen nach Rechnungserhalt.') return { modus: '30tage', eigen: '' }
+    if (wert === 'Sofort zahlbar ohne Abzug.') return { modus: 'sofort', eigen: '' }
+    return { modus: 'eigen', eigen: wert }
   }
 
   const rechnungBearbeiten = async (r: any) => {
@@ -107,6 +121,9 @@ export default function Rechnungen() {
       setSkontoAktiv(r.skontoProzent > 0)
       setSkontoProzent(r.skontoProzent || 2)
       setSkontoTage(r.skontoTage || 7)
+      const zm = zahlungsModusErkennen(r.zahlungshinweis)
+      setZahlungsModus(zm.modus)
+      setZahlungsEigenText(zm.eigen)
       setPositionen(posRes.data.length > 0
         ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
@@ -265,6 +282,13 @@ export default function Rechnungen() {
         rabattProzent: rabattProzent || 0,
         skontoProzent: skontoAktiv ? skontoProzent : 0,
         skontoTage: skontoAktiv ? skontoTage : 0,
+        zahlungshinweis: zahlungsModus === 'standard' ? '' :
+          zahlungsModus === 'ausblenden' ? '__ausblenden__' :
+          zahlungsModus === '7tage' ? 'Zahlbar innerhalb von 7 Tagen nach Rechnungserhalt.' :
+          zahlungsModus === '14tage' ? 'Zahlbar innerhalb von 14 Tagen nach Rechnungserhalt.' :
+          zahlungsModus === '30tage' ? 'Zahlbar innerhalb von 30 Tagen nach Rechnungserhalt.' :
+          zahlungsModus === 'sofort' ? 'Sofort zahlbar ohne Abzug.' :
+          zahlungsEigenText,
         positionen
       }
       if (bearbeitenId) {
@@ -485,6 +509,28 @@ export default function Rechnungen() {
                   <label style={labelStyle}>Fällig bis</label>
                   <input style={inputStyle} type="date"
                     value={faelligBis} onChange={e => setFaelligBis(e.target.value)} />
+                </div>
+                <div style={{gridColumn:'1 / -1'}}>
+                  <label style={labelStyle}>Zahlungsbedingungen im PDF</label>
+                  <select style={{...inputStyle, background:'white'}}
+                    value={zahlungsModus}
+                    onChange={e => setZahlungsModus(e.target.value)}>
+                    <option value="standard">Standard – 14 Tage nach Rechnungserhalt</option>
+                    <option value="7tage">7 Tage nach Rechnungserhalt</option>
+                    <option value="14tage">14 Tage nach Rechnungserhalt</option>
+                    <option value="30tage">30 Tage nach Rechnungserhalt</option>
+                    <option value="sofort">Sofort zahlbar ohne Abzug</option>
+                    <option value="eigen">Eigener Text...</option>
+                    <option value="ausblenden">Ausblenden (kein Hinweis im PDF)</option>
+                  </select>
+                  {zahlungsModus === 'eigen' && (
+                    <textarea
+                      style={{...inputStyle, marginTop:6, resize:'vertical', height:60}}
+                      placeholder="z.B. Zahlbar innerhalb von 10 Tagen nach Rechnungserhalt."
+                      value={zahlungsEigenText}
+                      onChange={e => setZahlungsEigenText(e.target.value)}
+                    />
+                  )}
                 </div>
               </div>
 

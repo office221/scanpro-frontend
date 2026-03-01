@@ -31,6 +31,8 @@ export default function Angebote() {
   const [positionen, setPositionen] = useState<Position[]>([
     { typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }
   ])
+  const [zahlungsModus, setZahlungsModus] = useState('standard')
+  const [zahlungsEigenText, setZahlungsEigenText] = useState('')
   const [bearbeitenId, setBearbeitenId] = useState<number | null>(null)
 
   useEffect(() => {
@@ -50,7 +52,15 @@ export default function Angebote() {
     setGueltigBis('')
     setDatum(new Date().toISOString().split('T')[0])
     setPositionen([{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+    setZahlungsModus('standard')
+    setZahlungsEigenText('')
     setBearbeitenId(null)
+  }
+
+  const zahlungsModusErkennen = (wert: string | null) => {
+    if (!wert) return { modus: 'standard', eigen: '' }
+    if (wert === '__ausblenden__') return { modus: 'ausblenden', eigen: '' }
+    return { modus: 'eigen', eigen: wert }
   }
 
   const zwischensumme = positionen
@@ -95,6 +105,9 @@ export default function Angebote() {
         faelligBis: null,
         istKleinunternehmer,
         status: 'Entwurf',
+        zahlungshinweis: zahlungsModus === 'standard' ? '' :
+          zahlungsModus === 'ausblenden' ? '__ausblenden__' :
+          zahlungsModus === 'eigen' ? zahlungsEigenText : '',
         positionen
       }
       if (bearbeitenId) {
@@ -164,6 +177,9 @@ export default function Angebote() {
       setDatum(a.datum?.split('T')[0] || new Date().toISOString().split('T')[0])
       setGueltigBis(a.gueltigBis?.split('T')[0] || '')
       setIstKleinunternehmer(a.istKleinunternehmer)
+      const zm = zahlungsModusErkennen(a.zahlungshinweis)
+      setZahlungsModus(zm.modus)
+      setZahlungsEigenText(zm.eigen)
       setPositionen(posRes.data.length > 0
         ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }]
@@ -327,6 +343,24 @@ export default function Angebote() {
                   <label style={labelStyle}>Gültig bis</label>
                   <input style={inputStyle} type="date"
                     value={gueltigBis} onChange={e => setGueltigBis(e.target.value)} />
+                </div>
+                <div style={{gridColumn:'1 / -1'}}>
+                  <label style={labelStyle}>Zahlungsbedingungen im PDF</label>
+                  <select style={{...inputStyle, background:'white'}}
+                    value={zahlungsModus}
+                    onChange={e => setZahlungsModus(e.target.value)}>
+                    <option value="standard">Standard – Angebot gültig bis [Datum]</option>
+                    <option value="eigen">Eigener Text...</option>
+                    <option value="ausblenden">Ausblenden (kein Hinweis im PDF)</option>
+                  </select>
+                  {zahlungsModus === 'eigen' && (
+                    <textarea
+                      style={{...inputStyle, marginTop:6, resize:'vertical', height:60}}
+                      placeholder="z.B. Dieses Angebot ist 30 Tage gültig."
+                      value={zahlungsEigenText}
+                      onChange={e => setZahlungsEigenText(e.target.value)}
+                    />
+                  )}
                 </div>
               </div>
 
