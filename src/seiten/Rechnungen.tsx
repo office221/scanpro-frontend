@@ -627,16 +627,21 @@ export default function Rechnungen() {
                         style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                     </div>
                     <div style={{position:'relative'}}>
-                      <input style={inputStyle} placeholder="Beschreibung..."
+                      <textarea style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block'}}
+                        placeholder="Beschreibung..."
+                        rows={1}
                         value={pos.beschreibung}
                         onChange={e => {
                           positionAendern(idx, 'beschreibung', e.target.value)
+                          e.target.style.height = 'auto'
+                          e.target.style.height = e.target.scrollHeight + 'px'
                           const q = e.target.value.toLowerCase()
                           if (q.length >= 1) {
                             const matches = vorlagen.filter(v => v.name.toLowerCase().includes(q) || (v.beschreibung||'').toLowerCase().includes(q))
                             setAutocomplete(matches.length > 0 ? {idx, items: matches.slice(0,6)} : null)
                           } else { setAutocomplete(null) }
                         }}
+                        onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
                         onBlur={() => setTimeout(() => setAutocomplete(null), 200)} />
                       {autocomplete && autocomplete.idx === idx && (
                         <div style={{position:'absolute', top:'100%', left:0, right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:300, overflow:'hidden', marginTop:2}}>
