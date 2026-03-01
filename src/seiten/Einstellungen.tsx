@@ -18,6 +18,7 @@ export default function Einstellungen() {
   const [iban, setIban] = useState('')
   const [bic, setBic] = useState('')
   const [bank, setBank] = useState('')
+  const [kontoinhaber, setKontoinhaber] = useState('')
   const [gerichtsstand, setGerichtsstand] = useState('')
   const [logoBase64, setLogoBase64] = useState('')
   const [logoBreite, setLogoBreite] = useState(100)
@@ -41,6 +42,7 @@ export default function Einstellungen() {
       setIban(d.iban || '')
       setBic(d.bic || '')
       setBank(d.bank || '')
+      setKontoinhaber(d.kontoinhaber || '')
       setGerichtsstand(d.gerichtsstand || '')
       setLogoBase64(d.logoBase64 || '')
       setLogoBreite(d.logoBreite || 100)
@@ -65,7 +67,7 @@ export default function Einstellungen() {
     try {
       await api.post('/einstellungen', {
         firma, strasse, plz, ort, land, telefon, email, website,
-        uid, iban, bic, bank, gerichtsstand, logoBase64, logoBreite, logoHoehe,
+        uid, iban, bic, bank, kontoinhaber, gerichtsstand, logoBase64, logoBreite, logoHoehe,
         mahnungFrist1, mahnungFrist2, mahnungFrist3
       })
       setGespeichert(true)
@@ -289,6 +291,11 @@ export default function Einstellungen() {
           🏦 Bankverbindung
         </div>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+          <div style={{gridColumn:'1 / -1'}}>
+            <label style={labelStyle}>Kontoinhaber <span style={{color:'#c8a96e', fontSize:10}}>(für QR-Code / SEPA)</span></label>
+            <input style={inputStyle} placeholder="Vorname Nachname oder Firma GmbH"
+              value={kontoinhaber} onChange={e => setKontoinhaber(e.target.value)} />
+          </div>
           <div style={{gridColumn:'1 / -1'}}>
             <label style={labelStyle}>IBAN</label>
             <input style={inputStyle} placeholder="AT12 3456 7890 1234 5678"
