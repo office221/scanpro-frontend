@@ -271,33 +271,27 @@ export default function Angebote() {
                       </select>
                     </td>
                     <td style={{padding:'10px 14px'}}>
-                      <div style={{display:'flex', gap:6}}>
-                        <button
-                          style={{padding:'4px 10px', borderRadius:6, border:'1px solid #c8a96e', background:'#fdf8f0', color:'#c8a96e', fontSize:11, fontWeight:600, cursor:'pointer'}}
-                          onClick={() => zuRechnungKonvertieren(a)}>
-                          📋 → Rechnung
+                      <div style={{display:'flex', gap:4}}>
+                        <button title="→ Rechnung konvertieren" onClick={() => zuRechnungKonvertieren(a)}
+                          style={{height:32,padding:'0 10px',borderRadius:8,border:'1px solid #c8a96e',background:'#fdf8f0',cursor:'pointer',display:'flex',alignItems:'center',gap:5,color:'#b8922a',fontSize:11,fontWeight:600}}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                          Rechnung
                         </button>
-                        <button
-                          style={{padding:'4px 10px', borderRadius:6, border:'1px solid #d1f5e0', background:'#f0fdf4', color:'#2d6a4f', fontSize:11, cursor:'pointer'}}
-                          onClick={() => pdfOeffnen(a.id)}
-                          title="PDF ansehen / drucken">
-                          🖨️
+                        <button title="PDF öffnen / drucken" onClick={() => pdfOeffnen(a.id)}
+                          style={{width:32,height:32,borderRadius:8,border:'1px solid #d1f5e0',background:'#f0fdf4',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#2d6a4f'}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                         </button>
-                        <button
-                          style={{padding:'4px 10px', borderRadius:6, border:'1px solid #d1f5e0', background:'#f0fdf4', color:'#2d6a4f', fontSize:11, cursor:'pointer'}}
-                          onClick={() => pdfHerunterladen(a.id)}
-                          title="PDF speichern">
-                          ⬇️
+                        <button title="PDF speichern" onClick={() => pdfHerunterladen(a.id)}
+                          style={{width:32,height:32,borderRadius:8,border:'1px solid #d1f5e0',background:'#f0fdf4',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#2d6a4f'}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </button>
-                        <button
-                          style={{padding:'4px 10px', borderRadius:6, border:'1px solid #e5e0d8', background:'white', fontSize:11, cursor:'pointer'}}
-                          onClick={() => angebotBearbeiten(a)}>
-                          ✏️
+                        <button title="Bearbeiten" onClick={() => angebotBearbeiten(a)}
+                          style={{width:32,height:32,borderRadius:8,border:'1px solid #e5e0d8',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#555'}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button
-                          style={{padding:'4px 10px', borderRadius:6, border:'1px solid #fde8e6', background:'white', color:'#c0392b', fontSize:11, cursor:'pointer'}}
-                          onClick={() => angebotLoeschen(a.id)}>
-                          🗑️
+                        <button title="Löschen" onClick={() => angebotLoeschen(a.id)}
+                          style={{width:32,height:32,borderRadius:8,border:'1px solid #fde8e6',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#c0392b'}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                         </button>
                       </div>
                     </td>
