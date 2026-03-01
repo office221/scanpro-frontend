@@ -63,6 +63,18 @@ export default function Rechnungen() {
   const [mahnungFrist1, setMahnungFrist1] = useState(14)
   const [mahnungFrist2, setMahnungFrist2] = useState(7)
   const [mahnungFrist3, setMahnungFrist3] = useState(5)
+  const [formKey, setFormKey] = useState(0)
+  const [vorlagen, setVorlagen] = useState<any[]>([])
+  const [autocomplete, setAutocomplete] = useState<{idx: number; items: any[]} | null>(null)
+  const [vorlagenPickerOffen, setVorlagenPickerOffen] = useState(false)
+
+  useEffect(() => {
+    if (formOffen) {
+      api.get('/vorlagen').then(r => setVorlagen(r.data)).catch(() => {})
+      setVorlagenPickerOffen(false)
+      setAutocomplete(null)
+    }
+  }, [formOffen])
 
   useEffect(() => {
     api.get('/kunden').then(r => setKunden(r.data))
@@ -88,6 +100,7 @@ export default function Rechnungen() {
     setFaelligBis('')
     setDatum(new Date().toISOString().split('T')[0])
     setPositionen([{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+    setFormKey(k => k + 1)
     setRabattProzent(0)
     setSkontoAktiv(false)
     setSkontoProzent(2)
@@ -127,6 +140,7 @@ export default function Rechnungen() {
       setPositionen(posRes.data.length > 0
         ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+      setFormKey(k => k + 1)
       setFormOffen(true)
     } catch (e) {
       alert('Fehler beim Laden der Rechnung!')
@@ -150,6 +164,7 @@ export default function Rechnungen() {
       setPositionen(posRes.data.length > 0
         ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+      setFormKey(k => k + 1)
       setFormOffen(true)
     } catch (e) {
       alert('Fehler beim Duplizieren!')
@@ -275,6 +290,7 @@ export default function Rechnungen() {
 
   const positionLoeschen = (idx: number) => {
     setPositionen(positionen.filter((_, i) => i !== idx))
+    setFormKey(k => k + 1)
   }
 
   const positionVerschieben = (idx: number, richtung: 'hoch' | 'runter') => {
@@ -283,6 +299,21 @@ export default function Rechnungen() {
     if (ziel < 0 || ziel >= neu.length) return
     ;[neu[idx], neu[ziel]] = [neu[ziel], neu[idx]]
     setPositionen(neu)
+    setFormKey(k => k + 1)
+  }
+
+  const vorlageEinfuegen = (idx: number, v: any) => {
+    const neu = [...positionen]
+    neu[idx] = { ...neu[idx], beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }
+    setPositionen(neu)
+    setFormKey(k => k + 1)
+    setAutocomplete(null)
+  }
+
+  const vorlageAlsPositionHinzufuegen = (v: any) => {
+    setPositionen([...positionen, { typ: 'Normal', beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }])
+    setFormKey(k => k + 1)
+    setVorlagenPickerOffen(false)
   }
 
   const speichern = async () => {
@@ -595,13 +626,42 @@ export default function Rechnungen() {
                         title="Nach unten"
                         style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                     </div>
-                    <input style={inputStyle} placeholder="Beschreibung..."
-                      value={pos.beschreibung}
-                      onChange={e => positionAendern(idx, 'beschreibung', e.target.value)} />
-                    <input style={{...inputStyle, textAlign:'right'}} type="number"
-                      value={pos.menge}
+                    <div style={{position:'relative'}}>
+                      <input style={inputStyle} placeholder="Beschreibung..."
+                        value={pos.beschreibung}
+                        onChange={e => {
+                          positionAendern(idx, 'beschreibung', e.target.value)
+                          const q = e.target.value.toLowerCase()
+                          if (q.length >= 1) {
+                            const matches = vorlagen.filter(v => v.name.toLowerCase().includes(q) || (v.beschreibung||'').toLowerCase().includes(q))
+                            setAutocomplete(matches.length > 0 ? {idx, items: matches.slice(0,6)} : null)
+                          } else { setAutocomplete(null) }
+                        }}
+                        onBlur={() => setTimeout(() => setAutocomplete(null), 200)} />
+                      {autocomplete && autocomplete.idx === idx && (
+                        <div style={{position:'absolute', top:'100%', left:0, right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:300, overflow:'hidden', marginTop:2}}>
+                          {autocomplete.items.map((v, i) => (
+                            <div key={i} onMouseDown={() => vorlageEinfuegen(idx, v)}
+                              style={{padding:'7px 12px', cursor:'pointer', borderBottom: i < autocomplete.items.length-1 ? '1px solid #f0ede8' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
+                              onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                              <div>
+                                <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a'}}>{v.name}</div>
+                                {v.beschreibung && <div style={{fontSize:11, color:'#888', marginTop:1}}>{v.beschreibung}</div>}
+                              </div>
+                              <div style={{fontSize:11, color:'#c8a96e', fontWeight:600, whiteSpace:'nowrap'}}>
+                                {parseFloat(v.einzelpreis) > 0 ? `€ ${parseFloat(v.einzelpreis).toFixed(2)}` : ''} {v.einheit}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
+                      key={`${formKey}-${idx}-menge`}
+                      defaultValue={pos.menge || ''}
                       onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
-                      onChange={e => positionAendern(idx, 'menge', parseFloat(e.target.value) || 0)} />
+                      onBlur={e => positionAendern(idx, 'menge', parseFloat(e.target.value.replace(',', '.')) || 0)} />
                     <select style={{...inputStyle, background:'white'}}
                       value={pos.einheit}
                       onChange={e => positionAendern(idx, 'einheit', e.target.value)}>
@@ -609,18 +669,52 @@ export default function Rechnungen() {
                         <option key={e} value={e}>{e}</option>
                       ))}
                     </select>
-                    <input style={{...inputStyle, textAlign:'right'}} type="number"
-                      value={pos.einzelpreis}
+                    <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
+                      key={`${formKey}-${idx}-preis`}
+                      defaultValue={pos.einzelpreis || ''}
                       onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
-                      onChange={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value) || 0)} />
+                      onBlur={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value.replace(',', '.')) || 0)} />
                     <button onClick={() => positionLoeschen(idx)}
                       style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
                   </div>
                 ))}
-                <button onClick={positionHinzufuegen}
-                  style={{width:'100%', padding:'9px', border:'2px dashed #e5e0d8', borderRadius:8, background:'transparent', color:'#888', fontFamily:'DM Sans, sans-serif', fontSize:13, cursor:'pointer', marginTop:4}}>
-                  + Position hinzufügen
-                </button>
+                <div style={{display:'flex', gap:8, marginTop:4}}>
+                  <div style={{position:'relative'}}>
+                    <button onClick={() => setVorlagenPickerOffen(!vorlagenPickerOffen)}
+                      style={{padding:'9px 14px', border:'1px solid #c8a96e', borderRadius:8, background:'#fdf8f0', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap'}}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+                      Vorlage
+                    </button>
+                    {vorlagenPickerOffen && (
+                      <>
+                        <div style={{position:'fixed', inset:0, zIndex:199}} onClick={() => setVorlagenPickerOffen(false)} />
+                        <div style={{position:'absolute', bottom:'100%', left:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.15)', zIndex:200, minWidth:280, maxHeight:220, overflowY:'auto', marginBottom:4}}>
+                          {vorlagen.length === 0
+                            ? <div style={{padding:'12px 16px', fontSize:12, color:'#888', textAlign:'center'}}>Noch keine Vorlagen gespeichert.</div>
+                            : vorlagen.map((v, i) => (
+                                <div key={i} onClick={() => vorlageAlsPositionHinzufuegen(v)}
+                                  style={{padding:'8px 14px', cursor:'pointer', borderBottom: i < vorlagen.length-1 ? '1px solid #f0ede8' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
+                                  onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                  <div>
+                                    <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a'}}>{v.name}</div>
+                                    {v.beschreibung && <div style={{fontSize:11, color:'#888', marginTop:1}}>{v.beschreibung}</div>}
+                                  </div>
+                                  <div style={{fontSize:11, color:'#c8a96e', fontWeight:600, whiteSpace:'nowrap'}}>
+                                    {parseFloat(v.einzelpreis) > 0 ? `€ ${parseFloat(v.einzelpreis).toFixed(2)}` : ''} {v.einheit}
+                                  </div>
+                                </div>
+                              ))
+                          }
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <button onClick={positionHinzufuegen}
+                    style={{flex:1, padding:'9px', border:'2px dashed #e5e0d8', borderRadius:8, background:'transparent', color:'#888', fontFamily:'DM Sans, sans-serif', fontSize:13, cursor:'pointer'}}>
+                    + Position hinzufügen
+                  </button>
+                </div>
               </div>
 
               {/* RABATT */}
