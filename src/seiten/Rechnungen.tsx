@@ -584,6 +584,7 @@ export default function Rechnungen() {
                       onChange={e => positionAendern(idx, 'beschreibung', e.target.value)} />
                     <input style={{...inputStyle, textAlign:'right'}} type="number"
                       value={pos.menge}
+                      onFocus={e => e.target.select()}
                       onChange={e => positionAendern(idx, 'menge', parseFloat(e.target.value) || 0)} />
                     <select style={{...inputStyle, background:'white'}}
                       value={pos.einheit}
@@ -594,6 +595,7 @@ export default function Rechnungen() {
                     </select>
                     <input style={{...inputStyle, textAlign:'right'}} type="number"
                       value={pos.einzelpreis}
+                      onFocus={e => e.target.select()}
                       onChange={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value) || 0)} />
                     <button onClick={() => positionLoeschen(idx)}
                       style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
