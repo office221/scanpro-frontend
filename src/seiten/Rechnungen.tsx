@@ -209,7 +209,7 @@ export default function Rechnungen() {
   const pdfOeffnen = (id: number) => {
     const token = localStorage.getItem('token')
     const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
-    window.open(`${baseUrl}/api/pdf/viewer/${id}?token=${token}`, '_blank')
+    window.open(`${baseUrl}/api/pdf/${id}?token=${token}`, '_blank')
   }
 
   const pdfHerunterladen = (id: number) => {
@@ -221,7 +221,7 @@ export default function Rechnungen() {
   const mahnungPdfOeffnen = (id: number, stufe: number) => {
     const token = localStorage.getItem('token')
     const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
-    window.open(`${baseUrl}/api/pdf/viewer/${id}?token=${token}&mahnung=${stufe}`, '_blank')
+    window.open(`${baseUrl}/api/pdf/${id}?token=${token}&mahnung=${stufe}`, '_blank')
   }
 
   const mahnungErstellen = async (stufe: number) => {
