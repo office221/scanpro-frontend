@@ -73,6 +73,14 @@ export default function Angebote() {
     setPositionen(positionen.filter((_, i) => i !== idx))
   }
 
+  const positionVerschieben = (idx: number, richtung: 'hoch' | 'runter') => {
+    const neu = [...positionen]
+    const ziel = richtung === 'hoch' ? idx - 1 : idx + 1
+    if (ziel < 0 || ziel >= neu.length) return
+    ;[neu[idx], neu[ziel]] = [neu[ziel], neu[idx]]
+    setPositionen(neu)
+  }
+
   const speichern = async () => {
     if (!selectedKunde) { alert('Bitte Kunde auswählen!'); return }
     setLaden(true)
@@ -334,13 +342,26 @@ export default function Angebote() {
 
               <div style={{marginBottom:16}}>
                 <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:10}}>Positionen</div>
-                <div style={{display:'grid', gridTemplateColumns:'1fr 80px 100px 100px 32px', gap:8, marginBottom:4}}>
-                  {['Beschreibung', 'Menge', 'Einheit', '€ Preis', ''].map(h => (
-                    <div key={h} style={{fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#aaa', fontWeight:700}}>{h}</div>
+                <div style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, marginBottom:4}}>
+                  {['', 'Beschreibung', 'Menge', 'Einheit', '€ Preis', ''].map((h, i) => (
+                    <div key={i} style={{fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#aaa', fontWeight:700}}>{h}</div>
                   ))}
                 </div>
                 {positionen.map((pos, idx) => (
-                  <div key={idx} style={{display:'grid', gridTemplateColumns:'1fr 80px 100px 100px 32px', gap:8, marginBottom:8, alignItems:'center'}}>
+                  <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, marginBottom:8, alignItems:'center'}}>
+                    {/* ↑↓ Buttons */}
+                    <div style={{display:'flex', flexDirection:'column', gap:2}}>
+                      <button
+                        onClick={() => positionVerschieben(idx, 'hoch')}
+                        disabled={idx === 0}
+                        title="Nach oben"
+                        style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
+                      <button
+                        onClick={() => positionVerschieben(idx, 'runter')}
+                        disabled={idx === positionen.length - 1}
+                        title="Nach unten"
+                        style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
+                    </div>
                     <input style={inputStyle} placeholder="Beschreibung..."
                       value={pos.beschreibung}
                       onChange={e => positionAendern(idx, 'beschreibung', e.target.value)} />
