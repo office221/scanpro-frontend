@@ -212,6 +212,12 @@ export default function Rechnungen() {
     window.open(`${baseUrl}/api/pdf/${id}?token=${token}`, '_blank')
   }
 
+  const pdfHerunterladen = (id: number) => {
+    const token = localStorage.getItem('token')
+    const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
+    window.open(`${baseUrl}/api/pdf/${id}?token=${token}&download=1`, '_blank')
+  }
+
   const mahnungPdfOeffnen = (id: number, stufe: number) => {
     const token = localStorage.getItem('token')
     const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
@@ -384,7 +390,12 @@ export default function Rechnungen() {
                           title="Duplizieren">📋</button>
                         <button
                           style={{padding:'4px 10px', borderRadius:6, border:'1px solid #d1f5e0', background:'#f0fdf4', color:'#2d6a4f', fontSize:11, cursor:'pointer'}}
-                          onClick={() => pdfOeffnen(r.id)}>📄 PDF</button>
+                          onClick={() => pdfOeffnen(r.id)}
+                          title="PDF ansehen / drucken">🖨️</button>
+                        <button
+                          style={{padding:'4px 10px', borderRadius:6, border:'1px solid #d1f5e0', background:'#f0fdf4', color:'#2d6a4f', fontSize:11, cursor:'pointer'}}
+                          onClick={() => pdfHerunterladen(r.id)}
+                          title="PDF speichern">⬇️</button>
                         <button
                           style={{padding:'4px 10px', borderRadius:6, border:'1px solid #fef3c7', background:'#fffbeb', color:'#92400e', fontSize:11, cursor:'pointer'}}
                           onClick={() => setMahnungModal(r)}

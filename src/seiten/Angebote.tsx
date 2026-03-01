@@ -196,6 +196,12 @@ export default function Angebote() {
     window.open(`${baseUrl}/api/pdf/${id}?token=${token}`, '_blank')
   }
 
+  const pdfHerunterladen = (id: number) => {
+    const token = localStorage.getItem('token')
+    const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
+    window.open(`${baseUrl}/api/pdf/${id}?token=${token}&download=1`, '_blank')
+  }
+
   const statusFarbe = (status: string) => {
     switch(status) {
       case 'Angenommen': return { bg: '#d1f5e0', text: '#2d6a4f' }
@@ -273,8 +279,15 @@ export default function Angebote() {
                         </button>
                         <button
                           style={{padding:'4px 10px', borderRadius:6, border:'1px solid #d1f5e0', background:'#f0fdf4', color:'#2d6a4f', fontSize:11, cursor:'pointer'}}
-                          onClick={() => pdfOeffnen(a.id)}>
-                          📄 PDF
+                          onClick={() => pdfOeffnen(a.id)}
+                          title="PDF ansehen / drucken">
+                          🖨️
+                        </button>
+                        <button
+                          style={{padding:'4px 10px', borderRadius:6, border:'1px solid #d1f5e0', background:'#f0fdf4', color:'#2d6a4f', fontSize:11, cursor:'pointer'}}
+                          onClick={() => pdfHerunterladen(a.id)}
+                          title="PDF speichern">
+                          ⬇️
                         </button>
                         <button
                           style={{padding:'4px 10px', borderRadius:6, border:'1px solid #e5e0d8', background:'white', fontSize:11, cursor:'pointer'}}
