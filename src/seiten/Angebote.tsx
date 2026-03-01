@@ -31,6 +31,7 @@ export default function Angebote() {
   const [positionen, setPositionen] = useState<Position[]>([
     { typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }
   ])
+  const [bearbeitenId, setBearbeitenId] = useState<number | null>(null)
 
   useEffect(() => {
     api.get('/kunden').then(r => setKunden(r.data))
@@ -49,6 +50,7 @@ export default function Angebote() {
     setGueltigBis('')
     setDatum(new Date().toISOString().split('T')[0])
     setPositionen([{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+    setBearbeitenId(null)
   }
 
   const zwischensumme = positionen
@@ -75,7 +77,7 @@ export default function Angebote() {
     if (!selectedKunde) { alert('Bitte Kunde auswählen!'); return }
     setLaden(true)
     try {
-      await api.post('/rechnungen', {
+      const daten = {
         typ: 'Angebot',
         kundeId: selectedKunde,
         projektName,
@@ -86,7 +88,12 @@ export default function Angebote() {
         istKleinunternehmer,
         status: 'Entwurf',
         positionen
-      })
+      }
+      if (bearbeitenId) {
+        await api.put(`/rechnungen/${bearbeitenId}`, daten)
+      } else {
+        await api.post('/rechnungen', daten)
+      }
       setFormOffen(false)
       formLeeren()
       angeboteLaden()
@@ -139,14 +146,24 @@ export default function Angebote() {
     }
   }
 
-  const angebotBearbeiten = (a: any) => {
-    setSelectedKunde(a.kundeId)
-    setProjektName(a.projektName || '')
-    setProjektAdresse(a.projektAdresse || '')
-    setDatum(a.datum?.split('T')[0] || new Date().toISOString().split('T')[0])
-    setGueltigBis(a.gueltigBis?.split('T')[0] || '')
-    setIstKleinunternehmer(a.istKleinunternehmer)
-    setFormOffen(true)
+  const angebotBearbeiten = async (a: any) => {
+    try {
+      const posRes = await api.get(`/rechnungen/${a.id}/positionen`)
+      setBearbeitenId(a.id)
+      setSelectedKunde(a.kundeId)
+      setProjektName(a.projektName || '')
+      setProjektAdresse(a.projektAdresse || '')
+      setDatum(a.datum?.split('T')[0] || new Date().toISOString().split('T')[0])
+      setGueltigBis(a.gueltigBis?.split('T')[0] || '')
+      setIstKleinunternehmer(a.istKleinunternehmer)
+      setPositionen(posRes.data.length > 0
+        ? posRes.data
+        : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }]
+      )
+      setFormOffen(true)
+    } catch (e) {
+      alert('Fehler beim Laden des Angebots!')
+    }
   }
 
   const pdfOeffnen = (id: number) => {
@@ -260,8 +277,10 @@ export default function Angebote() {
           <div style={{background:'white', borderRadius:14, width:680, margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
 
             <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1}}>📄 Neues Angebot</div>
-              <button onClick={() => setFormOffen(false)}
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1}}>
+                {bearbeitenId ? '✏️ Angebot bearbeiten' : '📄 Neues Angebot'}
+              </div>
+              <button onClick={() => { setFormOffen(false); formLeeren() }}
                 style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
             </div>
 
@@ -369,11 +388,11 @@ export default function Angebote() {
                 <button
                   style={{flex:1, padding:13, background:'#1a1a1a', color:'white', border:'none', borderRadius:9, fontFamily:'Syne, sans-serif', fontSize:14, fontWeight:700, cursor:'pointer'}}
                   onClick={speichern} disabled={laden}>
-                  {laden ? '⏳ Wird gespeichert...' : '✅ Angebot speichern'}
+                  {laden ? '⏳ Wird gespeichert...' : bearbeitenId ? '✅ Änderungen speichern' : '✅ Angebot speichern'}
                 </button>
                 <button
                   style={{padding:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:9, cursor:'pointer'}}
-                  onClick={() => setFormOffen(false)}>
+                  onClick={() => { setFormOffen(false); formLeeren() }}>
                   Abbrechen
                 </button>
               </div>
@@ -392,5 +411,6 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width:'100%', padding:'9px 12px', border:'1px solid #e5e0d8',
-  borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none'
+  borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none',
+  boxSizing: 'border-box'
 }
