@@ -196,10 +196,24 @@ export default function Angebote() {
     window.open(`${baseUrl}/api/pdf/${id}?token=${token}`, '_blank')
   }
 
-  const pdfHerunterladen = (id: number) => {
+  const pdfHerunterladen = async (id: number) => {
     const token = localStorage.getItem('token')
     const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
-    window.open(`${baseUrl}/api/pdf/${id}?token=${token}&download=1`, '_blank')
+    try {
+      const res = await fetch(`${baseUrl}/api/pdf/${id}?token=${token}&download=1`)
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition') || ''
+      const match = disposition.match(/filename="(.+)"/)
+      const filename = match ? match[1] : `Dokument-${id}.pdf`
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch { alert('Fehler beim Herunterladen!') }
   }
 
   const statusFarbe = (status: string) => {
