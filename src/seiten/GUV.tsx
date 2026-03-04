@@ -49,6 +49,7 @@ export default function GUV() {
   const [detailModal, setDetailModal] = useState<BelegDetail | null>(null)
 
   const [detailDateiUrl, setDetailDateiUrl] = useState<string | null>(null)
+  const [dateiLadenFertig, setDateiLadenFertig] = useState(false)
   const [confirmModal, setConfirmModal] = useState<{ text: string; onJa: () => void } | null>(null)
 
   useEffect(() => {
@@ -141,8 +142,9 @@ export default function GUV() {
   }
 
   const detailOeffnen = async (e: GuvEintrag) => {
-    // Modal sofort öffnen (wie Belegscanner), Datei danach asynchron laden
+    // Modal sofort öffnen, Datei danach asynchron laden
     setDetailDateiUrl(null)
+    setDateiLadenFertig(false)
     setDetailModal({ eintrag: e, extra: {} })
 
     let extra: BelegDetail['extra'] = {}
@@ -158,7 +160,6 @@ export default function GUV() {
           datei_typ: b.datei_typ,
         }
         setDetailModal({ eintrag: e, extra })
-        // Datei-Vorschau laden
         if (b.datei_typ) {
           try {
             const dateiRes = await api.get(`/belege/${e.quelle_id}/datei`, { responseType: 'blob' })
@@ -174,11 +175,14 @@ export default function GUV() {
         } catch {}
       }
     } catch {}
+    // Laden fertig – egal ob Datei gefunden oder nicht
+    setDateiLadenFertig(true)
   }
 
   const detailSchliessen = () => {
     if (detailDateiUrl) URL.revokeObjectURL(detailDateiUrl)
     setDetailDateiUrl(null)
+    setDateiLadenFertig(false)
     setDetailModal(null)
   }
 
@@ -735,11 +739,17 @@ export default function GUV() {
                     ) : (
                       /* Platzhalter wenn keine Datei */
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#ccc' }}>
-                        <div style={{ fontSize: 44 }}>📄</div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: '#bbb', textAlign: 'center' }}>
-                          {e.quelle === 'manuell' ? 'Manuell erfasst' : 'Wird geladen…'}
+                        <div style={{ fontSize: 44 }}>
+                          {!dateiLadenFertig && e.quelle !== 'manuell' ? '⏳' : '📄'}
                         </div>
-                        {e.quelle_id && e.quelle !== 'manuell' && (
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#bbb', textAlign: 'center' }}>
+                          {e.quelle === 'manuell'
+                            ? 'Manuell erfasst – kein Beleg'
+                            : !dateiLadenFertig
+                            ? 'Wird geladen…'
+                            : 'Kein Beleg vorhanden'}
+                        </div>
+                        {e.quelle_id && e.quelle !== 'manuell' && dateiLadenFertig && (
                           <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }}
                             style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#888', cursor: 'pointer', fontWeight: 600 }}>
                             👁 Datei öffnen
