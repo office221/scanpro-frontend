@@ -649,18 +649,6 @@ export default function GUV() {
         const e = detailModal.eintrag
         const x = detailModal.extra || {}
         const isEin = e.typ === 'einnahme'
-        const row = (label: string, value: React.ReactNode) => value ? (
-          <div key={label} style={{
-            display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '140px 1fr',
-            gap: isMobile ? 2 : 12, padding: '12px 0',
-            borderBottom: '1px solid #f4f1eb',
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.7, paddingTop: 2 }}>
-              {label}
-            </div>
-            <div style={{ fontSize: 14, color: '#1a2a3a', fontWeight: 500 }}>{value}</div>
-          </div>
-        ) : null
         return (
           <div style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
@@ -669,99 +657,108 @@ export default function GUV() {
           }} onClick={detailSchliessen}>
             <div style={{
               background: 'white', borderRadius: 20,
-              width: '100%', maxWidth: 520,
-              boxShadow: '0 24px 64px rgba(0,0,0,0.35)',
-              overflow: 'hidden',
+              width: '100%', maxWidth: detailDateiUrl && !isMobile ? 820 : 520,
+              boxShadow: '0 24px 64px rgba(0,0,0,0.35)', overflow: 'hidden',
               maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+              fontFamily: 'DM Sans, sans-serif',
             }} onClick={ev => ev.stopPropagation()}>
 
-              {/* Header */}
-              <div style={{
-                background: isEin ? GRUEN : ROT,
-                padding: '18px 22px',
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
-                    {isEin ? '↑ Einnahme' : '↓ Ausgabe'} · {e.quelle}
-                  </div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: 'white', fontFamily: 'Syne, sans-serif' }}>
+              {/* ── Header: dunkel wie Belegscanner ── */}
+              <div style={{ background: '#1a2a3a', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  background: isEin ? '#d1fae5' : '#fee2e2',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+                }}>
+                  {isEin ? '💰' : '🛒'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {e.bezeichnung || '—'}
                   </div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+                    {e.datum ? new Date(e.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: 'white', fontFamily: 'Syne, sans-serif' }}>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: isEin ? '#6ee7b7' : '#fca5a5' }}>
                     {isEin ? '+' : '−'} € {fmt(Number(e.brutto))}
                   </div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>Brutto</div>
+                  <div style={{
+                    display: 'inline-block', fontSize: 11, fontWeight: 700, marginTop: 4,
+                    background: isEin ? GRUEN : ROT, color: 'white',
+                    padding: '2px 10px', borderRadius: 20,
+                  }}>
+                    {isEin ? '↑ Einnahme' : '↓ Ausgabe'}
+                  </div>
                 </div>
-                <button onClick={detailSchliessen} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                <button onClick={detailSchliessen} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
               </div>
 
-              {/* Inhalt: Info + Vorschau nebeneinander */}
+              {/* ── Inhalt: Info links + Datei-Vorschau rechts ── */}
               <div style={{ display: 'grid', gridTemplateColumns: detailDateiUrl && !isMobile ? '1fr 1fr' : '1fr', flex: 1, overflow: 'hidden' }}>
 
-                {/* Felder */}
-                <div style={{ padding: '4px 22px 16px', overflowY: 'auto', borderRight: detailDateiUrl && !isMobile ? '1px solid #f0ece4' : 'none' }}>
-                  {row('Datum', e.datum ? new Date(e.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }) : null)}
-                  {row('Kategorie',
-                    <span style={{
-                      background: '#fdf8f0', color: GOLD,
-                      padding: '3px 12px', borderRadius: 12,
-                      border: `1px solid ${GOLD}44`, fontSize: 13, fontWeight: 600,
-                    }}>{e.kategorie}</span>
-                  )}
-                  {row('Netto', `€ ${fmt(Number(e.netto))}`)}
-                  {row('MwSt', Number(e.mwst_betrag) > 0 ? `€ ${fmt(Number(e.mwst_betrag))}` : '0 % (Kleinunternehmer)')}
-                  {row('Brutto', `€ ${fmt(Number(e.brutto))}`)}
-                  {x.lieferant && row('Lieferant / Von', x.lieferant)}
-                  {x.rechnungsnummer && row('Rechnungsnummer', x.rechnungsnummer)}
-                  {x.dateiname && row('Anhang', x.dateiname)}
-                  {x.notiz && row('Notiz', x.notiz)}
-                  {row('Quelle', e.quelle === 'beleg' ? 'Belegscanner' : e.quelle === 'rechnung' ? 'Rechnung' : 'Manuell')}
+                {/* Info-Felder mit Icons (wie Belegscanner) */}
+                <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, borderRight: detailDateiUrl && !isMobile ? '1px solid #f0ece4' : 'none' }}>
+                  {([
+                    { icon: '🏢', label: 'Lieferant',     value: x.lieferant },
+                    { icon: '📂', label: 'Kategorie',     value: e.kategorie },
+                    { icon: '📅', label: 'Datum',         value: e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : null },
+                    { icon: '#️⃣', label: 'Rechnungsnr.', value: x.rechnungsnummer },
+                    { icon: '💵', label: 'Netto',         value: `€ ${fmt(Number(e.netto))}` },
+                    { icon: '🧾', label: 'MwSt',          value: Number(e.mwst_betrag) > 0 ? `€ ${fmt(Number(e.mwst_betrag))}` : '0 % (Kleinunternehmer)' },
+                    { icon: '💰', label: 'Brutto',        value: `€ ${fmt(Number(e.brutto))}` },
+                    { icon: '📝', label: 'Notiz',         value: x.notiz },
+                    { icon: '📌', label: 'Quelle',        value: e.quelle === 'beleg' ? 'Belegscanner' : e.quelle === 'rechnung' ? 'Rechnung' : 'Manuell' },
+                  ] as { icon: string; label: string; value: string | undefined | null }[])
+                    .filter(r => r.value)
+                    .map(r => (
+                      <div key={r.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{r.icon}</span>
+                        <div>
+                          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#aaa', fontWeight: 700, marginBottom: 2 }}>{r.label}</div>
+                          <div style={{ fontSize: 13, color: '#1a2a3a', fontWeight: 500 }}>{r.value}</div>
+                        </div>
+                      </div>
+                    ))
+                  }
                 </div>
 
-                {/* Datei-Vorschau */}
+                {/* Datei-Vorschau (wie Belegscanner) */}
                 {detailDateiUrl && (
-                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>📎 Vorschau</div>
+                  <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>📎 Beleg-Datei</div>
                     {x.datei_typ === 'application/pdf' ? (
                       <embed src={detailDateiUrl} type="application/pdf"
-                        style={{ width: '100%', height: isMobile ? 220 : 320, borderRadius: 10, border: '1px solid #e5e0d8' }} />
+                        style={{ width: '100%', height: isMobile ? 200 : 340, borderRadius: 10, border: '1px solid #e5e0d8' }} />
                     ) : (
                       <img src={detailDateiUrl} alt="Vorschau"
-                        style={{ width: '100%', maxHeight: isMobile ? 220 : 320, objectFit: 'contain', borderRadius: 10, border: '1px solid #e5e0d8', background: '#faf8f5', cursor: 'zoom-in' }}
+                        style={{ width: '100%', maxHeight: isMobile ? 200 : 340, objectFit: 'contain', borderRadius: 10, border: '1px solid #e5e0d8', background: '#faf8f5', cursor: 'zoom-in' }}
                         onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }} />
                     )}
                     <button onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }}
-                      style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 8, padding: '8px', fontSize: 12, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
-                      🔍 Vollbild öffnen
+                      style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 8, padding: '9px', fontSize: 12, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
+                      🔍 Vollbild anzeigen
                     </button>
                   </div>
                 )}
               </div>
 
               {/* Footer */}
-              <div style={{
-                padding: '14px 22px', borderTop: '1px solid #f0ece4',
-                display: 'flex', gap: 8, justifyContent: 'flex-end',
-              }}>
+              <div style={{ padding: '14px 22px', borderTop: '1px solid #f0ece4', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {e.quelle_id && e.quelle !== 'manuell' && !detailDateiUrl && (
                   <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }} style={{
-                    background: '#f4f1eb', color: '#1a2a3a', border: 'none',
-                    borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700,
-                    cursor: 'pointer',
+                    flex: 1, background: '#f4f1eb', color: '#1a2a3a', border: 'none',
+                    borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
                   }}>👁 Datei ansehen</button>
                 )}
                 <button onClick={() => { detailSchliessen(); loeschen(e.id) }} style={{
-                  background: 'white', color: ROT, border: `1px solid ${ROT}33`,
-                  borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700,
-                  cursor: 'pointer',
-                }}>🗑 Entfernen</button>
+                  padding: '10px 16px', borderRadius: 9, border: '1.5px solid #fde8e6',
+                  background: 'white', fontSize: 13, cursor: 'pointer', color: ROT,
+                }}>🗑</button>
                 <button onClick={detailSchliessen} style={{
-                  background: '#1a2a3a', color: 'white', border: 'none',
-                  borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700,
-                  cursor: 'pointer',
+                  flex: 1, background: '#1a2a3a', color: 'white', border: 'none',
+                  borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 }}>Schließen</button>
               </div>
             </div>
