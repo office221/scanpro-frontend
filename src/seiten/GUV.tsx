@@ -47,7 +47,7 @@ export default function GUV() {
   const [dateiModal, setDateiModal] = useState<DateiModal | null>(null)
   const [dateiLaden, setDateiLaden] = useState(false)
   const [detailModal, setDetailModal] = useState<BelegDetail | null>(null)
-  const [detailLaden, setDetailLaden] = useState(false)
+
   const [detailDateiUrl, setDetailDateiUrl] = useState<string | null>(null)
   const [confirmModal, setConfirmModal] = useState<{ text: string; onJa: () => void } | null>(null)
 
@@ -141,8 +141,10 @@ export default function GUV() {
   }
 
   const detailOeffnen = async (e: GuvEintrag) => {
-    setDetailLaden(true)
+    // Modal sofort öffnen (wie Belegscanner), Datei danach asynchron laden
     setDetailDateiUrl(null)
+    setDetailModal({ eintrag: e, extra: {} })
+
     let extra: BelegDetail['extra'] = {}
     try {
       if (e.quelle === 'beleg' && e.quelle_id) {
@@ -155,6 +157,7 @@ export default function GUV() {
           dateiname: b.dateiname,
           datei_typ: b.datei_typ,
         }
+        setDetailModal({ eintrag: e, extra })
         // Datei-Vorschau laden
         if (b.datei_typ) {
           try {
@@ -163,16 +166,14 @@ export default function GUV() {
           } catch {}
         }
       } else if (e.quelle === 'rechnung' && e.quelle_id) {
-        // Rechnung PDF laden
         try {
           const dateiRes = await api.get(`/pdf/${e.quelle_id}`, { responseType: 'blob' })
-          setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
           extra = { datei_typ: 'application/pdf', dateiname: `${e.bezeichnung}.pdf` }
+          setDetailModal({ eintrag: e, extra })
+          setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
         } catch {}
       }
     } catch {}
-    setDetailLaden(false)
-    setDetailModal({ eintrag: e, extra })
   }
 
   const detailSchliessen = () => {
@@ -631,19 +632,6 @@ export default function GUV() {
         </div>
       )}
 
-      {/* ── Beleg-Detail-Lade-Spinner ──────────────────────────────────────── */}
-      {detailLaden && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-        }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: '28px 48px', textAlign: 'center' }}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>⏳</div>
-            <div style={{ fontSize: 13, color: '#666' }}>Wird geladen...</div>
-          </div>
-        </div>
-      )}
-
       {/* ── Beleg-Detail-Modal ─────────────────────────────────────────────── */}
       {detailModal && (() => {
         const e = detailModal.eintrag
@@ -657,7 +645,7 @@ export default function GUV() {
           }} onClick={detailSchliessen}>
             <div style={{
               background: 'white', borderRadius: 20,
-              width: '100%', maxWidth: detailDateiUrl && !isMobile ? 820 : 520,
+              width: '100%', maxWidth: isMobile ? 520 : 820,
               boxShadow: '0 24px 64px rgba(0,0,0,0.35)', overflow: 'hidden',
               maxHeight: '90vh', display: 'flex', flexDirection: 'column',
               fontFamily: 'DM Sans, sans-serif',
@@ -696,11 +684,11 @@ export default function GUV() {
                 <button onClick={detailSchliessen} style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: '#555', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
               </div>
 
-              {/* ── Inhalt: Info links + Datei-Vorschau rechts ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: detailDateiUrl && !isMobile ? '1fr 1fr' : '1fr', flex: 1, overflow: 'hidden' }}>
+              {/* ── Inhalt: Info links + Datei-Vorschau rechts (immer 2 Spalten auf Desktop) ── */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', flex: 1, overflow: 'hidden' }}>
 
-                {/* Info-Felder mit Icons (wie Belegscanner) */}
-                <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, borderRight: detailDateiUrl && !isMobile ? '1px solid #f0ece4' : 'none' }}>
+                {/* Info-Felder mit Icons */}
+                <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, borderRight: isMobile ? 'none' : '1px solid #f0ece4' }}>
                   {([
                     { icon: '🏢', label: 'Lieferant',     value: x.lieferant },
                     { icon: '📂', label: 'Kategorie',     value: e.kategorie },
@@ -725,22 +713,40 @@ export default function GUV() {
                   }
                 </div>
 
-                {/* Datei-Vorschau (wie Belegscanner) */}
-                {detailDateiUrl && (
-                  <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+                {/* Datei-Vorschau rechts – immer sichtbar */}
+                {!isMobile && (
+                  <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', background: '#faf8f5' }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>📎 Beleg-Datei</div>
-                    {x.datei_typ === 'application/pdf' ? (
-                      <embed src={detailDateiUrl} type="application/pdf"
-                        style={{ width: '100%', height: isMobile ? 200 : 340, borderRadius: 10, border: '1px solid #e5e0d8' }} />
+                    {detailDateiUrl ? (
+                      <>
+                        {x.datei_typ === 'application/pdf' ? (
+                          <embed src={detailDateiUrl} type="application/pdf"
+                            style={{ width: '100%', height: 340, borderRadius: 10, border: '1px solid #e5e0d8' }} />
+                        ) : (
+                          <img src={detailDateiUrl} alt="Vorschau"
+                            style={{ width: '100%', maxHeight: 340, objectFit: 'contain', borderRadius: 10, border: '1px solid #e5e0d8', background: 'white', cursor: 'zoom-in' }}
+                            onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }} />
+                        )}
+                        <button onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }}
+                          style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 8, padding: '9px', fontSize: 12, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
+                          🔍 Vollbild anzeigen
+                        </button>
+                      </>
                     ) : (
-                      <img src={detailDateiUrl} alt="Vorschau"
-                        style={{ width: '100%', maxHeight: isMobile ? 200 : 340, objectFit: 'contain', borderRadius: 10, border: '1px solid #e5e0d8', background: '#faf8f5', cursor: 'zoom-in' }}
-                        onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }} />
+                      /* Platzhalter wenn keine Datei */
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#ccc' }}>
+                        <div style={{ fontSize: 44 }}>📄</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#bbb', textAlign: 'center' }}>
+                          {e.quelle === 'manuell' ? 'Manuell erfasst' : 'Wird geladen…'}
+                        </div>
+                        {e.quelle_id && e.quelle !== 'manuell' && (
+                          <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }}
+                            style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#888', cursor: 'pointer', fontWeight: 600 }}>
+                            👁 Datei öffnen
+                          </button>
+                        )}
+                      </div>
                     )}
-                    <button onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }}
-                      style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 8, padding: '9px', fontSize: 12, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
-                      🔍 Vollbild anzeigen
-                    </button>
                   </div>
                 )}
               </div>
