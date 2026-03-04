@@ -29,6 +29,7 @@ interface BelegDetail {
     rechnungsnummer?: string
     notiz?: string
     dateiname?: string
+    datei_typ?: string
   }
 }
 
@@ -47,6 +48,7 @@ export default function GUV() {
   const [dateiLaden, setDateiLaden] = useState(false)
   const [detailModal, setDetailModal] = useState<BelegDetail | null>(null)
   const [detailLaden, setDetailLaden] = useState(false)
+  const [detailDateiUrl, setDetailDateiUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth < 768)
@@ -134,9 +136,10 @@ export default function GUV() {
 
   const detailOeffnen = async (e: GuvEintrag) => {
     setDetailLaden(true)
+    setDetailDateiUrl(null)
     let extra: BelegDetail['extra'] = {}
-    if (e.quelle === 'beleg' && e.quelle_id) {
-      try {
+    try {
+      if (e.quelle === 'beleg' && e.quelle_id) {
         const res = await api.get(`/belege/${e.quelle_id}`)
         const b = res.data
         extra = {
@@ -144,11 +147,32 @@ export default function GUV() {
           rechnungsnummer: b.rechnungsnummer,
           notiz: b.notiz,
           dateiname: b.dateiname,
+          datei_typ: b.datei_typ,
         }
-      } catch {}
-    }
+        // Datei-Vorschau laden
+        if (b.datei_typ) {
+          try {
+            const dateiRes = await api.get(`/belege/${e.quelle_id}/datei`, { responseType: 'blob' })
+            setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
+          } catch {}
+        }
+      } else if (e.quelle === 'rechnung' && e.quelle_id) {
+        // Rechnung PDF laden
+        try {
+          const dateiRes = await api.get(`/pdf/${e.quelle_id}`, { responseType: 'blob' })
+          setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
+          extra = { datei_typ: 'application/pdf', dateiname: `${e.bezeichnung}.pdf` }
+        } catch {}
+      }
+    } catch {}
     setDetailLaden(false)
     setDetailModal({ eintrag: e, extra })
+  }
+
+  const detailSchliessen = () => {
+    if (detailDateiUrl) URL.revokeObjectURL(detailDateiUrl)
+    setDetailDateiUrl(null)
+    setDetailModal(null)
   }
 
   // ── Berechnungen ──────────────────────────────────────────────────────────
@@ -636,7 +660,7 @@ export default function GUV() {
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 1000, padding: 16,
-          }} onClick={() => setDetailModal(null)}>
+          }} onClick={detailSchliessen}>
             <div style={{
               background: 'white', borderRadius: 20,
               width: '100%', maxWidth: 520,
@@ -665,26 +689,50 @@ export default function GUV() {
                   </div>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>Brutto</div>
                 </div>
+                <button onClick={detailSchliessen} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
               </div>
 
-              {/* Felder */}
-              <div style={{ padding: '4px 22px 16px', overflowY: 'auto' }}>
-                {row('Datum', e.datum ? new Date(e.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }) : null)}
-                {row('Kategorie',
-                  <span style={{
-                    background: '#fdf8f0', color: GOLD,
-                    padding: '3px 12px', borderRadius: 12,
-                    border: `1px solid ${GOLD}44`, fontSize: 13, fontWeight: 600,
-                  }}>{e.kategorie}</span>
+              {/* Inhalt: Info + Vorschau nebeneinander */}
+              <div style={{ display: 'grid', gridTemplateColumns: detailDateiUrl && !isMobile ? '1fr 1fr' : '1fr', flex: 1, overflow: 'hidden' }}>
+
+                {/* Felder */}
+                <div style={{ padding: '4px 22px 16px', overflowY: 'auto', borderRight: detailDateiUrl && !isMobile ? '1px solid #f0ece4' : 'none' }}>
+                  {row('Datum', e.datum ? new Date(e.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }) : null)}
+                  {row('Kategorie',
+                    <span style={{
+                      background: '#fdf8f0', color: GOLD,
+                      padding: '3px 12px', borderRadius: 12,
+                      border: `1px solid ${GOLD}44`, fontSize: 13, fontWeight: 600,
+                    }}>{e.kategorie}</span>
+                  )}
+                  {row('Netto', `€ ${fmt(Number(e.netto))}`)}
+                  {row('MwSt', Number(e.mwst_betrag) > 0 ? `€ ${fmt(Number(e.mwst_betrag))}` : '0 % (Kleinunternehmer)')}
+                  {row('Brutto', `€ ${fmt(Number(e.brutto))}`)}
+                  {x.lieferant && row('Lieferant / Von', x.lieferant)}
+                  {x.rechnungsnummer && row('Rechnungsnummer', x.rechnungsnummer)}
+                  {x.dateiname && row('Anhang', x.dateiname)}
+                  {x.notiz && row('Notiz', x.notiz)}
+                  {row('Quelle', e.quelle === 'beleg' ? 'Belegscanner' : e.quelle === 'rechnung' ? 'Rechnung' : 'Manuell')}
+                </div>
+
+                {/* Datei-Vorschau */}
+                {detailDateiUrl && (
+                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>📎 Vorschau</div>
+                    {x.datei_typ === 'application/pdf' ? (
+                      <embed src={detailDateiUrl} type="application/pdf"
+                        style={{ width: '100%', height: isMobile ? 220 : 320, borderRadius: 10, border: '1px solid #e5e0d8' }} />
+                    ) : (
+                      <img src={detailDateiUrl} alt="Vorschau"
+                        style={{ width: '100%', maxHeight: isMobile ? 220 : 320, objectFit: 'contain', borderRadius: 10, border: '1px solid #e5e0d8', background: '#faf8f5', cursor: 'zoom-in' }}
+                        onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }} />
+                    )}
+                    <button onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }}
+                      style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 8, padding: '8px', fontSize: 12, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
+                      🔍 Vollbild öffnen
+                    </button>
+                  </div>
                 )}
-                {row('Netto', `€ ${fmt(Number(e.netto))}`)}
-                {row('MwSt', Number(e.mwst_betrag) > 0 ? `€ ${fmt(Number(e.mwst_betrag))}` : '0 % (Kleinunternehmer)')}
-                {row('Brutto', `€ ${fmt(Number(e.brutto))}`)}
-                {x.lieferant && row('Lieferant / Von', x.lieferant)}
-                {x.rechnungsnummer && row('Rechnungsnummer', x.rechnungsnummer)}
-                {x.dateiname && row('Anhang', x.dateiname)}
-                {x.notiz && row('Notiz', x.notiz)}
-                {row('Quelle', e.quelle === 'beleg' ? 'Belegscanner' : e.quelle === 'rechnung' ? 'Rechnung' : 'Manuell')}
               </div>
 
               {/* Footer */}
@@ -692,14 +740,19 @@ export default function GUV() {
                 padding: '14px 22px', borderTop: '1px solid #f0ece4',
                 display: 'flex', gap: 8, justifyContent: 'flex-end',
               }}>
-                {e.quelle_id && e.quelle !== 'manuell' && (
-                  <button onClick={() => { setDetailModal(null); dateiOeffnen(e) }} style={{
+                {e.quelle_id && e.quelle !== 'manuell' && !detailDateiUrl && (
+                  <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }} style={{
                     background: '#f4f1eb', color: '#1a2a3a', border: 'none',
                     borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700,
                     cursor: 'pointer',
                   }}>👁 Datei ansehen</button>
                 )}
-                <button onClick={() => setDetailModal(null)} style={{
+                <button onClick={() => { detailSchliessen(); loeschen(e.id) }} style={{
+                  background: 'white', color: ROT, border: `1px solid ${ROT}33`,
+                  borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer',
+                }}>🗑 Entfernen</button>
+                <button onClick={detailSchliessen} style={{
                   background: '#1a2a3a', color: 'white', border: 'none',
                   borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700,
                   cursor: 'pointer',
