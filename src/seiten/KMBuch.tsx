@@ -69,6 +69,8 @@ export default function KMBuch() {
   const [filterMonat, setFilterMonat] = useState('Alle')
   const [routeLaden, setRouteLaden] = useState(false)
   const [detailFahrt, setDetailFahrt] = useState<Fahrt | null>(null)
+  const [gpsLadenStart, setGpsLadenStart] = useState(false)
+  const [gpsLadenZiel, setGpsLadenZiel]  = useState(false)
 
   // Form
   const [form, setForm]             = useState(emptyForm())
@@ -155,6 +157,56 @@ export default function KMBuch() {
     setForm(f => ({ ...f, ziel_adresse: v.display_name }))
     setZielKoord({ lat: v.lat, lon: v.lon })
     setZielVorschlaege([])
+  }
+
+  // ── GPS Standort holen & Adresse ermitteln ────────────────────────────────
+  const holGpsPosition = (ziel: 'start' | 'ziel') => {
+    if (!navigator.geolocation) {
+      zeigeToast('GPS nicht verfügbar auf diesem Gerät', false); return
+    }
+    if (ziel === 'start') setGpsLadenStart(true)
+    else setGpsLadenZiel(true)
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lon } = pos.coords
+        let adresse = `${lat.toFixed(6)}, ${lon.toFixed(6)}`
+        try {
+          // Versuche zuerst Backend-Proxy
+          const r = await api.get(`/km-buch/geocode-reverse?lat=${lat}&lon=${lon}`)
+          if (r.data?.display_name) adresse = r.data.display_name
+        } catch {
+          try {
+            // Fallback: direkt Nominatim (hat CORS-Support)
+            const r = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+              { headers: { 'Accept-Language': 'de' } }
+            )
+            const data = await r.json()
+            if (data?.display_name) adresse = data.display_name
+          } catch { /* Koordinaten als Fallback */ }
+        }
+        if (ziel === 'start') {
+          setForm(f => ({ ...f, start_adresse: adresse }))
+          setStartKoord({ lat: String(lat), lon: String(lon) })
+        } else {
+          setForm(f => ({ ...f, ziel_adresse: adresse }))
+          setZielKoord({ lat: String(lat), lon: String(lon) })
+        }
+        zeigeToast(`✅ ${ziel === 'start' ? 'Startadresse' : 'Zieladresse'} per GPS übernommen`)
+        if (ziel === 'start') setGpsLadenStart(false)
+        else setGpsLadenZiel(false)
+      },
+      (err) => {
+        const msg = err.code === 1
+          ? 'GPS-Zugriff verweigert – bitte im Browser erlauben'
+          : err.code === 3 ? 'GPS-Zeitüberschreitung' : 'GPS-Position nicht ermittelbar'
+        zeigeToast(msg, false)
+        if (ziel === 'start') setGpsLadenStart(false)
+        else setGpsLadenZiel(false)
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+    )
   }
 
   // ── Route via Backend-Proxy (OSRM) berechnen ──────────────────────────────
@@ -783,55 +835,91 @@ export default function KMBuch() {
               </div>
 
               {/* Startadresse */}
-              <div style={{ position: 'relative' }}>
+              <div>
                 <label style={lbl}>📍 Startadresse</label>
-                <input
-                  value={form.start_adresse}
-                  onChange={e => onStartChange(e.target.value)}
-                  onFocus={() => setStartFokus(true)}
-                  onBlur={() => setTimeout(() => setStartFokus(false), 200)}
-                  placeholder="z.B. Mariahilfer Straße 1, Wien"
-                  style={{ ...inp, borderColor: startKoord ? GRUEN : '#e5e0d8' }}
-                />
-                {startKoord && <div style={{ fontSize: 10, color: GRUEN, marginTop: 3 }}>✓ Koordinaten gespeichert – Route kann berechnet werden</div>}
-                {startVorschlaege.length > 0 && startFokus && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
-                    {startVorschlaege.map((v, i) => (
-                      <div key={i} onMouseDown={() => waehleStart(v)}
-                        style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: '#1a2a3a', borderBottom: '1px solid #f4f1eb' }}
-                        onMouseEnter={ev => ev.currentTarget.style.background = '#fdf8f0'}
-                        onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
-                        📍 {v.display_name}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <input
+                      value={form.start_adresse}
+                      onChange={e => onStartChange(e.target.value)}
+                      onFocus={() => setStartFokus(true)}
+                      onBlur={() => setTimeout(() => setStartFokus(false), 200)}
+                      placeholder="z.B. Mariahilfer Straße 1, Wien"
+                      style={{ ...inp, borderColor: startKoord ? GRUEN : '#e5e0d8' }}
+                    />
+                    {startVorschlaege.length > 0 && startFokus && (
+                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+                        {startVorschlaege.map((v, i) => (
+                          <div key={i} onMouseDown={() => waehleStart(v)}
+                            style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: '#1a2a3a', borderBottom: '1px solid #f4f1eb' }}
+                            onMouseEnter={ev => ev.currentTarget.style.background = '#fdf8f0'}
+                            onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
+                            📍 {v.display_name}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
+                  <button
+                    onClick={() => holGpsPosition('start')}
+                    disabled={gpsLadenStart}
+                    title="Aktuellen GPS-Standort als Startadresse übernehmen"
+                    style={{
+                      padding: '0 12px', borderRadius: 10, border: `1px solid ${gpsLadenStart ? '#e5e0d8' : GRUEN + '66'}`,
+                      background: gpsLadenStart ? '#f4f1eb' : '#ecfdf5',
+                      color: gpsLadenStart ? '#aaa' : GRUEN,
+                      cursor: gpsLadenStart ? 'default' : 'pointer',
+                      fontSize: 18, flexShrink: 0, display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', minWidth: 46, whiteSpace: 'nowrap',
+                    }}>
+                    {gpsLadenStart ? '⏳' : '📍'}
+                  </button>
+                </div>
+                {startKoord && <div style={{ fontSize: 10, color: GRUEN, marginTop: 3 }}>✓ Koordinaten gespeichert – Route kann berechnet werden</div>}
               </div>
 
               {/* Zieladresse */}
-              <div style={{ position: 'relative' }}>
+              <div>
                 <label style={lbl}>🏁 Zieladresse / Reiseziel</label>
-                <input
-                  value={form.ziel_adresse}
-                  onChange={e => onZielChange(e.target.value)}
-                  onFocus={() => setZielFokus(true)}
-                  onBlur={() => setTimeout(() => setZielFokus(false), 200)}
-                  placeholder="z.B. Hauptplatz 5, Graz"
-                  style={{ ...inp, borderColor: zielKoord ? GRUEN : '#e5e0d8' }}
-                />
-                {zielKoord && <div style={{ fontSize: 10, color: GRUEN, marginTop: 3 }}>✓ Koordinaten gespeichert</div>}
-                {zielVorschlaege.length > 0 && zielFokus && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
-                    {zielVorschlaege.map((v, i) => (
-                      <div key={i} onMouseDown={() => waehleZiel(v)}
-                        style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: '#1a2a3a', borderBottom: '1px solid #f4f1eb' }}
-                        onMouseEnter={ev => ev.currentTarget.style.background = '#fdf8f0'}
-                        onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
-                        🏁 {v.display_name}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <input
+                      value={form.ziel_adresse}
+                      onChange={e => onZielChange(e.target.value)}
+                      onFocus={() => setZielFokus(true)}
+                      onBlur={() => setTimeout(() => setZielFokus(false), 200)}
+                      placeholder="z.B. Hauptplatz 5, Graz"
+                      style={{ ...inp, borderColor: zielKoord ? GRUEN : '#e5e0d8' }}
+                    />
+                    {zielVorschlaege.length > 0 && zielFokus && (
+                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+                        {zielVorschlaege.map((v, i) => (
+                          <div key={i} onMouseDown={() => waehleZiel(v)}
+                            style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: '#1a2a3a', borderBottom: '1px solid #f4f1eb' }}
+                            onMouseEnter={ev => ev.currentTarget.style.background = '#fdf8f0'}
+                            onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
+                            🏁 {v.display_name}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
+                  <button
+                    onClick={() => holGpsPosition('ziel')}
+                    disabled={gpsLadenZiel}
+                    title="Wenn angekommen: aktuellen GPS-Standort als Zieladresse übernehmen"
+                    style={{
+                      padding: '0 12px', borderRadius: 10, border: `1px solid ${gpsLadenZiel ? '#e5e0d8' : ROT + '66'}`,
+                      background: gpsLadenZiel ? '#f4f1eb' : '#fef2f2',
+                      color: gpsLadenZiel ? '#aaa' : ROT,
+                      cursor: gpsLadenZiel ? 'default' : 'pointer',
+                      fontSize: 18, flexShrink: 0, display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', minWidth: 46, whiteSpace: 'nowrap',
+                    }}>
+                    {gpsLadenZiel ? '⏳' : '🏁'}
+                  </button>
+                </div>
+                {zielKoord && <div style={{ fontSize: 10, color: GRUEN, marginTop: 3 }}>✓ Koordinaten gespeichert</div>}
               </div>
 
               {/* Route-Buttons */}
