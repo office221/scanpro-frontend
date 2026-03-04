@@ -663,36 +663,37 @@ export default function GUV() {
               fontFamily: 'DM Sans, sans-serif',
             }} onClick={ev => ev.stopPropagation()}>
 
-              {/* ── Header: dunkel wie Belegscanner ── */}
-              <div style={{ background: '#1a2a3a', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 14 }}>
+              {/* ── Header: hell wie Belegscanner ── */}
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0ece4', display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  width: 44, height: 44, borderRadius: 10, flexShrink: 0,
                   background: isEin ? '#d1fae5' : '#fee2e2',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
                 }}>
                   {isEin ? '💰' : '🛒'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {e.bezeichnung || '—'}
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
                     {e.datum ? new Date(e.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: isEin ? '#6ee7b7' : '#fca5a5' }}>
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: isEin ? '#059669' : '#ef4444' }}>
                     {isEin ? '+' : '−'} € {fmt(Number(e.brutto))}
                   </div>
-                  <div style={{
-                    display: 'inline-block', fontSize: 11, fontWeight: 700, marginTop: 4,
-                    background: isEin ? GRUEN : ROT, color: 'white',
+                  <span style={{
+                    fontSize: 11, fontWeight: 800, marginTop: 4, display: 'inline-block',
+                    background: isEin ? '#d1fae5' : '#fee2e2',
+                    color: isEin ? '#065f46' : '#991b1b',
                     padding: '2px 10px', borderRadius: 20,
                   }}>
                     {isEin ? '↑ Einnahme' : '↓ Ausgabe'}
-                  </div>
+                  </span>
                 </div>
-                <button onClick={detailSchliessen} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                <button onClick={detailSchliessen} style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: '#555', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
               </div>
 
               {/* ── Inhalt: Info links + Datei-Vorschau rechts ── */}
