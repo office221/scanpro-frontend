@@ -39,7 +39,8 @@ interface Beleg {
 
 const emptyForm = () => ({
   beschreibung: '', betrag: '', datum: new Date().toISOString().split('T')[0],
-  kategorie: 'Sonstiges', lieferant: '', mwst: '', notiz: '', rechnungsnummer: '', typ: 'ausgabe'
+  kategorie: 'Sonstiges', lieferant: '', mwst: '', notiz: '', rechnungsnummer: '', typ: 'ausgabe',
+  abschreibung: false, abschreibungJahre: '3'
 })
 
 const labelStyle: React.CSSProperties = {
@@ -129,6 +130,8 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
       notiz:           beleg.notiz || '',
       rechnungsnummer: beleg.rechnungsnummer || '',
       typ:             beleg.typ || 'ausgabe',
+      abschreibung:    false,
+      abschreibungJahre: '3',
     } : emptyForm())
     setDatei(null)
     setDateiVorschau(null)
@@ -140,9 +143,41 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
     try {
       if (editBeleg) {
         await api.put(`/belege/${editBeleg.id}`, form)
+      } else if (form.abschreibung && !editBeleg) {
+        // Abschreibung: Betrag auf mehrere Jahre aufteilen
+        const jahre = Math.max(1, parseInt(form.abschreibungJahre) || 1)
+        const gesamtBetrag = parseFloat(form.betrag) || 0
+        const jahresBetrag = Math.round((gesamtBetrag / jahre) * 100) / 100
+        const startJahr = new Date(form.datum).getFullYear()
+        const startDatum = form.datum
+
+        for (let i = 0; i < jahre; i++) {
+          const fd = new FormData()
+          const jahrDatum = startDatum.replace(String(startJahr), String(startJahr + i))
+          // Letztes Jahr bekommt evtl. Rundungsdifferenz
+          const betragDiesesJahr = i === jahre - 1
+            ? Math.round((gesamtBetrag - jahresBetrag * (jahre - 1)) * 100) / 100
+            : jahresBetrag
+
+          const eintrag = {
+            ...form,
+            betrag: String(betragDiesesJahr),
+            datum: jahrDatum,
+            beschreibung: `${form.beschreibung} (AfA ${i + 1}/${jahre})`,
+            notiz: `Abschreibung ${startJahr + i} | Gesamtbetrag: €${gesamtBetrag} auf ${jahre} Jahre${form.notiz ? ' | ' + form.notiz : ''}`,
+          }
+          Object.entries(eintrag).forEach(([k, v]) => {
+            if (k !== 'abschreibung' && k !== 'abschreibungJahre') fd.append(k, String(v))
+          })
+          if (i === 0 && datei) fd.append('datei', datei) // Datei nur beim ersten Eintrag
+          await api.post('/belege', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+        }
+        zeigeToast(`✅ ${jahre} AfA-Einträge erstellt (je € ${jahresBetrag.toFixed(2)}/Jahr)`)
       } else {
         const fd = new FormData()
-        Object.entries(form).forEach(([k, v]) => fd.append(k, v))
+        Object.entries(form).forEach(([k, v]) => {
+          if (k !== 'abschreibung' && k !== 'abschreibungJahre') fd.append(k, String(v))
+        })
         if (datei) fd.append('datei', datei)
         await api.post('/belege', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       }
@@ -665,6 +700,49 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
                 <label style={labelStyle}>MwSt (€)</label>
                 <input style={inputStyle} type="number" step="0.01" placeholder="0,00" value={form.mwst} onChange={e => setForm({...form, mwst: e.target.value})} />
               </div>
+
+              {/* Abschreibung */}
+              {!editBeleg && (
+                <div style={{ marginBottom: 14, background: form.abschreibung ? '#fdf8f0' : '#fafafa', borderRadius: 10, padding: '12px 14px', border: `1.5px solid ${form.abschreibung ? '#c8a96e' : '#e5e0d8'}`, transition: 'all 0.2s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setForm({...form, abschreibung: !form.abschreibung})}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: 5, border: `2px solid ${form.abschreibung ? '#c8a96e' : '#ccc'}`,
+                      background: form.abschreibung ? '#c8a96e' : 'white',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s'
+                    }}>
+                      {form.abschreibung && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>📉 Abschreibung (AfA)</div>
+                      <div style={{ fontSize: 11, color: '#888' }}>Betrag auf mehrere Jahre aufteilen</div>
+                    </div>
+                  </div>
+                  {form.abschreibung && (
+                    <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div>
+                        <label style={labelStyle}>Anzahl Jahre</label>
+                        <input style={inputStyle} type="number" min="2" max="20" value={form.abschreibungJahre}
+                          onChange={e => setForm({...form, abschreibungJahre: e.target.value})} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 2 }}>
+                        <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Je Jahr</div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: '#c8a96e', fontFamily: 'Syne, sans-serif' }}>
+                          € {form.betrag && form.abschreibungJahre
+                            ? (parseFloat(form.betrag) / parseInt(form.abschreibungJahre)).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : '0,00'}
+                        </div>
+                      </div>
+                      <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#aaa', background: 'white', borderRadius: 8, padding: '8px 10px', border: '1px solid #e5e0d8' }}>
+                        📅 Erstellt {form.abschreibungJahre || '?'} Belege: {
+                          Array.from({ length: Math.min(parseInt(form.abschreibungJahre) || 0, 5) }, (_, i) =>
+                            new Date(form.datum).getFullYear() + i
+                          ).join(', ')
+                        }{parseInt(form.abschreibungJahre) > 5 ? ', ...' : ''}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>Notiz</label>
