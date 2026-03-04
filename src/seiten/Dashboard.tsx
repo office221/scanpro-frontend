@@ -25,7 +25,7 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   Positionsvorlagen:<Icon d="M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01" />,
   'G&V Abrechnung': <Icon d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20" />,
   'KM-Buch':        <Icon d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5a2 2 0 0 1-2 2h-2 M7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0 M15 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0" />,
-  'KM & G&V':       <Icon d="M18 20V10 M12 20V4 M6 20v-6 M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5" />,
+  BuchDashboard:     <Icon d="M18 20V10 M12 20V4 M6 20v-6 M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5" />,
   Belegscanner:     <Icon d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
   Einstellungen:    <Icon d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />,
 }
@@ -48,7 +48,7 @@ const NAV_GRUPPEN = [
     { name: 'Vorlagen', badge: null, rot: false, ki: false, children: [{ name: 'Positionsvorlagen' }] },
   ]},
   { gruppe: 'Buchhaltung', items: [
-    { name: 'KM & G&V',       badge: null, rot: false, ki: false, children: [] },
+    { name: 'BuchDashboard', label: 'Dashboard', badge: null, rot: false, ki: false, children: [] },
     { name: 'G&V Abrechnung', badge: null, rot: false, ki: false, children: [] },
     { name: 'KM-Buch',        badge: null, rot: false, ki: false, children: [] },
     { name: 'Belegscanner',   badge: null, rot: false, ki: true,  children: [] },
@@ -355,7 +355,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                           {NAV_ICONS[item.name]}
                         </svg>
                       </span>
-                      <span style={{ flex: 1, fontWeight: istAktiv ? 600 : 400 }}>{item.name}</span>
+                      <span style={{ flex: 1, fontWeight: istAktiv ? 600 : 400 }}>{item.label || item.name}</span>
                       {item.ki && <span style={{ fontSize: 8, background: theme.kiTag.bg, color: theme.kiTag.color, padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>KI</span>}
                       {badge && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 20, background: badgeRot ? '#ef4444' : D ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', color: badgeRot ? 'white' : D ? 'rgba(255,255,255,0.4)' : '#64748b', minWidth: 18, textAlign: 'center' as const }}>{badge}</span>}
                       {hatKinder && <span style={{ fontSize: 10, color: theme.navGroupLabel, display: 'inline-block', transition: 'transform 0.2s', transform: istExpanded ? 'rotate(90deg)' : 'none' }}>▶</span>}
@@ -733,7 +733,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           {aktivNav === 'Angebote'          && <div style={{ flex: 1, overflow: 'auto' }}><Angebote /></div>}
           {aktivNav === 'Positionsvorlagen' && <div style={{ flex: 1, overflow: 'auto' }}><Vorlagen /></div>}
           {aktivNav === 'Belegscanner'     && <div style={{ flex: 1, overflow: 'auto' }}><Belegscanner initialDatei={sharedFile} onSharedFileUsed={() => setSharedFile(null)} /></div>}
-          {aktivNav === 'KM & G&V'         && <div style={{ flex: 1, overflow: 'auto' }}><KMGuvDashboard /></div>}
+          {aktivNav === 'BuchDashboard'       && <div style={{ flex: 1, overflow: 'auto' }}><KMGuvDashboard /></div>}
           {aktivNav === 'G&V Abrechnung'   && <div style={{ flex: 1, overflow: 'auto' }}><GUV /></div>}
           {aktivNav === 'KM-Buch'          && <div style={{ flex: 1, overflow: 'auto' }}><KMBuch /></div>}
           {aktivNav === 'Einstellungen'     && <div style={{ flex: 1, overflow: 'auto', padding: '4px 0' }}><Einstellungen /></div>}
