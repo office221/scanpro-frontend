@@ -13,7 +13,7 @@ function App() {
 <Route path="/dashboard" element={
   token ? <Dashboard onLogout={() => console.log("Logout-Funktion aufgerufen")} /> : <Navigate to="/login" />
 } />
-        <Route path="*" element={<Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
       </Routes>
     </BrowserRouter>
   )

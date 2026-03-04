@@ -26,6 +26,15 @@ export default function Einstellungen() {
   const [mahnungFrist1, setMahnungFrist1] = useState(14)
   const [mahnungFrist2, setMahnungFrist2] = useState(7)
   const [mahnungFrist3, setMahnungFrist3] = useState(5)
+  const [kmSatz, setKmSatz] = useState(0.42)
+
+  // Passwort ändern
+  const [pwAktuell, setPwAktuell]     = useState('')
+  const [pwNeu, setPwNeu]             = useState('')
+  const [pwBestaetigt, setPwBestaetigt] = useState('')
+  const [pwLaden, setPwLaden]         = useState(false)
+  const [pwNachricht, setPwNachricht] = useState<{ text: string; ok: boolean } | null>(null)
+  const [pwSichtbar, setPwSichtbar]   = useState({ aktuell: false, neu: false, best: false })
 
   useEffect(() => {
     api.get('/einstellungen').then(r => {
@@ -50,6 +59,7 @@ export default function Einstellungen() {
       setMahnungFrist1(d.mahnungFrist1 || 14)
       setMahnungFrist2(d.mahnungFrist2 || 7)
       setMahnungFrist3(d.mahnungFrist3 || 5)
+      setKmSatz(parseFloat(d.km_satz) || 0.42)
     }).catch(() => {})
   }, [])
 
@@ -68,7 +78,7 @@ export default function Einstellungen() {
       await api.post('/einstellungen', {
         firma, strasse, plz, ort, land, telefon, email, website,
         uid, iban, bic, bank, kontoinhaber, gerichtsstand, logoBase64, logoBreite, logoHoehe,
-        mahnungFrist1, mahnungFrist2, mahnungFrist3
+        mahnungFrist1, mahnungFrist2, mahnungFrist3, km_satz: kmSatz
       })
       setGespeichert(true)
       setTimeout(() => setGespeichert(false), 3000)
@@ -76,6 +86,32 @@ export default function Einstellungen() {
       alert('Fehler: ' + fehler.message)
     }
     setLaden(false)
+  }
+
+  const passwortAendern = async () => {
+    if (!pwAktuell || !pwNeu || !pwBestaetigt) {
+      setPwNachricht({ text: 'Bitte alle Felder ausfüllen!', ok: false }); return
+    }
+    if (pwNeu !== pwBestaetigt) {
+      setPwNachricht({ text: 'Neues Passwort stimmt nicht überein!', ok: false }); return
+    }
+    if (pwNeu.length < 6) {
+      setPwNachricht({ text: 'Passwort muss mindestens 6 Zeichen haben!', ok: false }); return
+    }
+    setPwLaden(true)
+    setPwNachricht(null)
+    try {
+      const res = await api.post('/auth/passwort-aendern', {
+        aktuellesPasswort: pwAktuell,
+        neuesPasswort: pwNeu
+      })
+      setPwNachricht({ text: res.data.nachricht + ' Eine Bestätigungs-E-Mail wurde gesendet.', ok: true })
+      setPwAktuell(''); setPwNeu(''); setPwBestaetigt('')
+      setTimeout(() => setPwNachricht(null), 8000)
+    } catch (e: any) {
+      setPwNachricht({ text: e?.response?.data?.fehler || 'Fehler beim Ändern!', ok: false })
+    }
+    setPwLaden(false)
   }
 
   // PDF Maße: Basis 70mm breit, 30mm hoch bei 100%
@@ -369,6 +405,182 @@ export default function Einstellungen() {
             <div style={{fontSize:10, color:'#aaa', marginTop:4}}>Stufe 3 – letzte Chance</div>
           </div>
         </div>
+      </div>
+
+      {/* ── KM-GELD EINSTELLUNG ───────────────────────────────────── */}
+      <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+        <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:4}}>
+          🚗 KM-Geld / Fahrtenbuch
+        </div>
+        <div style={{fontSize:11, color:'#888', marginBottom:16}}>
+          Gesetzlicher km-Satz gem. § 26 EStG Österreich. Wird für die automatische Berechnung im KM-Buch und die G&V-Übertragung verwendet.
+        </div>
+        <div style={{display:'flex', alignItems:'center', gap:16, flexWrap:'wrap'}}>
+          <div>
+            <label style={{...labelStyle, marginBottom:6}}>km-Satz (€ pro km)</label>
+            <div style={{display:'flex', alignItems:'center', gap:8}}>
+              <span style={{fontSize:14, color:'#888'}}>€</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                max="2.00"
+                style={{...inputStyle, width:'100px', textAlign:'center', fontFamily:'Syne, sans-serif', fontWeight:700, fontSize:16}}
+                value={kmSatz}
+                onChange={e => {
+                  const v = parseFloat(e.target.value)
+                  if (!isNaN(v) && v >= 0) setKmSatz(v)
+                }}
+                onBlur={e => {
+                  // Beim Verlassen: sicherstellen dass ein gültiger Wert gesetzt ist
+                  const v = parseFloat(e.target.value)
+                  if (isNaN(v) || v <= 0) setKmSatz(0.42)
+                }}
+              />
+              <span style={{fontSize:12, color:'#888'}}>/km</span>
+            </div>
+          </div>
+          <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+            {[
+              { label: '€ 0,42 (PKW Standard AT)', val: 0.42 },
+              { label: '€ 0,24 (Motorrad)', val: 0.24 },
+              { label: '€ 0,38 (Fahrrad)', val: 0.38 },
+            ].map(p => (
+              <button key={p.val} onClick={() => setKmSatz(p.val)} style={{
+                padding:'6px 12px', borderRadius:8, border:'1px solid #e5e0d8',
+                background: kmSatz === p.val ? '#1a2a3a' : 'white',
+                color: kmSatz === p.val ? 'white' : '#555',
+                fontSize:11, fontWeight:600, cursor:'pointer',
+              }}>{p.label}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{marginTop:12, padding:'10px 14px', background:'#fdf8f0', borderRadius:8, border:'1px solid #c8a96e33', fontSize:12, color:'#888'}}>
+          💡 Beispiel: 100 km × € {kmSatz.toFixed(4)} = <strong style={{color:'#c8a96e'}}>€ {(100 * kmSatz).toFixed(2)}</strong> KM-Geld (steuerfrei)
+        </div>
+      </div>
+
+      {/* ── PASSWORT ÄNDERN ────────────────────────────────────────── */}
+      <div style={{background:'white', borderRadius:10, border:'1px solid #e5e0d8', padding:'20px 22px', marginBottom:16}}>
+        <div style={{fontFamily:'Syne, sans-serif', fontSize:14, fontWeight:800, color:'#1a1a1a', marginBottom:4, display:'flex', alignItems:'center', gap:8}}>
+          🔐 Passwort ändern
+        </div>
+        <div style={{fontSize:12, color:'#aaa', marginBottom:18}}>Nach der Änderung wird eine Bestätigungs-E-Mail gesendet.</div>
+
+        {/* Aktuelles Passwort */}
+        <div style={{marginBottom:12}}>
+          <label style={labelStyle}>Aktuelles Passwort</label>
+          <div style={{position:'relative'}}>
+            <input
+              type={pwSichtbar.aktuell ? 'text' : 'password'}
+              placeholder="Dein aktuelles Passwort"
+              value={pwAktuell}
+              onChange={e => setPwAktuell(e.target.value)}
+              style={{...inputStyle, paddingRight:44}}
+            />
+            <button onClick={() => setPwSichtbar(s => ({...s, aktuell: !s.aktuell}))}
+              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#aaa', fontSize:16, padding:0}}>
+              {pwSichtbar.aktuell ? '🙈' : '👁️'}
+            </button>
+          </div>
+        </div>
+
+        {/* Neues Passwort */}
+        <div style={{marginBottom:12}}>
+          <label style={labelStyle}>Neues Passwort</label>
+          <div style={{position:'relative'}}>
+            <input
+              type={pwSichtbar.neu ? 'text' : 'password'}
+              placeholder="Mindestens 6 Zeichen"
+              value={pwNeu}
+              onChange={e => setPwNeu(e.target.value)}
+              style={{
+                ...inputStyle, paddingRight:44,
+                borderColor: pwNeu.length > 0 && pwNeu.length < 6 ? '#ef4444' : pwNeu.length >= 6 ? '#10b981' : undefined
+              }}
+            />
+            <button onClick={() => setPwSichtbar(s => ({...s, neu: !s.neu}))}
+              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#aaa', fontSize:16, padding:0}}>
+              {pwSichtbar.neu ? '🙈' : '👁️'}
+            </button>
+          </div>
+          {/* Stärke-Anzeige */}
+          {pwNeu.length > 0 && (
+            <div style={{display:'flex', gap:4, marginTop:6}}>
+              {[
+                pwNeu.length >= 6,
+                /[A-Z]/.test(pwNeu),
+                /[0-9]/.test(pwNeu),
+                /[^A-Za-z0-9]/.test(pwNeu),
+              ].map((ok, i) => (
+                <div key={i} style={{flex:1, height:3, borderRadius:2, background: ok ? '#10b981' : '#e5e0d8', transition:'background 0.3s'}} />
+              ))}
+            </div>
+          )}
+          {pwNeu.length > 0 && (
+            <div style={{fontSize:10, color:'#aaa', marginTop:4}}>
+              {pwNeu.length >= 6 && /[A-Z]/.test(pwNeu) && /[0-9]/.test(pwNeu) && /[^A-Za-z0-9]/.test(pwNeu)
+                ? '💪 Sehr stark'
+                : pwNeu.length >= 6 && (/[A-Z]/.test(pwNeu) || /[0-9]/.test(pwNeu))
+                ? '✅ Gut'
+                : pwNeu.length >= 6 ? '⚠️ Schwach – Groß/Kleinbuchstaben & Zahlen empfohlen'
+                : '❌ Zu kurz (min. 6 Zeichen)'}
+            </div>
+          )}
+        </div>
+
+        {/* Bestätigen */}
+        <div style={{marginBottom:16}}>
+          <label style={labelStyle}>Neues Passwort bestätigen</label>
+          <div style={{position:'relative'}}>
+            <input
+              type={pwSichtbar.best ? 'text' : 'password'}
+              placeholder="Passwort wiederholen"
+              value={pwBestaetigt}
+              onChange={e => setPwBestaetigt(e.target.value)}
+              style={{
+                ...inputStyle, paddingRight:44,
+                borderColor: pwBestaetigt.length > 0 ? (pwBestaetigt === pwNeu ? '#10b981' : '#ef4444') : undefined
+              }}
+            />
+            <button onClick={() => setPwSichtbar(s => ({...s, best: !s.best}))}
+              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#aaa', fontSize:16, padding:0}}>
+              {pwSichtbar.best ? '🙈' : '👁️'}
+            </button>
+          </div>
+          {pwBestaetigt.length > 0 && pwBestaetigt !== pwNeu && (
+            <div style={{fontSize:11, color:'#ef4444', marginTop:4}}>❌ Passwörter stimmen nicht überein</div>
+          )}
+          {pwBestaetigt.length > 0 && pwBestaetigt === pwNeu && pwNeu.length >= 6 && (
+            <div style={{fontSize:11, color:'#10b981', marginTop:4}}>✅ Passwörter stimmen überein</div>
+          )}
+        </div>
+
+        {/* Nachricht */}
+        {pwNachricht && (
+          <div style={{
+            padding:'10px 14px', borderRadius:8, marginBottom:14,
+            background: pwNachricht.ok ? '#d1f5e0' : '#fde8e6',
+            color: pwNachricht.ok ? '#2d6a4f' : '#c0392b',
+            fontSize:13, fontWeight:600, border: `1px solid ${pwNachricht.ok ? '#a7f3c0' : '#fca5a5'}`
+          }}>
+            {pwNachricht.text}
+          </div>
+        )}
+
+        <button
+          onClick={passwortAendern}
+          disabled={pwLaden}
+          style={{
+            background: pwLaden ? '#e5e0d8' : '#1a1a1a',
+            color: pwLaden ? '#aaa' : 'white',
+            border: 'none', borderRadius: 8, padding: '10px 22px',
+            fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700,
+            cursor: pwLaden ? 'not-allowed' : 'pointer',
+            display:'flex', alignItems:'center', gap:8
+          }}>
+          {pwLaden ? '⏳ Wird geändert...' : '🔐 Passwort ändern'}
+        </button>
       </div>
 
       {/* Vorschau */}

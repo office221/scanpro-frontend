@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "BelegFix",
+  "name": "BelegFix – Belege & Rechnungen",
+  "description": "Österreichische Geschäftsverwaltung: Belege, Rechnungen & G&V",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,40 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait",
+  "theme_color": "#1a2a3a",
+  "background_color": "#1a2a3a",
+  "categories": ["business", "finance", "productivity"],
+  "lang": "de-AT",
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text":  "text",
+      "files": [{
+        "name":   "datei",
+        "accept": ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+      }]
+    }
+  }
 }

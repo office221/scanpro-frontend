@@ -38,10 +38,14 @@ export default function Angebote() {
   const [vorlagen, setVorlagen] = useState<any[]>([])
   const [autocomplete, setAutocomplete] = useState<{idx: number; items: any[]} | null>(null)
   const [vorlagenPickerOffen, setVorlagenPickerOffen] = useState(false)
+  const [abschlusstext, setAbschlusstext] = useState('')
+  const [abschlusstextVorlagen, setAbschlusstextVorlagen] = useState<any[]>([])
+  const [atPickerOffen, setAtPickerOffen] = useState(false)
 
   useEffect(() => {
     if (formOffen) {
       api.get('/vorlagen').then(r => setVorlagen(r.data)).catch(() => {})
+      api.get('/abschlusstexte').then(r => setAbschlusstextVorlagen(r.data)).catch(() => {})
       setVorlagenPickerOffen(false)
       setAutocomplete(null)
     }
@@ -66,6 +70,7 @@ export default function Angebote() {
     setPositionen([{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
     setZahlungsModus('standard')
     setZahlungsEigenText('')
+    setAbschlusstext('')
     setBearbeitenId(null)
     setFormKey(k => k + 1)
   }
@@ -141,6 +146,7 @@ export default function Angebote() {
           zahlungsModus === '7tage' ? 'Zahlbar innerhalb von 7 Tagen nach Rechnungserhalt.' :
           zahlungsModus === '14tage' ? 'Zahlbar innerhalb von 14 Tagen nach Rechnungserhalt.' :
           zahlungsModus === 'eigen' ? zahlungsEigenText : '',
+        abschlusstext,
         positionen
       }
       if (bearbeitenId) {
@@ -217,6 +223,7 @@ export default function Angebote() {
         ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }]
       )
+      setAbschlusstext(a.abschlusstext || '')
       setFormKey(k => k + 1)
       setFormOffen(true)
     } catch (e) {
@@ -325,9 +332,9 @@ export default function Angebote() {
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                           Rechnung
                         </button>
-                        <button title="PDF öffnen / drucken" onClick={() => pdfOeffnen(a.id)}
+                        <button title="PDF öffnen" onClick={() => pdfOeffnen(a.id)}
                           style={{width:32,height:32,borderRadius:8,border:'1px solid #d1f5e0',background:'#f0fdf4',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#2d6a4f'}}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
                         </button>
                         <button title="PDF speichern" onClick={() => pdfHerunterladen(a.id)}
                           style={{width:32,height:32,borderRadius:8,border:'1px solid #d1f5e0',background:'#f0fdf4',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#2d6a4f'}}>
@@ -439,76 +446,91 @@ export default function Angebote() {
                   ))}
                 </div>
                 {positionen.map((pos, idx) => (
-                  <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, marginBottom:8, alignItems:'center'}}>
-                    {/* ↑↓ Buttons */}
-                    <div style={{display:'flex', flexDirection:'column', gap:2}}>
-                      <button
-                        onClick={() => positionVerschieben(idx, 'hoch')}
-                        disabled={idx === 0}
-                        title="Nach oben"
-                        style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
-                      <button
-                        onClick={() => positionVerschieben(idx, 'runter')}
-                        disabled={idx === positionen.length - 1}
-                        title="Nach unten"
-                        style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
-                    </div>
-                    <div style={{position:'relative'}}>
-                      <textarea style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block'}}
-                        placeholder="Beschreibung..."
+                  pos.typ === 'Text' ? (
+                    /* ── Textzeile (keine Berechnung) ── */
+                    <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 32px', gap:8, marginBottom:6, alignItems:'center'}}>
+                      <div style={{display:'flex', flexDirection:'column', gap:2}}>
+                        <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
+                          style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
+                        <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
+                          style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
+                      </div>
+                      <textarea
+                        style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'#f5f3ef', borderColor:'#e5e0d8', color:'#3a2e1e'}}
+                        placeholder="Zwischentitel / Abschnittsbezeichnung..."
                         rows={1}
                         value={pos.beschreibung}
-                        onChange={e => {
-                          positionAendern(idx, 'beschreibung', e.target.value)
-                          e.target.style.height = 'auto'
-                          e.target.style.height = e.target.scrollHeight + 'px'
-                          const q = e.target.value.toLowerCase()
-                          if (q.length >= 1) {
-                            const matches = vorlagen.filter(v => v.name.toLowerCase().includes(q) || (v.beschreibung||'').toLowerCase().includes(q))
-                            setAutocomplete(matches.length > 0 ? {idx, items: matches.slice(0,6)} : null)
-                          } else { setAutocomplete(null) }
-                        }}
-                        onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
-                        onBlur={() => setTimeout(() => setAutocomplete(null), 200)} />
-                      {autocomplete && autocomplete.idx === idx && (
-                        <div style={{position:'absolute', top:'100%', left:0, right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:300, overflow:'hidden', marginTop:2}}>
-                          {autocomplete.items.map((v, i) => (
-                            <div key={i} onMouseDown={() => vorlageEinfuegen(idx, v)}
-                              style={{padding:'7px 12px', cursor:'pointer', borderBottom: i < autocomplete.items.length-1 ? '1px solid #f0ede8' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
-                              onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
-                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                              <div>
-                                <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a'}}>{v.name}</div>
-                                {v.beschreibung && <div style={{fontSize:11, color:'#888', marginTop:1}}>{v.beschreibung}</div>}
-                              </div>
-                              <div style={{fontSize:11, color:'#c8a96e', fontWeight:600, whiteSpace:'nowrap'}}>
-                                {parseFloat(v.einzelpreis) > 0 ? `€ ${parseFloat(v.einzelpreis).toFixed(2)}` : ''} {v.einheit}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                        onChange={e => { positionAendern(idx, 'beschreibung', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
+                        onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} />
+                      <button onClick={() => positionLoeschen(idx)}
+                        style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
                     </div>
-                    <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
-                      key={`${formKey}-${idx}-menge`}
-                      defaultValue={pos.menge || ''}
-                      onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
-                      onBlur={e => positionAendern(idx, 'menge', parseFloat(e.target.value.replace(',', '.')) || 0)} />
-                    <select style={{...inputStyle, background:'white'}}
-                      value={pos.einheit}
-                      onChange={e => positionAendern(idx, 'einheit', e.target.value)}>
-                      {['PA', 'M2', 'M3', 'LFM', 'STD', 'OBJ'].map(e => (
-                        <option key={e} value={e}>{e}</option>
-                      ))}
-                    </select>
-                    <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
-                      key={`${formKey}-${idx}-preis`}
-                      defaultValue={pos.einzelpreis || ''}
-                      onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
-                      onBlur={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value.replace(',', '.')) || 0)} />
-                    <button onClick={() => positionLoeschen(idx)}
-                      style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
-                  </div>
+                  ) : (
+                    /* ── Normale Position ── */
+                    <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, marginBottom:8, alignItems:'center'}}>
+                      <div style={{display:'flex', flexDirection:'column', gap:2}}>
+                        <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
+                          style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
+                        <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
+                          style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
+                      </div>
+                      <div style={{position:'relative'}}>
+                        <textarea style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block'}}
+                          placeholder="Beschreibung..."
+                          rows={1}
+                          value={pos.beschreibung}
+                          onChange={e => {
+                            positionAendern(idx, 'beschreibung', e.target.value)
+                            e.target.style.height = 'auto'
+                            e.target.style.height = e.target.scrollHeight + 'px'
+                            const q = e.target.value.toLowerCase()
+                            if (q.length >= 1) {
+                              const matches = vorlagen.filter(v => v.name.toLowerCase().includes(q) || (v.beschreibung||'').toLowerCase().includes(q))
+                              setAutocomplete(matches.length > 0 ? {idx, items: matches.slice(0,6)} : null)
+                            } else { setAutocomplete(null) }
+                          }}
+                          onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
+                          onBlur={() => setTimeout(() => setAutocomplete(null), 200)} />
+                        {autocomplete && autocomplete.idx === idx && (
+                          <div style={{position:'absolute', top:'100%', left:0, right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:300, overflow:'hidden', marginTop:2}}>
+                            {autocomplete.items.map((v, i) => (
+                              <div key={i} onMouseDown={() => vorlageEinfuegen(idx, v)}
+                                style={{padding:'7px 12px', cursor:'pointer', borderBottom: i < autocomplete.items.length-1 ? '1px solid #f0ede8' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
+                                onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                <div>
+                                  <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a'}}>{v.name}</div>
+                                  {v.beschreibung && <div style={{fontSize:11, color:'#888', marginTop:1}}>{v.beschreibung}</div>}
+                                </div>
+                                <div style={{fontSize:11, color:'#c8a96e', fontWeight:600, whiteSpace:'nowrap'}}>
+                                  {parseFloat(v.einzelpreis) > 0 ? `€ ${parseFloat(v.einzelpreis).toFixed(2)}` : ''} {v.einheit}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
+                        key={`${formKey}-${idx}-menge`}
+                        defaultValue={pos.menge || ''}
+                        onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
+                        onBlur={e => positionAendern(idx, 'menge', parseFloat(e.target.value.replace(',', '.')) || 0)} />
+                      <select style={{...inputStyle, background:'white'}}
+                        value={pos.einheit}
+                        onChange={e => positionAendern(idx, 'einheit', e.target.value)}>
+                        {['PA', 'M2', 'M3', 'LFM', 'STD', 'OBJ'].map(e => (
+                          <option key={e} value={e}>{e}</option>
+                        ))}
+                      </select>
+                      <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
+                        key={`${formKey}-${idx}-preis`}
+                        defaultValue={pos.einzelpreis || ''}
+                        onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
+                        onBlur={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value.replace(',', '.')) || 0)} />
+                      <button onClick={() => positionLoeschen(idx)}
+                        style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
+                    </div>
+                  )
                 ))}
                 <div style={{display:'flex', gap:8, marginTop:4}}>
                   <div style={{position:'relative'}}>
@@ -546,6 +568,10 @@ export default function Angebote() {
                     style={{flex:1, padding:'9px', border:'2px dashed #e5e0d8', borderRadius:8, background:'transparent', color:'#888', fontFamily:'DM Sans, sans-serif', fontSize:13, cursor:'pointer'}}>
                     + Position hinzufügen
                   </button>
+                  <button onClick={() => { setPositionen([...positionen, { typ: 'Text', beschreibung: '', menge: 0, einheit: '', einzelpreis: 0 }]); setFormKey(k => k + 1) }}
+                    style={{padding:'9px 14px', border:'2px dashed #c8a96e', borderRadius:8, background:'#fdf8f0', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>
+                    + Textzeile
+                  </button>
                 </div>
               </div>
 
@@ -564,6 +590,50 @@ export default function Angebote() {
                 <div style={{display:'flex', justifyContent:'space-between', fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, borderTop:'1px solid #e5e0d8', paddingTop:10}}>
                   <span>Gesamt</span><span>€ {gesamt.toFixed(2)}</span>
                 </div>
+              </div>
+
+              {/* ABSCHLUSSTEXT */}
+              <div style={{marginBottom:20}}>
+                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
+                  <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700}}>Abschlusstext (optional)</div>
+                  <div style={{position:'relative'}}>
+                    <button onClick={() => setAtPickerOffen(!atPickerOffen)}
+                      style={{padding:'6px 12px', border:'1px solid #c8a96e', borderRadius:7, background:'#fdf8f0', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      Vorlage wählen
+                    </button>
+                    {atPickerOffen && (
+                      <>
+                        <div style={{position:'fixed', inset:0, zIndex:199}} onClick={() => setAtPickerOffen(false)} />
+                        <div style={{position:'absolute', bottom:'100%', right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.15)', zIndex:200, minWidth:300, maxHeight:220, overflowY:'auto', marginBottom:4}}>
+                          {abschlusstextVorlagen.length === 0
+                            ? <div style={{padding:'12px 16px', fontSize:12, color:'#888', textAlign:'center'}}>Keine Abschlusstexte gespeichert.<br/><span style={{fontSize:11}}>Erstelle welche unter Vorlagen → Abschlusstexte</span></div>
+                            : abschlusstextVorlagen.map((t, i) => (
+                                <div key={i} onClick={() => { setAbschlusstext(t.text); setAtPickerOffen(false) }}
+                                  style={{padding:'10px 14px', cursor:'pointer', borderBottom: i < abschlusstextVorlagen.length-1 ? '1px solid #f0ede8' : 'none'}}
+                                  onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                  <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a', marginBottom:2}}>{t.name}</div>
+                                  <div style={{fontSize:11, color:'#888', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{t.text}</div>
+                                </div>
+                              ))
+                          }
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <textarea
+                  style={{...inputStyle, resize:'vertical', minHeight:90, lineHeight:'1.7', fontFamily:'DM Sans, sans-serif'}}
+                  placeholder="Abschlusstext eingeben oder aus Vorlage wählen..."
+                  value={abschlusstext}
+                  onChange={e => setAbschlusstext(e.target.value)} />
+                {abschlusstext && (
+                  <button onClick={() => setAbschlusstext('')}
+                    style={{marginTop:4, background:'none', border:'none', color:'#aaa', fontSize:11, cursor:'pointer', padding:'2px 0'}}>
+                    ✕ Text entfernen
+                  </button>
+                )}
               </div>
 
               <div style={{display:'flex', gap:10}}>
