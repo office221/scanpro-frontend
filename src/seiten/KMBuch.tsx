@@ -68,6 +68,7 @@ export default function KMBuch() {
   const [filterJahr, setFilterJahr] = useState(new Date().getFullYear())
   const [filterMonat, setFilterMonat] = useState('Alle')
   const [routeLaden, setRouteLaden] = useState(false)
+  const [detailFahrt, setDetailFahrt] = useState<Fahrt | null>(null)
 
   // Form
   const [form, setForm]             = useState(emptyForm())
@@ -519,11 +520,12 @@ export default function KMBuch() {
           )}
 
           {gefiltert.map(f => (
-            <div key={f.id} style={{
+            <div key={f.id} onClick={() => setDetailFahrt(f)} style={{
               background: 'white', borderRadius: 12,
               border: '1px solid #f0ece4',
               borderLeft: `4px solid ${f.in_guv ? GRUEN : GOLD}`,
               boxShadow: '0 1px 6px rgba(0,0,0,0.04)', overflow: 'hidden',
+              cursor: 'pointer',
             }}>
               {isMobile ? (
                 /* Mobile */
@@ -564,7 +566,7 @@ export default function KMBuch() {
                       {f.in_guv && (
                         <div style={{ fontSize: 10, color: GRUEN, fontWeight: 700, marginTop: 2 }}>✓ in G&V</div>
                       )}
-                      <div style={{ display: 'flex', gap: 4, marginTop: 8, justifyContent: 'flex-end' }}>
+                      <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 4, marginTop: 8, justifyContent: 'flex-end' }}>
                         {(f.start_adresse || f.start_lat) && (
                           <button onClick={() => oeffneMaps(f)} title="Route auf Google Maps" style={{ background: '#e8f0fe', color: BLAU, border: 'none', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🗺️</button>
                         )}
@@ -605,7 +607,7 @@ export default function KMBuch() {
                       </div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
+                  <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
                     {(f.start_adresse || f.start_lat) && (
                       <button onClick={() => oeffneMaps(f)} title="Route auf Google Maps öffnen"
                         style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, transition: 'color 0.15s' }}
@@ -648,6 +650,112 @@ export default function KMBuch() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Detail Modal ─────────────────────────────────────────────────────── */}
+      {detailFahrt && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 900 }} onClick={() => setDetailFahrt(null)} />
+          <div style={{
+            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+            width: isMobile ? '95vw' : 560, maxHeight: '90vh', overflowY: 'auto',
+            background: 'white', borderRadius: 18, zIndex: 901,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.3)', fontFamily: 'DM Sans, sans-serif',
+          }}>
+            {/* Header */}
+            <div style={{ padding: '18px 22px', background: '#1a2a3a', borderRadius: '18px 18px 0 0', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: detailFahrt.in_guv ? '#d1fae5' : '#fdf8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🚗</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {detailFahrt.zweck || 'Fahrt'}
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+                  {detailFahrt.datum ? new Date(detailFahrt.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: GOLD }}>
+                  € {fmt(Number(detailFahrt.km_gefahren) * kmSatz)}
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+                  {Number(detailFahrt.km_gefahren).toFixed(1)} km
+                </div>
+              </div>
+              <button onClick={() => setDetailFahrt(null)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+
+            {/* Inhalt */}
+            <div style={{ padding: '20px 22px' }}>
+
+              {/* Route */}
+              {(detailFahrt.start_adresse || detailFahrt.ziel_adresse) && (
+                <div style={{ marginBottom: 16, background: '#f8f6f2', borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>🗺️ Route</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 11, color: GRUEN, fontWeight: 700, marginBottom: 2 }}>VON</div>
+                      <div style={{ fontSize: 13, color: '#1a2a3a' }}>{detailFahrt.start_adresse || '—'}</div>
+                    </div>
+                    <div style={{ fontSize: 20, color: '#ccc', paddingTop: 16 }}>→</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 11, color: ROT, fontWeight: 700, marginBottom: 2 }}>NACH</div>
+                      <div style={{ fontSize: 13, color: '#1a2a3a' }}>{detailFahrt.ziel_adresse || '—'}</div>
+                    </div>
+                  </div>
+                  {detailFahrt.start_adresse && detailFahrt.ziel_adresse && (
+                    <button onClick={() => oeffneMaps(detailFahrt)} style={{ marginTop: 10, width: '100%', padding: '8px', borderRadius: 8, border: `1px solid ${BLAU}33`, background: '#eff6ff', color: BLAU, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      🗺️ Google Maps Route öffnen
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Details Zeilen */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { icon: '📏', label: 'km gefahren', value: `${Number(detailFahrt.km_gefahren).toFixed(1)} km` },
+                  { icon: '💰', label: 'KM-Geld', value: `€ ${fmt(Number(detailFahrt.km_gefahren) * kmSatz)} (${Number(detailFahrt.km_gefahren).toFixed(1)} × € ${kmSatz.toFixed(4)})` },
+                  detailFahrt.km_start ? { icon: '🔢', label: 'KM-Stand', value: `${detailFahrt.km_start} → ${detailFahrt.km_ende || '?'}` } : null,
+                  detailFahrt.notiz ? { icon: '📝', label: 'Notiz', value: detailFahrt.notiz } : null,
+                  detailFahrt.rechnung_nummer ? { icon: detailFahrt.rechnung_typ === 'angebot' ? '📝' : '🧾', label: 'Zugeordnet zu', value: `${detailFahrt.rechnung_nummer}${detailFahrt.rechnung_projekt ? ' – ' + detailFahrt.rechnung_projekt : ''}${detailFahrt.rechnung_kunde ? ' · ' + detailFahrt.rechnung_kunde : ''}` } : null,
+                ].filter(Boolean).map((row: any) => (
+                  <div key={row.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{row.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#aaa', fontWeight: 700, marginBottom: 2 }}>{row.label}</div>
+                      <div style={{ fontSize: 13, color: '#1a2a3a', fontWeight: 500 }}>{row.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* G&V Status */}
+              <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 10, background: detailFahrt.in_guv ? '#d1fae5' : '#fdf8f0', border: `1px solid ${detailFahrt.in_guv ? '#a7f3d0' : GOLD + '44'}` }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: detailFahrt.in_guv ? GRUEN : GOLD }}>
+                  {detailFahrt.in_guv ? '✅ In G&V übertragen' : '⏳ Noch nicht in G&V'}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Aktionen */}
+            <div style={{ padding: '14px 22px', borderTop: '1px solid #f0ece4', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => { setDetailFahrt(null); oeffneForm(detailFahrt) }}
+                style={{ flex: 1, padding: '10px', borderRadius: 9, border: '1.5px solid #e5e0d8', background: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#555' }}>
+                ✏️ Bearbeiten
+              </button>
+              {!detailFahrt.in_guv && (
+                <button onClick={() => { zuGuv(detailFahrt); setDetailFahrt(null) }}
+                  style={{ flex: 1, padding: '10px', borderRadius: 9, border: `1.5px solid ${GOLD}66`, background: '#fdf8f0', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: GOLD }}>
+                  ↓ Zu G&V übertragen
+                </button>
+              )}
+              <button onClick={() => { setDetailFahrt(null); loeschen(detailFahrt.id) }}
+                style={{ padding: '10px 16px', borderRadius: 9, border: '1.5px solid #fde8e6', background: 'white', fontSize: 13, cursor: 'pointer', color: ROT }}>
+                🗑
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* ── Form Modal ───────────────────────────────────────────────────────── */}
