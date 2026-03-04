@@ -270,7 +270,8 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
   })
 
   const monate = Array.from(new Set(belege.map(b => b.datum ? b.datum.substring(0, 7) : '').filter(Boolean))).sort().reverse()
-  const summeGesamt = gefilterlt.reduce((s, b) => s + (Number(b.betrag) || 0), 0)
+  const summeAusgaben = gefilterlt.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + (Number(b.betrag) || 0), 0)
+  const summeEinnahmen = gefilterlt.filter(b => b.typ === 'einnahme').reduce((s, b) => s + (Number(b.betrag) || 0), 0)
   const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   // ── Aktionen Buttons (wiederverwendbar) ────────────────────────────────────
@@ -357,7 +358,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
           { label: 'Gesamt Ausgaben', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#ef4444' },
           { label: 'Dieser Monat', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#6366f1' },
           { label: 'Belege gesamt', value: String(belege.length), color: '#10b981' },
-          { label: 'Aktiver Filter', value: (filterKat !== 'Alle' || filterMonat !== 'Alle') ? `${gefilterlt.length} · € ${fmt(summeGesamt)}` : '—', color: GOLD },
+          { label: 'Aktiver Filter', value: (filterKat !== 'Alle' || filterMonat !== 'Alle') ? `${gefilterlt.length} Belege · −€ ${fmt(summeAusgaben)}` : '—', color: GOLD },
         ].map((s, i) => (
           <div key={i} style={{ background: 'white', borderRadius: 10, padding: '12px 16px', border: '1px solid #e5e0d8' }}>
             <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 14 : 17, fontWeight: 800, color: s.color }}>{s.value}</div>
