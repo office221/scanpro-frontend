@@ -76,6 +76,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
   const [toast, setToast]                 = useState<{ text: string; ok: boolean } | null>(null)
   const [detailBeleg, setDetailBeleg]     = useState<Beleg | null>(null)
   const [detailDateiUrl, setDetailDateiUrl] = useState<string | null>(null)
+  const [confirmModal, setConfirmModal]     = useState<{ text: string; onJa: () => void } | null>(null)
   const fileRef   = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
 
@@ -214,10 +215,15 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
     setKiLaden(false)
   }
 
-  const loeschen = async (id: number) => {
-    if (!window.confirm('Beleg wirklich löschen?')) return
-    await api.delete(`/belege/${id}`)
-    await ladeBelege()
+  const loeschen = (id: number) => {
+    setConfirmModal({
+      text: 'Möchten Sie diesen Beleg wirklich löschen?',
+      onJa: async () => {
+        setConfirmModal(null)
+        await api.delete(`/belege/${id}`)
+        await ladeBelege()
+      }
+    })
   }
 
   const bildOeffnen = async (b: Beleg) => {
@@ -874,6 +880,43 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
                 style={{ padding: '10px 16px', borderRadius: 9, border: '1.5px solid #fde8e6', background: 'white', fontSize: 13, cursor: 'pointer', color: '#c0392b' }}>
                 🗑
               </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Bestätigungs-Modal Löschen ───────────────────────────────────────── */}
+      {confirmModal && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1500 }} onClick={() => setConfirmModal(null)} />
+          <div style={{
+            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+            background: 'white', borderRadius: 20, width: '90%', maxWidth: 380,
+            boxShadow: '0 32px 80px rgba(0,0,0,0.35)', zIndex: 1501,
+            fontFamily: 'DM Sans, sans-serif', overflow: 'hidden',
+          }}>
+            <div style={{ padding: '28px 24px 12px', textAlign: 'center' }}>
+              <div style={{ fontSize: 44, marginBottom: 10 }}>🗑️</div>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a2a3a', marginBottom: 8 }}>
+                Wirklich löschen?
+              </div>
+              <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+                {confirmModal.text}
+              </div>
+              <div style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>
+                Diese Aktion kann nicht rückgängig gemacht werden.
+              </div>
+            </div>
+            <div style={{ padding: '12px 20px 22px', display: 'flex', gap: 10 }}>
+              <button onClick={() => setConfirmModal(null)} style={{
+                flex: 1, padding: '12px', borderRadius: 10, border: '1.5px solid #e5e0d8',
+                background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555',
+              }}>Abbrechen</button>
+              <button onClick={confirmModal.onJa} style={{
+                flex: 1, padding: '12px', borderRadius: 10, border: 'none',
+                background: '#ef4444', color: 'white', fontSize: 13, fontWeight: 800,
+                cursor: 'pointer', boxShadow: '0 4px 14px rgba(239,68,68,0.4)',
+              }}>Ja, löschen</button>
             </div>
           </div>
         </>
