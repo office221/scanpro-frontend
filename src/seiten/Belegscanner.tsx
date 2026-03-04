@@ -271,7 +271,6 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
 
   const monate = Array.from(new Set(belege.map(b => b.datum ? b.datum.substring(0, 7) : '').filter(Boolean))).sort().reverse()
   const summeAusgaben = gefilterlt.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + (Number(b.betrag) || 0), 0)
-  const summeEinnahmen = gefilterlt.filter(b => b.typ === 'einnahme').reduce((s, b) => s + (Number(b.betrag) || 0), 0)
   const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   // ── Aktionen Buttons (wiederverwendbar) ────────────────────────────────────
