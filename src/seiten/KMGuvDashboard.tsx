@@ -210,11 +210,11 @@ export default function KMGuvDashboard() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {([['beide', '🗂 Beide'], ['km', '🚗 KM-Buch'], ['guv', '💰 G&V']] as const).map(([k, l]) => (
               <button key={k} onClick={() => setAnsicht(k)} style={{
-                padding: '8px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                padding: '8px 20px', borderRadius: 10, cursor: 'pointer',
                 fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700,
                 background: ansicht === k ? '#1a2a3a' : 'white',
                 color: ansicht === k ? 'white' : '#888',
-                border: ansicht === k ? 'none' : '1px solid #f0ece4' as any,
+                border: ansicht === k ? 'none' : '1px solid #f0ece4',
                 boxShadow: ansicht === k ? '0 4px 14px rgba(26,42,58,0.3)' : 'none',
                 transition: 'all 0.2s',
               }}>{l}</button>
