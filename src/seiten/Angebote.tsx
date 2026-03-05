@@ -466,8 +466,9 @@ export default function Angebote() {
                         style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
                     </div>
                   ) : (
-                    /* ── Normale Position ── */
-                    <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, marginBottom:8, alignItems:'center'}}>
+                    /* ── Normale / Eventualposition ── */
+                    <div key={idx} style={{marginBottom:8, background: pos.typ === 'Eventualposition' ? '#fffbeb' : 'transparent', borderRadius:8, border: pos.typ === 'Eventualposition' ? '1.5px dashed #f59e0b' : 'none', padding: pos.typ === 'Eventualposition' ? '6px 8px 4px' : '0'}}>
+                    <div style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, alignItems:'center'}}>
                       <div style={{display:'flex', flexDirection:'column', gap:2}}>
                         <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
                           style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
@@ -529,6 +530,17 @@ export default function Angebote() {
                         onBlur={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value.replace(',', '.')) || 0)} />
                       <button onClick={() => positionLoeschen(idx)}
                         style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
+                    </div>
+                    {/* Eventualposition Checkbox */}
+                    <label style={{display:'flex', alignItems:'center', gap:6, marginTop:5, marginLeft:30, cursor:'pointer', userSelect:'none'}}>
+                      <input type="checkbox"
+                        checked={pos.typ === 'Eventualposition'}
+                        onChange={e => positionAendern(idx, 'typ', e.target.checked ? 'Eventualposition' : 'Normal')}
+                        style={{width:14, height:14, accentColor:'#f59e0b', cursor:'pointer'}} />
+                      <span style={{fontSize:11, fontWeight: pos.typ === 'Eventualposition' ? 700 : 400, color: pos.typ === 'Eventualposition' ? '#b45309' : '#aaa'}}>
+                        Eventualposition – Preis sichtbar, nicht in Gesamtsumme
+                      </span>
+                    </label>
                     </div>
                   )
                 ))}
