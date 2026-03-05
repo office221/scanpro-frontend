@@ -33,6 +33,7 @@ interface Beleg {
   notiz?: string
   rechnungsnummer?: string
   typ?: 'einnahme' | 'ausgabe'
+  buero_anteil?: number
   createdAt?: string
   in_guv?: boolean
 }
@@ -40,7 +41,8 @@ interface Beleg {
 const emptyForm = () => ({
   beschreibung: '', betrag: '', datum: new Date().toISOString().split('T')[0],
   kategorie: 'Sonstiges', lieferant: '', mwst: '', notiz: '', rechnungsnummer: '', typ: 'ausgabe',
-  abschreibung: false, abschreibungJahre: '3'
+  abschreibung: false, abschreibungJahre: '3',
+  buero_anteil: '100',
 })
 
 const labelStyle: React.CSSProperties = {
@@ -133,6 +135,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
       typ:             beleg.typ || 'ausgabe',
       abschreibung:    false,
       abschreibungJahre: '3',
+      buero_anteil:    beleg.buero_anteil != null ? String(beleg.buero_anteil) : '100',
     } : emptyForm())
     setDatei(null)
     setDateiVorschau(null)
@@ -750,6 +753,52 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
                 </div>
               )}
 
+              {/* Büro/Privat Aufteilung */}
+              {form.typ === 'ausgabe' && (
+                <div style={{ marginBottom: 14, background: parseInt(form.buero_anteil) < 100 ? '#f0f7ff' : '#fafafa', borderRadius: 10, padding: '12px 14px', border: `1.5px solid ${parseInt(form.buero_anteil) < 100 ? '#6366f144' : '#e5e0d8'}`, transition: 'all 0.2s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                    onClick={() => setForm({...form, buero_anteil: parseInt(form.buero_anteil) < 100 ? '100' : '50'})}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: 5, border: `2px solid ${parseInt(form.buero_anteil) < 100 ? '#6366f1' : '#ccc'}`,
+                      background: parseInt(form.buero_anteil) < 100 ? '#6366f1' : 'white',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s'
+                    }}>
+                      {parseInt(form.buero_anteil) < 100 && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>🏢 Teilweise privat (Büro/Privat-Aufteilung)</div>
+                      <div style={{ fontSize: 11, color: '#888' }}>z.B. Internet 50% Büro / 50% privat</div>
+                    </div>
+                  </div>
+                  {parseInt(form.buero_anteil) < 100 && (
+                    <div style={{ marginTop: 12 }}>
+                      <label style={labelStyle}>Büroanteil: {form.buero_anteil}%</label>
+                      <input type="range" min="10" max="90" step="10"
+                        value={form.buero_anteil}
+                        onChange={e => setForm({...form, buero_anteil: e.target.value})}
+                        style={{ width: '100%', accentColor: '#6366f1', marginBottom: 8 }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        {[10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90].map(p => (
+                          <button key={p} type="button" onClick={() => setForm({...form, buero_anteil: String(p)})}
+                            style={{ padding: '3px 7px', borderRadius: 6, border: parseInt(form.buero_anteil) === p ? '2px solid #6366f1' : '1px solid #e5e0d8', background: parseInt(form.buero_anteil) === p ? '#ede9fe' : 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: parseInt(form.buero_anteil) === p ? '#4f46e5' : '#888' }}>
+                            {p}%
+                          </button>
+                        ))}
+                      </div>
+                      {form.betrag && (
+                        <div style={{ background: '#ede9fe', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+                          <span style={{ color: '#4f46e5', fontWeight: 700 }}>
+                            € {(parseFloat(form.betrag) * parseInt(form.buero_anteil) / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span style={{ color: '#6366f1' }}> werden bei G&V als Büroausgabe verrechnet</span>
+                          <span style={{ color: '#aaa' }}> ({form.buero_anteil}% von € {parseFloat(form.betrag).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>Notiz</label>
                 <textarea style={{ ...inputStyle, height: 72, resize: 'vertical' as const }} placeholder="Optionale Notiz..." value={form.notiz} onChange={e => setForm({...form, notiz: e.target.value})} />
@@ -834,6 +883,19 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
                     </div>
                   </div>
                 ) : null)}
+
+                {/* Büro/Privat Aufteilung */}
+                {detailBeleg.typ === 'ausgabe' && detailBeleg.buero_anteil != null && detailBeleg.buero_anteil < 100 && (
+                  <div style={{ marginBottom: 14, background: '#ede9fe', borderRadius: 10, padding: '10px 14px', border: '1px solid #c4b5fd' }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7c3aed', fontWeight: 700, marginBottom: 4 }}>🏢 Büro/Privat-Aufteilung</div>
+                    <div style={{ fontSize: 13, color: '#4f46e5', fontWeight: 700 }}>
+                      {detailBeleg.buero_anteil}% Büroanteil → € {fmt(Number(detailBeleg.betrag || 0) * detailBeleg.buero_anteil / 100)} verrechnet
+                    </div>
+                    <div style={{ fontSize: 11, color: '#7c3aed', marginTop: 2 }}>
+                      {100 - detailBeleg.buero_anteil}% privat (€ {fmt(Number(detailBeleg.betrag || 0) * (100 - detailBeleg.buero_anteil) / 100)}) werden nicht übertragen
+                    </div>
+                  </div>
+                )}
 
                 {/* G&V Status */}
                 <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 10, background: detailBeleg.in_guv ? '#d1fae5' : '#fdf8f0', border: `1px solid ${detailBeleg.in_guv ? '#a7f3d0' : GOLD + '44'}` }}>
