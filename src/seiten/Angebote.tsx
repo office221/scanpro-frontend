@@ -31,6 +31,11 @@ export default function Angebote() {
   const [positionen, setPositionen] = useState<Position[]>([
     { typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }
   ])
+  // Rabatt & Sonderangebot
+  const [rabattProzent, setRabattProzent] = useState(0)
+  const [rabattBeschreibung, setRabattBeschreibung] = useState('Rabatt')
+  const [sonderangebot, setSonderangebot] = useState(false)
+
   const [zahlungsModus, setZahlungsModus] = useState('standard')
   const [zahlungsEigenText, setZahlungsEigenText] = useState('')
   const [bearbeitenId, setBearbeitenId] = useState<number | null>(null)
@@ -68,6 +73,9 @@ export default function Angebote() {
     setGueltigBis('')
     setDatum(new Date().toISOString().split('T')[0])
     setPositionen([{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+    setRabattProzent(0)
+    setRabattBeschreibung('Rabatt')
+    setSonderangebot(false)
     setZahlungsModus('standard')
     setZahlungsEigenText('')
     setAbschlusstext('')
@@ -86,8 +94,10 @@ export default function Angebote() {
   const zwischensumme = positionen
     .filter(p => p.typ === 'Normal')
     .reduce((sum, p) => sum + (p.menge * p.einzelpreis), 0)
-  const mwst = istKleinunternehmer ? 0 : zwischensumme * 0.20
-  const gesamt = zwischensumme + mwst
+  const rabattBetrag = rabattProzent > 0 ? zwischensumme * (rabattProzent / 100) : 0
+  const nachRabatt = zwischensumme - rabattBetrag
+  const mwst = istKleinunternehmer ? 0 : nachRabatt * 0.20
+  const gesamt = nachRabatt + mwst
 
   const positionHinzufuegen = () => {
     setPositionen([...positionen, { typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
@@ -141,6 +151,9 @@ export default function Angebote() {
         faelligBis: null,
         istKleinunternehmer,
         status: 'Entwurf',
+        rabattProzent: rabattProzent || 0,
+        rabattBeschreibung: rabattBeschreibung || 'Rabatt',
+        sonderangebot,
         zahlungshinweis: zahlungsModus === 'standard' ? '' :
           zahlungsModus === 'ausblenden' ? '__ausblenden__' :
           zahlungsModus === '7tage' ? 'Zahlbar innerhalb von 7 Tagen nach Rechnungserhalt.' :
@@ -223,6 +236,9 @@ export default function Angebote() {
         ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }]
       )
+      setRabattProzent(parseFloat(a.rabattProzent) || 0)
+      setRabattBeschreibung(a.rabattBeschreibung || 'Rabatt')
+      setSonderangebot(!!a.sonderangebot)
       setAbschlusstext(a.abschlusstext || '')
       setFormKey(k => k + 1)
       setFormOffen(true)
@@ -591,6 +607,12 @@ export default function Angebote() {
                 <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'#888'}}>
                   <span>Zwischensumme</span><span>€ {zwischensumme.toFixed(2)}</span>
                 </div>
+                {rabattProzent > 0 && (
+                  <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'#c0392b', fontWeight:600}}>
+                    <span>{rabattBeschreibung || 'Rabatt'} ({rabattProzent}%)</span>
+                    <span>− € {rabattBetrag.toFixed(2)}</span>
+                  </div>
+                )}
                 {!istKleinunternehmer && (
                   <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'#888'}}>
                     <span>MwSt. 20%</span><span>€ {mwst.toFixed(2)}</span>
@@ -601,6 +623,59 @@ export default function Angebote() {
                 )}
                 <div style={{display:'flex', justifyContent:'space-between', fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, borderTop:'1px solid #e5e0d8', paddingTop:10}}>
                   <span>Gesamt</span><span>€ {gesamt.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* SONDERANGEBOT & RABATT */}
+              <div style={{marginBottom:20}}>
+                {/* Sonderangebot Toggle */}
+                <label style={{display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:10, background: sonderangebot ? '#fff1f1' : '#f9f6f1', border: sonderangebot ? '1.5px solid #dc2626' : '1.5px solid #e5e0d8', cursor:'pointer', marginBottom:12, userSelect:'none'}}>
+                  <input type="checkbox" checked={sonderangebot} onChange={e => setSonderangebot(e.target.checked)}
+                    style={{width:16, height:16, accentColor:'#dc2626', cursor:'pointer'}} />
+                  <div>
+                    <div style={{fontSize:13, fontWeight:700, color: sonderangebot ? '#dc2626' : '#555'}}>
+                      🏷️ Sonderangebot – "SONDERANGEBOT" Badge im PDF anzeigen
+                    </div>
+                    <div style={{fontSize:11, color:'#aaa', marginTop:1}}>Hebt das Angebot als zeitlich limitiertes Sonderangebot hervor</div>
+                  </div>
+                </label>
+
+                {/* Rabatt Sektion */}
+                <div style={{background:'#fdf8f0', border:'1px solid #e8d9b8', borderRadius:10, padding:16}}>
+                  <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:12, color:'#92400e'}}>🏷️ Rabatt</div>
+                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+                    <div>
+                      <label style={labelStyle}>Rabatt in %</label>
+                      <div style={{display:'flex', alignItems:'center', gap:8}}>
+                        <input style={{...inputStyle, textAlign:'right'}} type="number" min={0} max={100} step={0.5}
+                          value={rabattProzent || ''}
+                          placeholder="0"
+                          onChange={e => setRabattProzent(parseFloat(e.target.value) || 0)} />
+                        <span style={{fontSize:13, color:'#888', flexShrink:0}}>%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Bezeichnung (im PDF)</label>
+                      <input style={inputStyle} type="text" placeholder="z.B. Treuerabatt, Aktionsrabatt"
+                        value={rabattBeschreibung}
+                        onChange={e => setRabattBeschreibung(e.target.value)} />
+                    </div>
+                  </div>
+                  {rabattProzent > 0 && (
+                    <div style={{marginTop:10, display:'flex', justifyContent:'space-between', padding:'8px 12px', background:'white', borderRadius:8, border:'1px solid #e8d9b8'}}>
+                      <span style={{fontSize:12, color:'#888'}}>{rabattBeschreibung || 'Rabatt'} ({rabattProzent}%)</span>
+                      <span style={{fontSize:14, fontWeight:800, color:'#c0392b'}}>− € {rabattBetrag.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {/* Schnell-Rabatt Buttons */}
+                  <div style={{display:'flex', gap:6, marginTop:10, flexWrap:'wrap'}}>
+                    {[5, 10, 15, 20, 25, 30].map(p => (
+                      <button key={p} onClick={() => setRabattProzent(rabattProzent === p ? 0 : p)}
+                        style={{padding:'4px 12px', borderRadius:20, border:'none', background: rabattProzent === p ? '#c0392b' : '#f0ede8', color: rabattProzent === p ? 'white' : '#555', fontSize:12, fontWeight:700, cursor:'pointer'}}>
+                        {p}%
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
