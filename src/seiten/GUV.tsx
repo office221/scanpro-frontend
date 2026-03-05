@@ -30,6 +30,8 @@ interface BelegDetail {
     notiz?: string
     dateiname?: string
     datei_typ?: string
+    buero_anteil?: number
+    betrag_gesamt?: number
   }
 }
 
@@ -158,6 +160,8 @@ export default function GUV() {
           notiz: b.notiz,
           dateiname: b.dateiname,
           datei_typ: b.datei_typ,
+          buero_anteil: b.buero_anteil != null ? Number(b.buero_anteil) : undefined,
+          betrag_gesamt: b.betrag != null ? Number(b.betrag) : undefined,
         }
         setDetailModal({ eintrag: e, extra })
       } catch { /* Beleg-Metadaten nicht geladen */ }
@@ -716,6 +720,34 @@ export default function GUV() {
                       </div>
                     ))
                   }
+
+                  {/* Büro/Privat-Aufteilung Info-Box */}
+                  {x.buero_anteil != null && x.buero_anteil < 100 && x.betrag_gesamt != null && (
+                    <div style={{ background: '#ede9fe', borderRadius: 10, padding: '12px 14px', border: '1px solid #c4b5fd' }}>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7c3aed', fontWeight: 700, marginBottom: 8 }}>
+                        🏢 Büro/Privat-Aufteilung
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 10, color: '#7c3aed', fontWeight: 700, marginBottom: 2 }}>🏢 Büroanteil ({x.buero_anteil}%)</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#4f46e5' }}>
+                            € {fmt(x.betrag_gesamt * x.buero_anteil / 100)}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 1 }}>✓ wurde übertragen</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 10, color: '#9333ea', fontWeight: 700, marginBottom: 2 }}>🏠 Privatanteil ({100 - x.buero_anteil}%)</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#9333ea' }}>
+                            € {fmt(x.betrag_gesamt * (100 - x.buero_anteil) / 100)}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#d8b4fe', marginTop: 1 }}>✗ nicht übertragen</div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 8, fontSize: 11, color: '#6d28d9', background: 'rgba(255,255,255,0.5)', borderRadius: 6, padding: '5px 8px' }}>
+                        Gesamtbetrag: € {fmt(x.betrag_gesamt)} · nur {x.buero_anteil}% (€ {fmt(x.betrag_gesamt * x.buero_anteil / 100)}) wurden zur G&V übertragen
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Datei-Vorschau rechts – immer sichtbar */}
