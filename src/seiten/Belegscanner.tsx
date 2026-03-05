@@ -4,11 +4,12 @@ import api from '../services/api'
 const GOLD = '#c8a96e'
 const KATEGORIEN = [
   'Bürobedarf', 'Fahrtkosten', 'Miete & Betrieb',
-  'Werkzeug & Material', 'Kommunikation', 'Verpflegung', 'Sonstiges'
+  'Werkzeug & Material', 'Kommunikation', 'Verpflegung', 'Versicherung', 'Sonstiges'
 ]
 const KAT_ICONS: Record<string, string> = {
   'Bürobedarf': '📎', 'Fahrtkosten': '🚗', 'Miete & Betrieb': '🏢',
-  'Werkzeug & Material': '🔧', 'Kommunikation': '📱', 'Verpflegung': '🍽️', 'Sonstiges': '📁'
+  'Werkzeug & Material': '🔧', 'Kommunikation': '📱', 'Verpflegung': '🍽️',
+  'Versicherung': '🛡️', 'Sonstiges': '📁'
 }
 const KAT_FARBEN: Record<string, { bg: string; text: string }> = {
   'Bürobedarf':         { bg: '#dbeafe', text: '#1e40af' },
@@ -17,6 +18,7 @@ const KAT_FARBEN: Record<string, { bg: string; text: string }> = {
   'Werkzeug & Material':{ bg: '#f3e8ff', text: '#6b21a8' },
   'Kommunikation':      { bg: '#e0f2fe', text: '#0369a1' },
   'Verpflegung':        { bg: '#fce7f3', text: '#9d174d' },
+  'Versicherung':       { bg: '#fef9c3', text: '#854d0e' },
   'Sonstiges':          { bg: '#f0f0f0', text: '#555' },
 }
 
