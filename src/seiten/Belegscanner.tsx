@@ -40,6 +40,10 @@ interface Beleg {
   in_guv?: boolean
 }
 
+// Effektiver Betrag nach Büroanteil-Abzug
+const effBetrag = (b: { betrag?: number; buero_anteil?: number }) =>
+  Number(b.betrag || 0) * (b.buero_anteil ?? 100) / 100
+
 const emptyForm = () => ({
   beschreibung: '', betrag: '', datum: new Date().toISOString().split('T')[0],
   kategorie: 'Sonstiges', lieferant: '', mwst: '', notiz: '', rechnungsnummer: '', typ: 'ausgabe',
@@ -435,8 +439,8 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
         /* Mobile: kompakte Stat-Leiste */
         <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
           {[
-            { label: 'Gesamt', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#ef4444', bg: '#fff1f1' },
-            { label: 'Dieser Monat', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#6366f1', bg: '#f5f3ff' },
+            { label: 'Gesamt', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + effBetrag(b), 0))}`, color: '#ef4444', bg: '#fff1f1' },
+            { label: 'Dieser Monat', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + effBetrag(b), 0))}`, color: '#6366f1', bg: '#f5f3ff' },
             { label: 'Belege', value: String(belege.length), color: '#10b981', bg: '#f0fdf4' },
           ].map((s, i) => (
             <div key={i} style={{ background: s.bg, borderRadius: 10, padding: '8px 12px', border: `1px solid ${s.color}22`, flexShrink: 0 }}>
@@ -449,8 +453,8 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
         /* Desktop: 4-Spalten Grid */
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
           {[
-            { label: 'Gesamt Ausgaben', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#ef4444' },
-            { label: 'Dieser Monat', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#6366f1' },
+            { label: 'Gesamt Ausgaben', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + effBetrag(b), 0))}`, color: '#ef4444' },
+            { label: 'Dieser Monat', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + effBetrag(b), 0))}`, color: '#6366f1' },
             { label: 'Belege gesamt', value: String(belege.length), color: '#10b981' },
             { label: 'Aktiver Filter', value: (filterKat !== 'Alle' || filterMonat !== 'Alle') ? `${gefilterlt.length} Belege · −€ ${fmt(summeAusgaben)}` : '—', color: GOLD },
           ].map((s, i) => (
@@ -527,9 +531,16 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
                   {/* Rechts: Betrag + Aktionen */}
                   <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                     {b.betrag != null && (
-                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800,
-                        color: b.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
-                        {b.typ === 'einnahme' ? '+' : '−'}&nbsp;€&nbsp;{fmt(Number(b.betrag))}
+                      <div>
+                        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800,
+                          color: b.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
+                          {b.typ === 'einnahme' ? '+' : '−'}&nbsp;€&nbsp;{fmt(effBetrag(b))}
+                        </div>
+                        {(b.buero_anteil ?? 100) < 100 && (
+                          <div style={{ fontSize: 10, color: '#bbb', textDecoration: 'line-through', textAlign: 'right' }}>
+                            € {fmt(Number(b.betrag))}
+                          </div>
+                        )}
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
@@ -616,7 +627,12 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
                     {/* Betrag */}
                     <td style={{ padding: '10px 14px', fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap',
                       color: b.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
-                      {b.betrag != null ? `${b.typ === 'einnahme' ? '+' : '−'} € ${fmt(Number(b.betrag))}` : '—'}
+                      {b.betrag != null ? `${b.typ === 'einnahme' ? '+' : '−'} € ${fmt(effBetrag(b))}` : '—'}
+                      {(b.buero_anteil ?? 100) < 100 && b.betrag != null && (
+                        <div style={{ fontSize: 10, color: '#bbb', textDecoration: 'line-through', fontWeight: 400 }}>
+                          € {fmt(Number(b.betrag))}
+                        </div>
+                      )}
                     </td>
                     {/* Aktionen */}
                     <td style={{ padding: '10px 14px' }} onClick={e => e.stopPropagation()}>
@@ -950,8 +966,13 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: detailBeleg.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
-                  {detailBeleg.typ === 'einnahme' ? '+' : '−'} € {fmt(Number(detailBeleg.betrag || 0))}
+                  {detailBeleg.typ === 'einnahme' ? '+' : '−'} € {fmt(effBetrag(detailBeleg))}
                 </div>
+                {(detailBeleg.buero_anteil ?? 100) < 100 && detailBeleg.betrag != null && (
+                  <div style={{ fontSize: 11, color: '#bbb', textDecoration: 'line-through', marginTop: -2 }}>
+                    € {fmt(Number(detailBeleg.betrag))} (gesamt)
+                  </div>
+                )}
                 <span style={{
                   fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 20,
                   background: detailBeleg.typ === 'einnahme' ? '#d1fae5' : '#fee2e2',
