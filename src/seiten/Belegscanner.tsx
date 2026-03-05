@@ -375,42 +375,89 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
       )}
 
       {/* ── Header ───────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, fontFamily: 'Syne, sans-serif', fontSize: 13, color: '#888' }}>
-          {belege.length} Belege gespeichert
+      {isMobile ? (
+        /* Mobile Header: kompakt */
+        <div style={{ marginBottom: 12 }}>
+          {/* Zeile 1: Titel + Add-Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={{ flex: 1, fontFamily: 'Syne, sans-serif', fontSize: 13, color: '#888' }}>
+              {belege.length} Belege
+            </div>
+            <button onClick={() => oeffnen()}
+              style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, padding: '9px 16px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Neu
+            </button>
+          </div>
+          {/* Zeile 2: Filter */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <select value={filterMonat} onChange={e => setFilterMonat(e.target.value)}
+              style={{ flex: 1, fontSize: 12, padding: '7px 8px', borderRadius: 8, border: `1.5px solid ${filterMonat !== 'Alle' ? '#6366f1' : '#e5e0d8'}`, background: filterMonat !== 'Alle' ? '#f0f0ff' : 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+              <option value="Alle">Alle Monate</option>
+              {monate.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select value={filterKat} onChange={e => setFilterKat(e.target.value)}
+              style={{ flex: 1, fontSize: 12, padding: '7px 8px', borderRadius: 8, border: `1.5px solid ${filterKat !== 'Alle' ? '#6366f1' : '#e5e0d8'}`, background: filterKat !== 'Alle' ? '#f0f0ff' : 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+              <option value="Alle">Alle Kategorien</option>
+              {KATEGORIEN.map(k => <option key={k} value={k}>{KAT_ICONS[k]} {k}</option>)}
+            </select>
+          </div>
         </div>
-        {/* Filter */}
-        <select value={filterMonat} onChange={e => setFilterMonat(e.target.value)}
-          style={{ fontSize: 12, padding: '7px 10px', borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
-          <option value="Alle">Alle Monate</option>
-          {monate.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-        <select value={filterKat} onChange={e => setFilterKat(e.target.value)}
-          style={{ fontSize: 12, padding: '7px 10px', borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
-          <option value="Alle">Alle Kategorien</option>
-          {KATEGORIEN.map(k => <option key={k} value={k}>{KAT_ICONS[k]} {k}</option>)}
-        </select>
-        <button onClick={() => oeffnen()}
-          style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, padding: '9px 18px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Beleg hinzufügen
-        </button>
-      </div>
+      ) : (
+        /* Desktop Header */
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, fontFamily: 'Syne, sans-serif', fontSize: 13, color: '#888' }}>
+            {belege.length} Belege gespeichert
+          </div>
+          <select value={filterMonat} onChange={e => setFilterMonat(e.target.value)}
+            style={{ fontSize: 12, padding: '7px 10px', borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+            <option value="Alle">Alle Monate</option>
+            {monate.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <select value={filterKat} onChange={e => setFilterKat(e.target.value)}
+            style={{ fontSize: 12, padding: '7px 10px', borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+            <option value="Alle">Alle Kategorien</option>
+            {KATEGORIEN.map(k => <option key={k} value={k}>{KAT_ICONS[k]} {k}</option>)}
+          </select>
+          <button onClick={() => oeffnen()}
+            style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, padding: '9px 18px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Beleg hinzufügen
+          </button>
+        </div>
+      )}
 
       {/* ── Statistik-Zeile ───────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-        {[
-          { label: 'Gesamt Ausgaben', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#ef4444' },
-          { label: 'Dieser Monat', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#6366f1' },
-          { label: 'Belege gesamt', value: String(belege.length), color: '#10b981' },
-          { label: 'Aktiver Filter', value: (filterKat !== 'Alle' || filterMonat !== 'Alle') ? `${gefilterlt.length} Belege · −€ ${fmt(summeAusgaben)}` : '—', color: GOLD },
-        ].map((s, i) => (
-          <div key={i} style={{ background: 'white', borderRadius: 10, padding: '12px 16px', border: '1px solid #e5e0d8' }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 14 : 17, fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
+      {isMobile ? (
+        /* Mobile: kompakte Stat-Leiste */
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
+          {[
+            { label: 'Gesamt', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#ef4444', bg: '#fff1f1' },
+            { label: 'Dieser Monat', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#6366f1', bg: '#f5f3ff' },
+            { label: 'Belege', value: String(belege.length), color: '#10b981', bg: '#f0fdf4' },
+          ].map((s, i) => (
+            <div key={i} style={{ background: s.bg, borderRadius: 10, padding: '8px 12px', border: `1px solid ${s.color}22`, flexShrink: 0 }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* Desktop: 4-Spalten Grid */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+          {[
+            { label: 'Gesamt Ausgaben', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#ef4444' },
+            { label: 'Dieser Monat', value: `€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + (Number(b.betrag) || 0), 0))}`, color: '#6366f1' },
+            { label: 'Belege gesamt', value: String(belege.length), color: '#10b981' },
+            { label: 'Aktiver Filter', value: (filterKat !== 'Alle' || filterMonat !== 'Alle') ? `${gefilterlt.length} Belege · −€ ${fmt(summeAusgaben)}` : '—', color: GOLD },
+          ].map((s, i) => (
+            <div key={i} style={{ background: 'white', borderRadius: 10, padding: '12px 16px', border: '1px solid #e5e0d8' }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Tabelle (Desktop) / Karten (Mobile) ──────────────────────────────── */}
       <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', flex: 1, overflow: 'auto' }}>
@@ -432,54 +479,70 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
             </div>
           </div>
         ) : isMobile ? (
-          /* ── Mobile: Karten ──────────────────────────────────────────────── */
-          <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {gefilterlt.map(b => {
+          /* ── Mobile: Kompakte Liste ───────────────────────────────────────── */
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {gefilterlt.map((b, idx) => {
               const farben = KAT_FARBEN[b.kategorie || 'Sonstiges'] || KAT_FARBEN['Sonstiges']
+              const istLetzte = idx === gefilterlt.length - 1
               return (
-                <div key={b.id} style={{ borderRadius: 10, border: '1px solid #f0ece4', overflow: 'hidden', cursor: 'pointer' }} onClick={() => detailOeffnen(b)}>
-                  {/* Kopfzeile: Icon + Titel + Betrag */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderBottom: '1px solid #f5f2ee' }}>
-                    <div onClick={() => b.datei_typ && bildOeffnen(b)}
-                      style={{ width: 36, height: 36, borderRadius: 8, background: b.datei_typ ? '#fdf8f0' : '#f8f8f8', border: `1px solid ${b.datei_typ ? GOLD + '33' : '#eee'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: b.datei_typ ? 'pointer' : 'default', fontSize: 17 }}>
-                      {b.datei_typ?.startsWith('image/') ? '🖼️' : b.datei_typ === 'application/pdf' ? '📄' : KAT_ICONS[b.kategorie || 'Sonstiges']}
+                <div key={b.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderBottom: istLetzte ? 'none' : '1px solid #f5f2ee', cursor: 'pointer', background: 'white', transition: 'background 0.1s' }}
+                  onClick={() => detailOeffnen(b)}
+                  onTouchStart={e => (e.currentTarget.style.background = '#faf8f5')}
+                  onTouchEnd={e => (e.currentTarget.style.background = 'white')}>
+
+                  {/* Kategorie-Icon Kreis */}
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                    background: farben.bg, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: 18,
+                  }}>
+                    {KAT_ICONS[b.kategorie || 'Sonstiges']}
+                  </div>
+
+                  {/* Mitte: Titel + Meta */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
+                      {b.beschreibung || b.lieferant || b.dateiname || '—'}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {b.beschreibung || b.lieferant || b.dateiname || '—'}
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                       {b.lieferant && b.beschreibung && (
-                        <div style={{ fontSize: 11, color: '#999', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          🏪 {b.lieferant}
-                        </div>
+                        <span style={{ fontSize: 11, color: '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 90 }}>
+                          {b.lieferant}
+                        </span>
                       )}
+                      {b.lieferant && b.beschreibung && b.datum && <span style={{ color: '#ddd', fontSize: 11 }}>·</span>}
+                      {b.datum && (
+                        <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
+                          {new Date(b.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit' })}
+                        </span>
+                      )}
+                      {b.in_guv && <span style={{ fontSize: 10, color: '#059669' }}>✓ G&V</span>}
                     </div>
+                  </div>
+
+                  {/* Rechts: Betrag + Aktionen */}
+                  <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                     {b.betrag != null && (
-                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, flexShrink: 0,
+                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800,
                         color: b.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
                         {b.typ === 'einnahme' ? '+' : '−'}&nbsp;€&nbsp;{fmt(Number(b.betrag))}
                       </div>
                     )}
-                  </div>
-                  {/* Fußzeile: Meta + Buttons */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: '#faf8f5' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 20,
-                        background: b.typ === 'einnahme' ? '#d1fae5' : '#fee2e2',
-                        color:      b.typ === 'einnahme' ? '#065f46' : '#991b1b' }}>
-                        {b.typ === 'einnahme' ? '↑ Einnahme' : '↓ Ausgabe'}
-                      </span>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: farben.bg, color: farben.text }}>
-                        {KAT_ICONS[b.kategorie || 'Sonstiges']} {b.kategorie}
-                      </span>
-                      {b.datum && <span style={{ fontSize: 11, color: '#aaa' }}>📅 {new Date(b.datum).toLocaleDateString('de-AT')}</span>}
-                      {b.rechnungsnummer && (
-                        <span style={{ background: '#f0f4ff', color: '#6366f1', border: '1px solid #6366f122', borderRadius: 8, padding: '1px 7px', fontWeight: 700, fontSize: 10 }}>
-                          #{b.rechnungsnummer}
-                        </span>
-                      )}
+                    <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
+                      {/* G&V Button */}
+                      <button onClick={() => guvUebertragen(b)} disabled={!!b.in_guv} title={b.in_guv ? 'In G&V' : 'Zu G&V'}
+                        style={{ width: 26, height: 26, borderRadius: 6, border: b.in_guv ? '1px solid #a7f3d0' : `1px solid ${GOLD}55`, background: b.in_guv ? '#d1fae5' : '#fdf8f0', cursor: b.in_guv ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: b.in_guv ? '#059669' : GOLD }}>
+                        {b.in_guv
+                          ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>}
+                      </button>
+                      {/* Edit Button */}
+                      <button onClick={() => oeffnen(b)} title="Bearbeiten"
+                        style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #e5e0d8', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
                     </div>
-                    <div onClick={e => e.stopPropagation()}><ActionBtns b={b} size={28} /></div>
                   </div>
                 </div>
               )
