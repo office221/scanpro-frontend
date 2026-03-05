@@ -294,12 +294,15 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
     setDetailDateiUrl(null)
   }
 
-  const guvUebertragen = async (b: Beleg) => {
-    if (b.in_guv) return
+  const guvUebertragen = async (b: Beleg, aktualisieren = false) => {
     try {
-      await api.post(`/guv/von-beleg/${b.id}`, {})
+      const res = await api.post(`/guv/von-beleg/${b.id}`, {})
       setBelege(prev => prev.map(x => x.id === b.id ? { ...x, in_guv: true } : x))
-      zeigeToast(`✅ "${b.beschreibung || 'Beleg'}" wurde zur G&V übertragen!`)
+      if (res.data?.aktualisiert || aktualisieren) {
+        zeigeToast(`🔄 G&V-Betrag für "${b.beschreibung || 'Beleg'}" aktualisiert!`)
+      } else {
+        zeigeToast(`✅ "${b.beschreibung || 'Beleg'}" wurde zur G&V übertragen!`)
+      }
     } catch (e: any) {
       zeigeToast(e?.response?.data?.fehler || 'Fehler beim Übertragen', false)
     }
@@ -1003,6 +1006,13 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
                   {!detailBeleg.in_guv && (
                     <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>Klicke auf ↓ um zur G&V zu übertragen</div>
                   )}
+                  {detailBeleg.in_guv && detailBeleg.typ === 'ausgabe' && (detailBeleg.buero_anteil ?? 100) < 100 && (
+                    <button
+                      onClick={() => { guvUebertragen(detailBeleg, true); detailSchliessen(); }}
+                      style={{ marginTop: 8, width: '100%', padding: '7px 10px', borderRadius: 8, border: '1.5px solid #6d28d9', background: '#ede9fe', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#6d28d9' }}>
+                      🔄 G&V-Betrag aktualisieren ({detailBeleg.buero_anteil ?? 100}% = € {((detailBeleg.betrag ?? 0) * (detailBeleg.buero_anteil ?? 100) / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1034,6 +1044,12 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
                 <button onClick={() => { guvUebertragen(detailBeleg); detailSchliessen(); }}
                   style={{ flex: 1, padding: '10px', borderRadius: 9, border: `1.5px solid ${GOLD}66`, background: '#fdf8f0', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: GOLD }}>
                   ↓ Zu G&V übertragen
+                </button>
+              )}
+              {detailBeleg.in_guv && detailBeleg.typ === 'ausgabe' && (detailBeleg.buero_anteil ?? 100) < 100 && (
+                <button onClick={() => { guvUebertragen(detailBeleg, true); detailSchliessen(); }}
+                  style={{ flex: 1, padding: '10px', borderRadius: 9, border: '1.5px solid #6d28d9', background: '#ede9fe', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#6d28d9' }}>
+                  🔄 G&V aktualisieren
                 </button>
               )}
               <button onClick={() => { detailSchliessen(); loeschen(detailBeleg.id); }}
