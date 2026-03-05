@@ -819,50 +819,83 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
               )}
 
               {/* Büro/Privat Aufteilung */}
-              {form.typ === 'ausgabe' && (
-                <div style={{ marginBottom: 14, background: parseInt(form.buero_anteil) < 100 ? '#f0f7ff' : '#fafafa', borderRadius: 10, padding: '12px 14px', border: `1.5px solid ${parseInt(form.buero_anteil) < 100 ? '#6366f144' : '#e5e0d8'}`, transition: 'all 0.2s' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-                    onClick={() => setForm({...form, buero_anteil: parseInt(form.buero_anteil) < 100 ? '100' : '50'})}>
-                    <div style={{
-                      width: 20, height: 20, borderRadius: 5, border: `2px solid ${parseInt(form.buero_anteil) < 100 ? '#6366f1' : '#ccc'}`,
-                      background: parseInt(form.buero_anteil) < 100 ? '#6366f1' : 'white',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s'
-                    }}>
-                      {parseInt(form.buero_anteil) < 100 && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>🏢 Teilweise privat (Büro/Privat-Aufteilung)</div>
-                      <div style={{ fontSize: 11, color: '#888' }}>z.B. Internet 50% Büro / 50% privat</div>
-                    </div>
-                  </div>
-                  {parseInt(form.buero_anteil) < 100 && (
-                    <div style={{ marginTop: 12 }}>
-                      <label style={labelStyle}>Büroanteil: {form.buero_anteil}%</label>
-                      <input type="range" min="10" max="90" step="10"
-                        value={form.buero_anteil}
-                        onChange={e => setForm({...form, buero_anteil: e.target.value})}
-                        style={{ width: '100%', accentColor: '#6366f1', marginBottom: 8 }} />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                        {[10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90].map(p => (
-                          <button key={p} type="button" onClick={() => setForm({...form, buero_anteil: String(p)})}
-                            style={{ padding: '3px 7px', borderRadius: 6, border: parseInt(form.buero_anteil) === p ? '2px solid #6366f1' : '1px solid #e5e0d8', background: parseInt(form.buero_anteil) === p ? '#ede9fe' : 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: parseInt(form.buero_anteil) === p ? '#4f46e5' : '#888' }}>
-                            {p}%
-                          </button>
-                        ))}
+              {form.typ === 'ausgabe' && (() => {
+                const anteil = parseInt(form.buero_anteil) || 100
+                const privat = 100 - anteil
+                const betragNum = parseFloat(form.betrag) || 0
+                const bueroEur = (betragNum * anteil / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                const privatEur = (betragNum * privat / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                const istAutoNotiz = (n: string) => !n || /^\d+% Büroanteil/.test(n)
+                const genNotiz = (a: number) => {
+                  const p = 100 - a
+                  const bN = parseFloat(form.betrag) || 0
+                  const bEur = (bN * a / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                  const pEur = (bN * p / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                  return bN > 0
+                    ? `${a}% Büroanteil (€ ${bEur}) wurde abgezogen – ${p}% Privatnutzung (€ ${pEur})`
+                    : `${a}% Büroanteil – ${p}% Privatnutzung`
+                }
+                return (
+                  <div style={{ marginBottom: 14, background: anteil < 100 ? '#f0f7ff' : '#fafafa', borderRadius: 10, padding: '12px 14px', border: `1.5px solid ${anteil < 100 ? '#6366f144' : '#e5e0d8'}`, transition: 'all 0.2s' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                      onClick={() => {
+                        const neuerAnteil = anteil < 100 ? 100 : 50
+                        const neueNotiz = neuerAnteil < 100
+                          ? genNotiz(neuerAnteil)
+                          : (istAutoNotiz(form.notiz) ? '' : form.notiz)
+                        setForm({...form, buero_anteil: String(neuerAnteil), notiz: neueNotiz})
+                      }}>
+                      <div style={{
+                        width: 20, height: 20, borderRadius: 5, border: `2px solid ${anteil < 100 ? '#6366f1' : '#ccc'}`,
+                        background: anteil < 100 ? '#6366f1' : 'white',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s'
+                      }}>
+                        {anteil < 100 && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                       </div>
-                      {form.betrag && (
-                        <div style={{ background: '#ede9fe', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
-                          <span style={{ color: '#4f46e5', fontWeight: 700 }}>
-                            € {(parseFloat(form.betrag) * parseInt(form.buero_anteil) / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                          <span style={{ color: '#6366f1' }}> werden bei G&V als Büroausgabe verrechnet</span>
-                          <span style={{ color: '#aaa' }}> ({form.buero_anteil}% von € {parseFloat(form.betrag).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
-                        </div>
-                      )}
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>🏢 Teilweise privat (Büro/Privat-Aufteilung)</div>
+                        <div style={{ fontSize: 11, color: '#888' }}>z.B. Internet 50% Büro / 50% privat</div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
+                    {anteil < 100 && (
+                      <div style={{ marginTop: 12 }}>
+                        <label style={labelStyle}>Büroanteil: {anteil}%</label>
+                        <input type="range" min="10" max="90" step="10"
+                          value={form.buero_anteil}
+                          onChange={e => {
+                            const a = parseInt(e.target.value)
+                            setForm({...form, buero_anteil: e.target.value,
+                              notiz: istAutoNotiz(form.notiz) ? genNotiz(a) : form.notiz})
+                          }}
+                          style={{ width: '100%', accentColor: '#6366f1', marginBottom: 8 }} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                          {[10, 20, 25, 30, 50, 60, 75, 80, 90].map(p => (
+                            <button key={p} type="button"
+                              onClick={() => setForm({...form, buero_anteil: String(p),
+                                notiz: istAutoNotiz(form.notiz) ? genNotiz(p) : form.notiz})}
+                              style={{ padding: '3px 7px', borderRadius: 6, border: anteil === p ? '2px solid #6366f1' : '1px solid #e5e0d8', background: anteil === p ? '#ede9fe' : 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: anteil === p ? '#4f46e5' : '#888' }}>
+                              {p}%
+                            </button>
+                          ))}
+                        </div>
+                        {/* Rechner-Box */}
+                        <div style={{ background: '#ede9fe', borderRadius: 10, padding: '10px 14px', fontSize: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          <div>
+                            <div style={{ fontSize: 10, color: '#7c3aed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>🏢 Büroanteil ({anteil}%)</div>
+                            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#4f46e5' }}>€ {bueroEur}</div>
+                            <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 1 }}>wird zur G&V übertragen</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, color: '#9333ea', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>🏠 Privatanteil ({privat}%)</div>
+                            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#9333ea' }}>€ {privatEur}</div>
+                            <div style={{ fontSize: 10, color: '#d8b4fe', marginTop: 1 }}>wird nicht übertragen</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>Notiz</label>
