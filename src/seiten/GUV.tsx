@@ -161,16 +161,11 @@ export default function GUV() {
           datei_typ: b.datei_typ,
         }
         setDetailModal({ eintrag: e, extra })
-        // Datei IMMER versuchen zu laden (auch wenn datei_typ nicht gesetzt)
+        // Datei laden – genau wie dateiOeffnen()
         try {
           const dateiRes = await api.get(`/belege/${e.quelle_id}/datei`, { responseType: 'blob' })
-          if (dateiRes.data && dateiRes.data.size > 0) {
-            const typ = dateiRes.headers['content-type'] || b.datei_typ || 'application/octet-stream'
-            extra.datei_typ = extra.datei_typ || typ
-            setDetailModal({ eintrag: e, extra: { ...extra, datei_typ: typ } })
-            setDetailDateiUrl(URL.createObjectURL(new Blob([dateiRes.data], { type: typ })))
-          }
-        } catch { /* Kein Beleg vorhanden */ }
+          setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
+        } catch { /* kein Anhang */ }
       } else if (e.quelle === 'rechnung' && e.quelle_id) {
         try {
           const dateiRes = await api.get(`/pdf/${e.quelle_id}`, { responseType: 'blob' })
