@@ -142,15 +142,14 @@ export default function GUV() {
   }
 
   const detailOeffnen = async (e: GuvEintrag) => {
-    // Modal sofort öffnen, Datei danach asynchron laden
     setDetailDateiUrl(null)
     setDateiLadenFertig(false)
     setDetailModal({ eintrag: e, extra: {} })
 
+    // ── 1. Extra-Infos laden (getrennt vom Datei-Laden!) ──
     let extra: BelegDetail['extra'] = {}
-    try {
-      if (e.quelle === 'beleg' && e.quelle_id) {
-        // Beleg-Metadaten laden
+    if (e.quelle === 'beleg' && e.quelle_id) {
+      try {
         const res = await api.get(`/belege/${e.quelle_id}`)
         const b = res.data
         extra = {
@@ -161,20 +160,23 @@ export default function GUV() {
           datei_typ: b.datei_typ,
         }
         setDetailModal({ eintrag: e, extra })
-        // Datei laden – genau wie dateiOeffnen()
-        try {
-          const dateiRes = await api.get(`/belege/${e.quelle_id}/datei`, { responseType: 'blob' })
-          setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
-        } catch { /* kein Anhang */ }
-      } else if (e.quelle === 'rechnung' && e.quelle_id) {
-        try {
-          const dateiRes = await api.get(`/pdf/${e.quelle_id}`, { responseType: 'blob' })
-          extra = { datei_typ: 'application/pdf', dateiname: `${e.bezeichnung}.pdf` }
-          setDetailModal({ eintrag: e, extra })
-          setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
-        } catch { /* Kein PDF vorhanden */ }
-      }
-    } catch { /* API-Fehler */ }
+      } catch { /* Beleg-Metadaten nicht geladen */ }
+
+      // ── 2. Datei laden – IMMER versuchen, unabhängig von Schritt 1 ──
+      try {
+        const dateiRes = await api.get(`/belege/${e.quelle_id}/datei`, { responseType: 'blob' })
+        setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
+      } catch { /* keine Datei */ }
+
+    } else if (e.quelle === 'rechnung' && e.quelle_id) {
+      try {
+        const dateiRes = await api.get(`/pdf/${e.quelle_id}`, { responseType: 'blob' })
+        extra = { datei_typ: 'application/pdf', dateiname: `${e.bezeichnung}.pdf` }
+        setDetailModal({ eintrag: e, extra })
+        setDetailDateiUrl(URL.createObjectURL(dateiRes.data))
+      } catch { /* kein PDF */ }
+    }
+
     setDateiLadenFertig(true)
   }
 
