@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import api from '../services/api'
 
 const GOLD  = '#c8a96e'
@@ -57,6 +57,92 @@ const emptyForm = () => ({
   zweck: '', notiz: '',
 })
 
+// ── Leaflet Karten-Vorschau Komponente ─────────────────────────────────────
+function RouteKarte({ startKoord, zielKoord, routeGeometry, startAdresse, zielAdresse }: {
+  startKoord: { lat: string; lon: string }
+  zielKoord:  { lat: string; lon: string }
+  routeGeometry: [number, number][] | null
+  startAdresse: string
+  zielAdresse:  string
+}) {
+  const divRef  = useRef<HTMLDivElement>(null)
+  const mapRef  = useRef<any>(null)
+  const [bereit, setBereit] = useState(!!(window as any).L)
+
+  // Leaflet CSS + JS einmalig laden
+  useEffect(() => {
+    if ((window as any).L) { setBereit(true); return }
+    if (!document.getElementById('leaflet-css')) {
+      const l = document.createElement('link')
+      l.id = 'leaflet-css'; l.rel = 'stylesheet'
+      l.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      document.head.appendChild(l)
+    }
+    if (!document.getElementById('leaflet-js')) {
+      const s = document.createElement('script')
+      s.id = 'leaflet-js'
+      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+      s.onload = () => setBereit(true)
+      document.head.appendChild(s)
+    }
+    return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
+  }, [])
+
+  const karteAktualisieren = useCallback(() => {
+    const L = (window as any).L
+    if (!L || !divRef.current) return
+
+    // Alte Karte entfernen und neu erstellen (sicherstes Vorgehen)
+    if (mapRef.current) { mapRef.current.remove(); mapRef.current = null }
+
+    const map = L.map(divRef.current, { zoomControl: true, attributionControl: false })
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
+    mapRef.current = map
+
+    const sLat = parseFloat(startKoord.lat), sLon = parseFloat(startKoord.lon)
+    const zLat = parseFloat(zielKoord.lat),  zLon = parseFloat(zielKoord.lon)
+
+    const iconStyle = (bg: string, label: string) => L.divIcon({
+      html: `<div style="background:${bg};color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4)">${label}</div>`,
+      className: '', iconSize: [26, 26], iconAnchor: [13, 13]
+    })
+
+    L.marker([sLat, sLon], { icon: iconStyle('#10b981', 'S') }).addTo(map)
+      .bindPopup(`<b>Start</b><br>${startAdresse || ''}`)
+    L.marker([zLat, zLon], { icon: iconStyle('#ef4444', 'Z') }).addTo(map)
+      .bindPopup(`<b>Ziel</b><br>${zielAdresse || ''}`)
+
+    if (routeGeometry && routeGeometry.length > 1) {
+      const latLons = routeGeometry.map(([lon, lat]: [number, number]) => [lat, lon])
+      L.polyline(latLons, { color: '#6366f1', weight: 5, opacity: 0.85 }).addTo(map)
+      map.fitBounds(L.latLngBounds(latLons as any), { padding: [28, 28] })
+    } else {
+      map.fitBounds(L.latLngBounds([[sLat, sLon], [zLat, zLon]]), { padding: [48, 48] })
+    }
+  }, [startKoord, zielKoord, routeGeometry, startAdresse, zielAdresse])
+
+  useEffect(() => { if (bereit) karteAktualisieren() }, [bereit, karteAktualisieren])
+
+  return (
+    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #e5e0d8', background: '#f0ece4' }}>
+      <div style={{ padding: '8px 12px', background: '#1a2a3a', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#c8a96e', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+          🗺️ Routenvorschau
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
+          {routeGeometry ? '● Route berechnet' : '○ Nur Marker (Route noch nicht berechnet)'}
+        </span>
+      </div>
+      <div ref={divRef} style={{ width: '100%', height: 280 }} />
+      <div style={{ padding: '6px 12px', background: '#f9f6f1', display: 'flex', gap: 14, fontSize: 11 }}>
+        <span><span style={{ color: '#10b981', fontWeight: 700 }}>S</span> {startAdresse?.split(',')[0] || 'Start'}</span>
+        <span style={{ color: '#aaa' }}>→</span>
+        <span><span style={{ color: '#ef4444', fontWeight: 700 }}>Z</span> {zielAdresse?.split(',')[0] || 'Ziel'}</span>
+      </div>
+    </div>
+  )
+}
+
 export default function KMBuch() {
   const [fahrten, setFahrten]       = useState<Fahrt[]>([])
   const [laden, setLaden]           = useState(false)
@@ -68,6 +154,7 @@ export default function KMBuch() {
   const [filterJahr, setFilterJahr] = useState(new Date().getFullYear())
   const [filterMonat, setFilterMonat] = useState('Alle')
   const [routeLaden, setRouteLaden] = useState(false)
+  const [routeGeometry, setRouteGeometry] = useState<[number, number][] | null>(null)
   const [detailFahrt, setDetailFahrt] = useState<Fahrt | null>(null)
   const [gpsLadenStart, setGpsLadenStart] = useState(false)
   const [gpsLadenZiel, setGpsLadenZiel]  = useState(false)
@@ -225,6 +312,9 @@ export default function KMBuch() {
       if (data.routes?.[0]) {
         const km = Math.round(data.routes[0].distance / 100) / 10
         setForm(f => ({ ...f, km_gefahren: km.toString() }))
+        // Geometrie (GeoJSON) für Kartenvorschau speichern
+        const coords = data.routes[0].geometry?.coordinates
+        if (coords) setRouteGeometry(coords)
         zeigeToast(`✅ Route berechnet: ${km.toFixed(1)} km`)
       } else {
         zeigeToast('Route konnte nicht berechnet werden', false)
@@ -258,6 +348,7 @@ export default function KMBuch() {
     setEditFahrt(null)
     setForm(emptyForm())
     setStartKoord(null); setZielKoord(null)
+    setRouteGeometry(null)
     setRechnungGewählt(null)
     setFormOffen(true)
   }
@@ -1032,6 +1123,17 @@ export default function KMBuch() {
                   </button>
                 )}
               </div>
+
+              {/* ── Karten-Vorschau ── */}
+              {startKoord && zielKoord && (
+                <RouteKarte
+                  startKoord={startKoord}
+                  zielKoord={zielKoord}
+                  routeGeometry={routeGeometry}
+                  startAdresse={form.start_adresse}
+                  zielAdresse={form.ziel_adresse}
+                />
+              )}
 
               {/* Trennlinie */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
