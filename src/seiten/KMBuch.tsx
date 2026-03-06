@@ -22,6 +22,12 @@ interface Fahrt {
   rechnung_projekt?: string
   rechnung_typ?: string
   rechnung_kunde?: string
+  beleg_beschreibung?: string
+  beleg_dateiname?: string
+  beleg_betrag?: number
+  beleg_kategorie?: string
+  beleg_lieferant?: string
+  beleg_datum?: string
   start_lat?: number
   start_lon?: number
   ziel_lat?: number
@@ -31,6 +37,17 @@ interface Fahrt {
   beweis_name?: string
   beweis_typ?: string
   createdAt: string
+}
+
+interface BelegAuswahl {
+  id: number
+  beschreibung?: string
+  dateiname?: string
+  betrag?: number
+  datum?: string
+  kategorie?: string
+  lieferant?: string
+  typ?: string
 }
 
 interface OrtVorschlag {
@@ -186,6 +203,12 @@ export default function KMBuch() {
   const [rechnungSuche, setRechnungSuche]             = useState('')
   const [rechnungDropdownOffen, setRechnungDropdownOffen] = useState(false)
 
+  // G&V-Beleg Zuordnung
+  const [belegListe, setBelegListe]               = useState<BelegAuswahl[]>([])
+  const [belegGewählt, setBelegGewählt]           = useState<BelegAuswahl | null>(null)
+  const [belegSuche, setBelegSuche]               = useState('')
+  const [belegDropdownOffen, setBelegDropdownOffen] = useState(false)
+
   const startTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const zielTimer  = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -206,6 +229,7 @@ export default function KMBuch() {
   useEffect(() => {
     if (formOffen) {
       api.get('/km-buch/rechnungen-auswahl').then(r => setRechnungenListe(r.data)).catch(() => {})
+      api.get('/km-buch/belege-auswahl').then(r => setBelegListe(r.data)).catch(() => {})
     }
   }, [formOffen]) // eslint-disable-line
 
@@ -355,6 +379,7 @@ export default function KMBuch() {
   const oeffneFormNeu = () => {
     setStartVorschlaege([]); setZielVorschlaege([])
     setRechnungSuche(''); setRechnungDropdownOffen(false)
+    setBelegSuche(''); setBelegDropdownOffen(false); setBelegGewählt(null)
     setEditFahrt(null)
     setForm(emptyForm())
     setStartKoord(null); setZielKoord(null)
@@ -383,6 +408,7 @@ export default function KMBuch() {
     setStartKoord(vorlage.ziel_lat ? { lat: String(vorlage.ziel_lat), lon: String(vorlage.ziel_lon) } : null)
     setZielKoord (vorlage.start_lat ? { lat: String(vorlage.start_lat), lon: String(vorlage.start_lon) } : null)
     setRechnungGewählt(null)
+    setBelegSuche(''); setBelegDropdownOffen(false); setBelegGewählt(null)
     setBeweisData(null); setBeweisName(null); setBeweisTyp(null); setBeweisGeaendert(false)
     setFormOffen(true)
   }
@@ -425,11 +451,22 @@ export default function KMBuch() {
         id: f.rechnung_id, nummer: f.rechnung_nummer,
         projektName: f.rechnung_projekt, typ: f.rechnung_typ || 'rechnung',
       } : null)
+      setBelegGewählt(f.beleg_id && (f.beleg_beschreibung || f.beleg_dateiname) ? {
+        id: f.beleg_id,
+        beschreibung: f.beleg_beschreibung,
+        dateiname: f.beleg_dateiname,
+        betrag: f.beleg_betrag,
+        kategorie: f.beleg_kategorie,
+        lieferant: f.beleg_lieferant,
+        datum: f.beleg_datum,
+      } : null)
+      setBelegSuche(''); setBelegDropdownOffen(false)
     } else {
       setEditFahrt(null)
       setForm(emptyForm())
       setStartKoord(null); setZielKoord(null)
       setRechnungGewählt(null)
+      setBelegSuche(''); setBelegDropdownOffen(false); setBelegGewählt(null)
       setBeweisData(null); setBeweisName(null); setBeweisTyp(null); setBeweisGeaendert(false)
     }
     setFormOffen(true)
@@ -449,6 +486,7 @@ export default function KMBuch() {
         km_gefahren: parseFloat(form.km_gefahren),
         zweck: form.zweck, notiz: form.notiz,
         rechnung_id: rechnungGewählt?.id || null,
+        beleg_id: belegGewählt?.id || null,
         start_lat: startKoord?.lat || null, start_lon: startKoord?.lon || null,
         ziel_lat:  zielKoord?.lat  || null, ziel_lon:  zielKoord?.lon  || null,
         // Beweis nur mitsenden wenn geändert (verhindert Überschreiben)
@@ -556,6 +594,14 @@ export default function KMBuch() {
     return r.nummer.toLowerCase().includes(s)
       || (r.projektName || '').toLowerCase().includes(s)
       || (kunde || '').toLowerCase().includes(s)
+  }).slice(0, 8)
+
+  const gefilterteBelege = belegListe.filter(b => {
+    if (!belegSuche) return true
+    const s = belegSuche.toLowerCase()
+    return (b.beschreibung || b.dateiname || '').toLowerCase().includes(s)
+      || (b.lieferant || '').toLowerCase().includes(s)
+      || (b.kategorie || '').toLowerCase().includes(s)
   }).slice(0, 8)
 
   const monate = Array.from(new Set(
@@ -979,7 +1025,17 @@ export default function KMBuch() {
                   { icon: '💰', label: 'KM-Geld', value: `€ ${fmt(Number(detailFahrt.km_gefahren) * kmSatz)} (${Number(detailFahrt.km_gefahren).toFixed(1)} × € ${kmSatz.toFixed(4)})` },
                   detailFahrt.km_start ? { icon: '🔢', label: 'KM-Stand', value: `${detailFahrt.km_start} → ${detailFahrt.km_ende || '?'}` } : null,
                   detailFahrt.notiz ? { icon: '📝', label: 'Notiz', value: detailFahrt.notiz } : null,
-                  detailFahrt.rechnung_nummer ? { icon: detailFahrt.rechnung_typ === 'angebot' ? '📝' : '🧾', label: 'Zugeordnet zu', value: `${detailFahrt.rechnung_nummer}${detailFahrt.rechnung_projekt ? ' – ' + detailFahrt.rechnung_projekt : ''}${detailFahrt.rechnung_kunde ? ' · ' + detailFahrt.rechnung_kunde : ''}` } : null,
+                  detailFahrt.rechnung_nummer ? { icon: detailFahrt.rechnung_typ === 'angebot' ? '📝' : '🧾', label: 'Rechnung / Angebot', value: `${detailFahrt.rechnung_nummer}${detailFahrt.rechnung_projekt ? ' – ' + detailFahrt.rechnung_projekt : ''}${detailFahrt.rechnung_kunde ? ' · ' + detailFahrt.rechnung_kunde : ''}` } : null,
+                  (detailFahrt.beleg_id && (detailFahrt.beleg_beschreibung || detailFahrt.beleg_dateiname)) ? {
+                    icon: '🧾',
+                    label: 'G&V-Beleg',
+                    value: [
+                      detailFahrt.beleg_beschreibung || detailFahrt.beleg_dateiname,
+                      detailFahrt.beleg_lieferant,
+                      detailFahrt.beleg_betrag != null ? `€ ${Number(detailFahrt.beleg_betrag).toFixed(2)}` : null,
+                      detailFahrt.beleg_datum ? new Date(detailFahrt.beleg_datum).toLocaleDateString('de-AT') : null,
+                    ].filter(Boolean).join(' · ')
+                  } : null,
                 ].filter(Boolean).map((row: any) => (
                   <div key={row.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{row.icon}</span>
@@ -1270,6 +1326,67 @@ export default function KMBuch() {
               <div>
                 <label style={lbl}>Notiz (optional)</label>
                 <input value={form.notiz} onChange={e => setForm(f => ({ ...f, notiz: e.target.value }))} placeholder="z.B. Maut A1: €8,50, Parkticket" style={inp} />
+              </div>
+
+              {/* ── G&V-Beleg verknüpfen ── */}
+              <div style={{ position: 'relative' }}>
+                <label style={lbl}>🧾 G&V-Beleg verknüpfen (optional)</label>
+                <div style={{ fontSize: 10, color: '#bbb', marginBottom: 6 }}>Bereits in G&V übertragene Belege – als Nachweis für diese Fahrt</div>
+                {belegGewählt ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f0fdf4', border: `1px solid ${GRUEN}44`, borderRadius: 10 }}>
+                    <span style={{ fontSize: 18 }}>🧾</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {belegGewählt.beschreibung || belegGewählt.dateiname || 'Beleg'}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#888', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {belegGewählt.lieferant && <span>📍 {belegGewählt.lieferant}</span>}
+                        {belegGewählt.betrag != null && <span>€ {Number(belegGewählt.betrag).toFixed(2)}</span>}
+                        {belegGewählt.kategorie && <span style={{ background: '#e5e7eb', borderRadius: 4, padding: '1px 6px' }}>{belegGewählt.kategorie}</span>}
+                      </div>
+                    </div>
+                    <button onClick={() => { setBelegGewählt(null); setBelegSuche('') }}
+                      style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}>✕</button>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      value={belegSuche}
+                      onChange={e => { setBelegSuche(e.target.value); setBelegDropdownOffen(true) }}
+                      onFocus={() => setBelegDropdownOffen(true)}
+                      onBlur={() => setTimeout(() => setBelegDropdownOffen(false), 200)}
+                      placeholder="Beleg suchen: Beschreibung, Lieferant, Kategorie..."
+                      style={inp}
+                    />
+                    {belegDropdownOffen && gefilterteBelege.length > 0 && (
+                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: 240, overflowY: 'auto' }}>
+                        {gefilterteBelege.map(b => (
+                          <div key={b.id}
+                            onMouseDown={() => { setBelegGewählt(b); setBelegSuche(''); setBelegDropdownOffen(false) }}
+                            style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f4f1eb', display: 'flex', alignItems: 'flex-start', gap: 10 }}
+                            onMouseEnter={ev => ev.currentTarget.style.background = '#f0fdf4'}
+                            onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
+                            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>🧾</span>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {b.beschreibung || b.dateiname || 'Beleg #' + b.id}
+                              </div>
+                              <div style={{ fontSize: 11, color: '#aaa', display: 'flex', gap: 8 }}>
+                                {b.lieferant && <span>{b.lieferant}</span>}
+                                {b.betrag != null && <span style={{ color: GOLD, fontWeight: 700 }}>€ {Number(b.betrag).toFixed(2)}</span>}
+                                {b.datum && <span>{new Date(b.datum).toLocaleDateString('de-AT')}</span>}
+                                {b.kategorie && <span style={{ background: '#f4f1eb', borderRadius: 4, padding: '0 5px' }}>{b.kategorie}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {belegDropdownOffen && belegListe.length === 0 && (
+                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Keine G&V-Belege vorhanden – Belegscanner → erst zur G&V übertragen</div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Zuordnung zu Rechnung / Angebot */}
