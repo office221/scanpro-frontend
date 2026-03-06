@@ -54,6 +54,11 @@ export default function GUV() {
   const [dateiLadenFertig, setDateiLadenFertig] = useState(false)
   const [confirmModal, setConfirmModal] = useState<{ text: string; onJa: () => void } | null>(null)
 
+  // Diagramm
+  const [diagrammAnsicht, setDiagrammAnsicht] = useState<'jahr' | 'monat'>('jahr')
+  const [diagrammMonat, setDiagrammMonat]     = useState<number>(new Date().getMonth() + 1)
+  const [hoveredBar, setHoveredBar]           = useState<number | null>(null)
+
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', h)
@@ -216,6 +221,29 @@ export default function GUV() {
     return acc
   }, {} as Record<string, number>)
 
+  // ── Monatliche Aggregate für Diagramm ──────────────────────────────────────
+  const MONATSNAMEN = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
+  const MONATSNAMEN_LANG = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
+  const monatsDaten = Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1
+    const mE = einnahmen.filter(e => new Date(e.datum).getMonth() + 1 === m)
+    const mA = ausgaben.filter(e =>  new Date(e.datum).getMonth() + 1 === m)
+    const sumE = mE.reduce((s, e) => s + Number(e.brutto), 0)
+    const sumA = mA.reduce((s, e) => s + Number(e.brutto), 0)
+    return {
+      monat: m,
+      label: MONATSNAMEN[i],
+      labelLang: MONATSNAMEN_LANG[i],
+      einnahmen: sumE,
+      ausgaben:  sumA,
+      gewinn:    mE.reduce((s, e) => s + Number(e.netto), 0) - mA.reduce((s, e) => s + Number(e.netto), 0),
+      hatDaten:  mE.length > 0 || mA.length > 0,
+      anzahlE:   mE.length,
+      anzahlA:   mA.length,
+    }
+  })
+  const maxWertJahr = Math.max(...monatsDaten.map(m => Math.max(m.einnahmen, m.ausgaben)), 1)
+
   // ── Styles ────────────────────────────────────────────────────────────────
   const card: React.CSSProperties = {
     background: 'white',
@@ -317,6 +345,280 @@ export default function GUV() {
           <div style={{ fontSize: 11, color: '#ccc' }}>ans Finanzamt</div>
         </div>
       </div>
+
+      {/* ── Diagramm ────────────────────────────────────────────────────────── */}
+      {eintraege.length > 0 && (() => {
+        const CHART_H = 180
+        const aktMonat = new Date().getMonth() + 1
+
+        return (
+          <div style={{ ...card, marginBottom: 20 }}>
+
+            {/* Header + Toggle */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#1a2a3a' }}>
+                  📊 Einnahmen & Ausgaben – {jahr}
+                </div>
+                <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
+                  {diagrammAnsicht === 'jahr'
+                    ? '12-Monats-Balkendiagramm · Brutto-Beträge · Hover für Details'
+                    : `Monatsdetail: ${MONATSNAMEN_LANG[diagrammMonat - 1]} ${jahr}`}
+                </div>
+              </div>
+              {/* Toggle Jahr / Monat */}
+              <div style={{ display: 'flex', background: '#f4f1eb', borderRadius: 10, padding: 3, gap: 2, flexShrink: 0 }}>
+                {([{ k: 'jahr', l: '📅 Jahresansicht' }, { k: 'monat', l: '📆 Monatsdetail' }] as const).map(t => (
+                  <button key={t.k} onClick={() => setDiagrammAnsicht(t.k)} style={{
+                    padding: '7px 13px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    fontSize: 12, fontWeight: 700,
+                    background: diagrammAnsicht === t.k ? 'white' : 'transparent',
+                    color: diagrammAnsicht === t.k ? '#1a2a3a' : '#aaa',
+                    boxShadow: diagrammAnsicht === t.k ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.2s',
+                  }}>{t.l}</button>
+                ))}
+              </div>
+            </div>
+
+            {diagrammAnsicht === 'jahr' ? (
+              /* ── JAHRES-BALKENDIAGRAMM ─────────────────────────────────── */
+              <>
+                <div style={{ display: 'flex', gap: 0, alignItems: 'flex-end' }}>
+                  {/* Y-Achse */}
+                  <div style={{ display: 'flex', flexDirection: 'column-reverse', justifyContent: 'space-between', height: CHART_H + 22, paddingBottom: 22, marginRight: 8, flexShrink: 0 }}>
+                    {[0,1,2,3,4].map(i => (
+                      <div key={i} style={{ fontSize: 9, color: '#ccc', textAlign: 'right', minWidth: 38, lineHeight: 1 }}>
+                        {i === 0 ? '€ 0' : `€ ${(maxWertJahr * i / 4).toLocaleString('de-AT', { maximumFractionDigits: 0 })}`}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Chart-Area */}
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    {/* Gitterlinien */}
+                    {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
+                      <div key={i} style={{
+                        position: 'absolute', left: 0, right: 0,
+                        bottom: 22 + Math.round(p * CHART_H),
+                        height: 1, background: i === 0 ? '#e5e0d8' : '#f4f1eb', zIndex: 0,
+                      }} />
+                    ))}
+
+                    {/* Balken */}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', height: CHART_H + 22, paddingBottom: 22, gap: isMobile ? 2 : 4 }}>
+                      {monatsDaten.map((m, i) => {
+                        const eH = Math.round((m.einnahmen / maxWertJahr) * CHART_H)
+                        const aH = Math.round((m.ausgaben  / maxWertJahr) * CHART_H)
+                        const istAktMonat = m.monat === aktMonat && jahr === aktuellesJahr
+                        const isHov = hoveredBar === i
+                        return (
+                          <div key={i}
+                            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', position: 'relative', zIndex: 1 }}
+                            onMouseEnter={() => setHoveredBar(i)}
+                            onMouseLeave={() => setHoveredBar(null)}>
+
+                            {/* Tooltip */}
+                            {isHov && (
+                              <div style={{
+                                position: 'absolute', bottom: CHART_H + 28, left: '50%', transform: 'translateX(-50%)',
+                                background: '#1a2a3a', color: 'white', borderRadius: 10, padding: '10px 14px',
+                                fontSize: 11, fontWeight: 600, zIndex: 20, whiteSpace: 'nowrap',
+                                boxShadow: '0 6px 20px rgba(0,0,0,0.25)', pointerEvents: 'none',
+                              }}>
+                                <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>{m.labelLang} {jahr}</div>
+                                <div style={{ color: GRUEN, marginBottom: 3 }}>↑ Einnahmen: € {fmt(m.einnahmen)}</div>
+                                <div style={{ color: '#ff8080', marginBottom: 3 }}>↓ Ausgaben: &nbsp; € {fmt(m.ausgaben)}</div>
+                                <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', marginTop: 6, paddingTop: 6, color: m.gewinn >= 0 ? GOLD : '#ff6b6b', fontWeight: 800 }}>
+                                  {m.gewinn >= 0 ? '✓ Gewinn' : '✗ Verlust'}: € {fmt(Math.abs(m.gewinn))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Balken-Gruppe */}
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, width: '100%', justifyContent: 'center' }}>
+                              {/* Einnahmen */}
+                              <div style={{
+                                flex: 1, height: eH || (m.einnahmen > 0 ? 2 : 0),
+                                background: isHov ? GRUEN : `${GRUEN}bb`,
+                                borderRadius: '4px 4px 0 0',
+                                transition: 'background 0.15s',
+                                minWidth: isMobile ? 4 : 6,
+                                boxShadow: isHov ? `0 0 0 1px ${GRUEN}` : 'none',
+                              }} />
+                              {/* Ausgaben */}
+                              <div style={{
+                                flex: 1, height: aH || (m.ausgaben > 0 ? 2 : 0),
+                                background: isHov ? ROT : `${ROT}bb`,
+                                borderRadius: '4px 4px 0 0',
+                                transition: 'background 0.15s',
+                                minWidth: isMobile ? 4 : 6,
+                                boxShadow: isHov ? `0 0 0 1px ${ROT}` : 'none',
+                              }} />
+                            </div>
+
+                            {/* X-Label */}
+                            <div style={{
+                              fontSize: isMobile ? 8 : 10, marginTop: 5,
+                              color: istAktMonat ? BLAU : m.hatDaten ? '#666' : '#ccc',
+                              fontWeight: istAktMonat ? 800 : 600,
+                            }}>{m.label}</div>
+                            {istAktMonat && <div style={{ width: 4, height: 4, borderRadius: '50%', background: BLAU, marginTop: 1 }} />}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legende */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: 3, background: GRUEN }} />
+                      <span style={{ color: '#555', fontWeight: 600 }}>Einnahmen</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: 3, background: ROT }} />
+                      <span style={{ color: '#555', fontWeight: 600 }}>Ausgaben</span>
+                    </div>
+                    {jahr === aktuellesJahr && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: BLAU }} />
+                        <span style={{ color: '#aaa' }}>aktueller Monat</span>
+                      </div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 11, color: '#ccc' }}>← Hover für Details</span>
+                </div>
+
+                {/* Gewinn/Verlust Mini-Chips je Monat */}
+                {monatsDaten.some(m => m.hatDaten) && (
+                  <div style={{ marginTop: 14, padding: '12px 14px', background: '#faf8f5', borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                      Gewinn / Verlust pro Monat (Netto)
+                    </div>
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                      {monatsDaten.filter(m => m.hatDaten).map((m, i) => (
+                        <div key={i} style={{
+                          padding: '4px 9px', borderRadius: 7, fontSize: 10, fontWeight: 700,
+                          background: m.gewinn >= 0 ? '#d1fae5' : '#fee2e2',
+                          color: m.gewinn >= 0 ? '#065f46' : '#991b1b',
+                        }}>
+                          {m.label} {m.gewinn >= 0 ? '+' : ''}€ {fmt(Math.abs(m.gewinn))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+
+            ) : (
+              /* ── MONATSDETAIL ──────────────────────────────────────────── */
+              <>
+                {/* Monat-Selector */}
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 18 }}>
+                  {monatsDaten.map((m, i) => (
+                    <button key={i} onClick={() => setDiagrammMonat(m.monat)} style={{
+                      padding: '6px 11px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      fontSize: 11, fontWeight: 700,
+                      background: diagrammMonat === m.monat ? '#1a2a3a' : m.hatDaten ? '#f4f1eb' : '#fafafa',
+                      color:      diagrammMonat === m.monat ? 'white'    : m.hatDaten ? '#555'    : '#ccc',
+                      boxShadow:  diagrammMonat === m.monat ? '0 3px 10px rgba(0,0,0,0.15)' : 'none',
+                      position: 'relative',
+                    }}>
+                      {m.label}
+                      {m.hatDaten && <span style={{ position: 'absolute', top: 3, right: 3, width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'block' }} />}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Monats-Inhalt */}
+                {(() => {
+                  const mDat = monatsDaten[diagrammMonat - 1]
+                  const monatEintraege = eintraege.filter(e => new Date(e.datum).getMonth() + 1 === diagrammMonat)
+                  const monatE = monatEintraege.filter(e => e.typ === 'einnahme')
+                  const monatA = monatEintraege.filter(e => e.typ === 'ausgabe')
+
+                  if (monatEintraege.length === 0) return (
+                    <div style={{ textAlign: 'center', padding: '30px 16px', color: '#ccc' }}>
+                      <div style={{ fontSize: 40, marginBottom: 8 }}>📭</div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>Keine Daten für {mDat.labelLang}</div>
+                      <div style={{ fontSize: 11, marginTop: 4 }}>Monate mit Daten sind mit ● markiert</div>
+                    </div>
+                  )
+
+                  // Kategorien berechnen
+                  const katMap: Record<string, { ein: number; aus: number }> = {}
+                  monatEintraege.forEach(e => {
+                    const k = e.kategorie || 'Sonstiges'
+                    if (!katMap[k]) katMap[k] = { ein: 0, aus: 0 }
+                    if (e.typ === 'einnahme') katMap[k].ein += Number(e.brutto)
+                    else katMap[k].aus += Number(e.brutto)
+                  })
+                  const maxKat = Math.max(...Object.values(katMap).flatMap(v => [v.ein, v.aus]), 1)
+                  const gewinnMonat = mDat.einnahmen - mDat.ausgaben
+
+                  return (
+                    <>
+                      {/* 3 Kennzahlen-Karten */}
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+                        <div style={{ background: `${GRUEN}12`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${GRUEN}22` }}>
+                          <div style={{ fontSize: 10, color: GRUEN, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>↑ Einnahmen</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: GRUEN }}>€ {fmt(mDat.einnahmen)}</div>
+                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>{monatE.length} Einträge</div>
+                        </div>
+                        <div style={{ background: `${ROT}10`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${ROT}22` }}>
+                          <div style={{ fontSize: 10, color: ROT, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>↓ Ausgaben</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: ROT }}>€ {fmt(mDat.ausgaben)}</div>
+                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>{monatA.length} Einträge</div>
+                        </div>
+                        <div style={{ background: gewinnMonat >= 0 ? '#fdf8f0' : '#fff5f5', borderRadius: 12, padding: '12px 16px', border: `1px solid ${gewinnMonat >= 0 ? GOLD : ROT}33`, gridColumn: isMobile ? '1 / -1' : 'auto' }}>
+                          <div style={{ fontSize: 10, color: gewinnMonat >= 0 ? GOLD : ROT, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
+                            {gewinnMonat >= 0 ? '✅ Gewinn' : '❌ Verlust'}
+                          </div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: gewinnMonat >= 0 ? '#1a6a40' : ROT }}>€ {fmt(Math.abs(gewinnMonat))}</div>
+                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Brutto</div>
+                        </div>
+                      </div>
+
+                      {/* Horizontale Balken nach Kategorie */}
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
+                        Aufschlüsselung nach Kategorie
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {Object.entries(katMap)
+                          .sort((a, b) => (b[1].ein + b[1].aus) - (a[1].ein + a[1].aus))
+                          .map(([kat, v]) => (
+                          <div key={kat}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{kat}</span>
+                              <span style={{ fontSize: 12, display: 'flex', gap: 10 }}>
+                                {v.ein > 0 && <span style={{ color: GRUEN, fontWeight: 700 }}>+€ {fmt(v.ein)}</span>}
+                                {v.aus > 0 && <span style={{ color: ROT,   fontWeight: 700 }}>−€ {fmt(v.aus)}</span>}
+                              </span>
+                            </div>
+                            {v.ein > 0 && (
+                              <div style={{ height: 9, background: '#f0fdf4', borderRadius: 5, overflow: 'hidden', marginBottom: 3, border: '1px solid #d1fae5' }}>
+                                <div style={{ height: '100%', width: `${(v.ein / maxKat) * 100}%`, background: `linear-gradient(90deg, ${GRUEN}, #34d399)`, borderRadius: 5, transition: 'width 0.6s' }} />
+                              </div>
+                            )}
+                            {v.aus > 0 && (
+                              <div style={{ height: 9, background: '#fff5f5', borderRadius: 5, overflow: 'hidden', border: '1px solid #fee2e2' }}>
+                                <div style={{ height: '100%', width: `${(v.aus / maxKat) * 100}%`, background: `linear-gradient(90deg, ${ROT}, #f87171)`, borderRadius: 5, transition: 'width 0.6s' }} />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )
+                })()}
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Kategorien-Chips ────────────────────────────────────────────────── */}
       {Object.keys(ausgabenNachKat).length > 0 && (
