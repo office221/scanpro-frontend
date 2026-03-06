@@ -72,6 +72,7 @@ export default function KMBuch() {
   const [gpsLadenStart, setGpsLadenStart] = useState(false)
   const [gpsLadenZiel, setGpsLadenZiel]  = useState(false)
   const [confirmModal, setConfirmModal]   = useState<{ text: string; onJa: () => void } | null>(null)
+  const [rueckfahrtModal, setRueckfahrtModal] = useState<{ vorlage: Fahrt } | null>(null)
 
   // Form
   const [form, setForm]             = useState(emptyForm())
@@ -250,10 +251,55 @@ export default function KMBuch() {
       })
   }, [form.km_start, form.km_gefahren]) // eslint-disable-line
 
+  // ── Neue Fahrt ohne Rückfahrt-Check (direkt öffnen) ────────────────────────
+  const oeffneFormNeu = () => {
+    setStartVorschlaege([]); setZielVorschlaege([])
+    setRechnungSuche(''); setRechnungDropdownOffen(false)
+    setEditFahrt(null)
+    setForm(emptyForm())
+    setStartKoord(null); setZielKoord(null)
+    setRechnungGewählt(null)
+    setFormOffen(true)
+  }
+
+  // ── Rückfahrt eintragen (Start ↔ Ziel tauschen) ────────────────────────────
+  const oeffneRueckfahrt = (vorlage: Fahrt) => {
+    setRueckfahrtModal(null)
+    setStartVorschlaege([]); setZielVorschlaege([])
+    setRechnungSuche(''); setRechnungDropdownOffen(false)
+    setEditFahrt(null)
+    setForm({
+      datum: new Date().toISOString().split('T')[0],
+      start_adresse: vorlage.ziel_adresse || '',   // ← getauscht
+      ziel_adresse:  vorlage.start_adresse || '',   // ← getauscht
+      km_start: '', km_ende: '',
+      km_gefahren: vorlage.km_gefahren?.toString() || '',
+      zweck: vorlage.zweck ? `Rückfahrt – ${vorlage.zweck}` : 'Rückfahrt',
+      notiz: '',
+    })
+    // Koordinaten ebenfalls tauschen
+    setStartKoord(vorlage.ziel_lat ? { lat: String(vorlage.ziel_lat), lon: String(vorlage.ziel_lon) } : null)
+    setZielKoord (vorlage.start_lat ? { lat: String(vorlage.start_lat), lon: String(vorlage.start_lon) } : null)
+    setRechnungGewählt(null)
+    setFormOffen(true)
+  }
+
   // ── Form öffnen ────────────────────────────────────────────────────────────
   const oeffneForm = (f?: Fahrt) => {
     setStartVorschlaege([]); setZielVorschlaege([])
     setRechnungSuche(''); setRechnungDropdownOffen(false)
+
+    // Neue Fahrt: prüfen ob heute schon eine Fahrt existiert → Rückfahrt anbieten
+    if (!f) {
+      const heute = new Date().toISOString().split('T')[0]
+      const heuteFahrten = fahrten.filter(x => (x.datum || '').split('T')[0] === heute)
+      if (heuteFahrten.length > 0) {
+        const letzteHeuteFahrt = heuteFahrten[heuteFahrten.length - 1]
+        setRueckfahrtModal({ vorlage: letzteHeuteFahrt })
+        return
+      }
+    }
+
     if (f) {
       setEditFahrt(f)
       setForm({
@@ -1103,6 +1149,55 @@ export default function KMBuch() {
           </div>
         </div>
       )}
+      {/* ── Rückfahrt-Modal ──────────────────────────────────────────────────── */}
+      {rueckfahrtModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}
+          onClick={() => setRueckfahrtModal(null)}>
+          <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 420, padding: 28, boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}
+            onClick={ev => ev.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>🔄</div>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a2a3a' }}>Rückfahrt eintragen?</div>
+              <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>Du hast heute bereits eine Fahrt eingetragen</div>
+            </div>
+
+            {/* Vorschau der heutigen Fahrt */}
+            <div style={{ background: '#f5f3ef', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8, color: '#aaa', fontWeight: 700, marginBottom: 8 }}>Letzte Fahrt heute</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>📍 {rueckfahrtModal.vorlage.start_adresse || '—'}</div>
+                  <div style={{ fontSize: 11, color: '#888', margin: '3px 0' }}>↓ {rueckfahrtModal.vorlage.km_gefahren} km</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>🏁 {rueckfahrtModal.vorlage.ziel_adresse || '—'}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rückfahrt-Vorschau */}
+            <div style={{ background: '#e8f5e9', borderRadius: 12, padding: '14px 16px', marginBottom: 24, border: '1.5px solid #a5d6a7' }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8, color: '#2e7d32', fontWeight: 700, marginBottom: 8 }}>Rückfahrt (wird eingetragen)</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>📍 {rueckfahrtModal.vorlage.ziel_adresse || '—'}</div>
+              <div style={{ fontSize: 11, color: '#888', margin: '3px 0' }}>↓ {rueckfahrtModal.vorlage.km_gefahren} km</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>🏁 {rueckfahrtModal.vorlage.start_adresse || '—'}</div>
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => { setRueckfahrtModal(null); oeffneFormNeu() }}
+                style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #e5e0d8', background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555' }}>
+                + Neue Fahrt
+              </button>
+              <button onClick={() => oeffneRueckfahrt(rueckfahrtModal.vorlage)}
+                style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #10b981, #059669)', fontSize: 13, fontWeight: 800, cursor: 'pointer', color: 'white', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }}>
+                ↩ Ja, Rückfahrt!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
