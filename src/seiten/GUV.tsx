@@ -693,29 +693,29 @@ export default function GUV() {
                 <button onClick={detailSchliessen} style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: '#555', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
               </div>
 
-              {/* ── Inhalt: Info links + Datei-Vorschau rechts (immer 2 Spalten auf Desktop) ── */}
+              {/* ── Inhalt: Info links + Datei-Vorschau rechts ── */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', flex: 1, overflow: 'hidden' }}>
 
-                {/* Info-Felder mit Icons */}
-                <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, borderRight: isMobile ? 'none' : '1px solid #f0ece4' }}>
+                {/* Info-Felder – Icon-Box-Stil wie Belegscanner */}
+                <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 18, borderRight: isMobile ? 'none' : '1px solid #f0ece4' }}>
                   {([
-                    { icon: '🏢', label: 'Lieferant',     value: x.lieferant },
-                    { icon: '📂', label: 'Kategorie',     value: e.kategorie },
-                    { icon: '📅', label: 'Datum',         value: e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : null },
-                    { icon: '#️⃣', label: 'Rechnungsnr.', value: x.rechnungsnummer },
-                    { icon: '💵', label: 'Netto',         value: `€ ${fmt(Number(e.netto))}` },
-                    { icon: '🧾', label: 'MwSt',          value: Number(e.mwst_betrag) > 0 ? `€ ${fmt(Number(e.mwst_betrag))}` : '0 % (Kleinunternehmer)' },
-                    { icon: '💰', label: 'Brutto',        value: `€ ${fmt(Number(e.brutto))}` },
-                    { icon: '📝', label: 'Notiz',         value: x.notiz },
-                    { icon: '📌', label: 'Quelle',        value: e.quelle === 'beleg' ? 'Belegscanner' : e.quelle === 'rechnung' ? 'Rechnung' : 'Manuell' },
-                  ] as { icon: string; label: string; value: string | undefined | null }[])
+                    { icon: '🏢', bg: '#f0f0f0', label: 'Lieferant',    value: x.lieferant },
+                    { icon: '📂', bg: '#e8f0fe', label: 'Kategorie',    value: e.kategorie },
+                    { icon: '📅', bg: '#fff3e0', label: 'Datum',        value: e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : null },
+                    { icon: '#️⃣', bg: '#f3e5f5', label: 'Rechnungsnr.', value: x.rechnungsnummer },
+                    { icon: '💵', bg: '#e8f5e9', label: 'MwSt',         value: Number(e.mwst_betrag) > 0 ? `€ ${fmt(Number(e.mwst_betrag))}` : '0 % (Kleinunternehmer)' },
+                    { icon: '📝', bg: '#fce4ec', label: 'Notiz',        value: x.notiz },
+                    { icon: '📌', bg: '#f3f4f6', label: 'Quelle',       value: e.quelle === 'beleg' ? 'Belegscanner' : e.quelle === 'rechnung' ? 'Rechnung' : e.quelle === 'km' ? 'KM-Buch' : 'Manuell' },
+                  ] as { icon: string; bg: string; label: string; value: string | undefined | null }[])
                     .filter(r => r.value)
                     .map(r => (
-                      <div key={r.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{r.icon}</span>
+                      <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: r.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                          {r.icon}
+                        </div>
                         <div>
-                          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#aaa', fontWeight: 700, marginBottom: 2 }}>{r.label}</div>
-                          <div style={{ fontSize: 13, color: '#1a2a3a', fontWeight: 500 }}>{r.value}</div>
+                          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', fontWeight: 700, marginBottom: 3 }}>{r.label}</div>
+                          <div style={{ fontSize: 14, color: '#1a2a3a', fontWeight: 600 }}>{r.value}</div>
                         </div>
                       </div>
                     ))
@@ -748,68 +748,69 @@ export default function GUV() {
                       </div>
                     </div>
                   )}
+
+                  {/* G&V Status – großer Button wie Belegscanner */}
+                  <div style={{
+                    width: '100%', padding: '13px 18px', borderRadius: 12,
+                    background: '#d1fae5', border: '1px solid #a7f3d0',
+                    fontSize: 14, fontWeight: 800, color: '#065f46',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}>
+                    ✅ In G&V eingetragen
+                  </div>
                 </div>
 
-                {/* Datei-Vorschau rechts – immer sichtbar */}
-                {!isMobile && (
-                  <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', background: '#faf8f5' }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>📎 Beleg-Datei</div>
-                    {detailDateiUrl ? (
-                      <>
-                        {x.datei_typ === 'application/pdf' ? (
-                          <embed src={detailDateiUrl} type="application/pdf"
-                            style={{ width: '100%', height: 340, borderRadius: 10, border: '1px solid #e5e0d8' }} />
-                        ) : (
-                          <img src={detailDateiUrl} alt="Vorschau"
-                            style={{ width: '100%', maxHeight: 340, objectFit: 'contain', borderRadius: 10, border: '1px solid #e5e0d8', background: 'white', cursor: 'zoom-in' }}
-                            onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }} />
-                        )}
-                        <button onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }}
-                          style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 8, padding: '9px', fontSize: 12, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
-                          🔍 Vollbild anzeigen
-                        </button>
-                      </>
-                    ) : (
-                      /* Platzhalter wenn keine Datei */
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#ccc' }}>
-                        <div style={{ fontSize: 44 }}>
-                          {!dateiLadenFertig && e.quelle !== 'manuell' ? '⏳' : '📄'}
-                        </div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: '#bbb', textAlign: 'center' }}>
-                          {e.quelle === 'manuell'
-                            ? 'Manuell erfasst – kein Beleg'
-                            : !dateiLadenFertig
-                            ? 'Wird geladen…'
-                            : 'Kein Beleg vorhanden'}
-                        </div>
-                        {e.quelle_id && e.quelle !== 'manuell' && dateiLadenFertig && (
-                          <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }}
-                            style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#888', cursor: 'pointer', fontWeight: 600 }}>
-                            👁 Datei öffnen
-                          </button>
-                        )}
+                {/* Datei-Vorschau rechts */}
+                <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', background: '#faf8f5' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>📎 Beleg-Datei</div>
+                  {detailDateiUrl ? (
+                    <>
+                      {x.datei_typ === 'application/pdf' ? (
+                        <embed src={detailDateiUrl} type="application/pdf"
+                          style={{ width: '100%', flex: 1, minHeight: 280, borderRadius: 12, border: '1px solid #e5e0d8' }} />
+                      ) : (
+                        <img src={detailDateiUrl} alt="Vorschau"
+                          style={{ width: '100%', maxHeight: 380, objectFit: 'contain', borderRadius: 12, border: '1px solid #e5e0d8', background: 'white', cursor: 'zoom-in' }}
+                          onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }} />
+                      )}
+                      <button onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }}
+                        style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 10, padding: '11px', fontSize: 13, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
+                        🔍 Vollbild anzeigen
+                      </button>
+                    </>
+                  ) : (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#ccc', minHeight: 200 }}>
+                      <div style={{ fontSize: 48 }}>
+                        {!dateiLadenFertig && e.quelle !== 'manuell' ? '⏳' : '📄'}
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#bbb', textAlign: 'center' }}>
+                        {e.quelle === 'manuell'
+                          ? 'Manuell erfasst'
+                          : !dateiLadenFertig
+                          ? 'Wird geladen…'
+                          : 'Kein Beleg vorhanden'}
+                      </div>
+                      {e.quelle_id && e.quelle !== 'manuell' && dateiLadenFertig && (
+                        <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }}
+                          style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#888', cursor: 'pointer', fontWeight: 600 }}>
+                          👁 Datei öffnen
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Footer */}
-              <div style={{ padding: '14px 22px', borderTop: '1px solid #f0ece4', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {e.quelle_id && e.quelle !== 'manuell' && !detailDateiUrl && (
-                  <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }} style={{
-                    flex: 1, background: '#f4f1eb', color: '#1a2a3a', border: 'none',
-                    borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                  }}>👁 Datei ansehen</button>
-                )}
-                <button onClick={() => { detailSchliessen(); loeschen(e.id) }} style={{
-                  padding: '10px 16px', borderRadius: 9, border: '1.5px solid #fde8e6',
-                  background: 'white', fontSize: 13, cursor: 'pointer', color: ROT,
-                }}>🗑</button>
+              {/* Footer – wie Belegscanner */}
+              <div style={{ padding: '14px 22px', borderTop: '1px solid #f0ece4', display: 'flex', gap: 8 }}>
                 <button onClick={detailSchliessen} style={{
-                  flex: 1, background: '#1a2a3a', color: 'white', border: 'none',
-                  borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                }}>Schließen</button>
+                  flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #e5e0d8',
+                  background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555',
+                }}>✕ Schließen</button>
+                <button onClick={() => { detailSchliessen(); loeschen(e.id) }} style={{
+                  padding: '11px 16px', borderRadius: 10, border: '1.5px solid #fde8e6',
+                  background: 'white', fontSize: 14, cursor: 'pointer', color: ROT,
+                }}>🗑</button>
               </div>
             </div>
           </div>
