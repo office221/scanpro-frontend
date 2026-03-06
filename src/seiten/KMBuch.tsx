@@ -28,6 +28,8 @@ interface Fahrt {
   ziel_lon?: number
   in_guv: boolean
   guv_id?: number
+  beweis_name?: string
+  beweis_typ?: string
   createdAt: string
 }
 
@@ -160,6 +162,14 @@ export default function KMBuch() {
   const [gpsLadenZiel, setGpsLadenZiel]  = useState(false)
   const [confirmModal, setConfirmModal]   = useState<{ text: string; onJa: () => void } | null>(null)
   const [rueckfahrtModal, setRueckfahrtModal] = useState<{ vorlage: Fahrt } | null>(null)
+
+  // Beweis / Foto-Anhang
+  const [beweisData, setBeweisData] = useState<string | null>(null)
+  const [beweisName, setBeweisName] = useState<string | null>(null)
+  const [beweisTyp, setBeweisTyp]   = useState<string | null>(null)
+  const [beweisGeaendert, setBeweisGeaendert] = useState(false)
+  const [beweisModal, setBeweisModal] = useState<{ data: string; typ: string; name: string } | null>(null)
+  const [beweisLaden, setBeweisLaden] = useState(false)
 
   // Form
   const [form, setForm]             = useState(emptyForm())
@@ -350,6 +360,7 @@ export default function KMBuch() {
     setStartKoord(null); setZielKoord(null)
     setRouteGeometry(null)
     setRechnungGewählt(null)
+    setBeweisData(null); setBeweisName(null); setBeweisTyp(null); setBeweisGeaendert(false)
     setFormOffen(true)
   }
 
@@ -372,6 +383,7 @@ export default function KMBuch() {
     setStartKoord(vorlage.ziel_lat ? { lat: String(vorlage.ziel_lat), lon: String(vorlage.ziel_lon) } : null)
     setZielKoord (vorlage.start_lat ? { lat: String(vorlage.start_lat), lon: String(vorlage.start_lon) } : null)
     setRechnungGewählt(null)
+    setBeweisData(null); setBeweisName(null); setBeweisTyp(null); setBeweisGeaendert(false)
     setFormOffen(true)
   }
 
@@ -393,6 +405,11 @@ export default function KMBuch() {
 
     if (f) {
       setEditFahrt(f)
+      // Beweis: name/typ für Anzeige, data bleibt null (wird erst bei Bedarf geladen)
+      setBeweisData(null)
+      setBeweisName(f.beweis_name || null)
+      setBeweisTyp(f.beweis_typ || null)
+      setBeweisGeaendert(false)
       setForm({
         datum: f.datum?.split('T')[0] || '',
         start_adresse: f.start_adresse || '',
@@ -413,6 +430,7 @@ export default function KMBuch() {
       setForm(emptyForm())
       setStartKoord(null); setZielKoord(null)
       setRechnungGewählt(null)
+      setBeweisData(null); setBeweisName(null); setBeweisTyp(null); setBeweisGeaendert(false)
     }
     setFormOffen(true)
   }
@@ -422,7 +440,7 @@ export default function KMBuch() {
       zeigeToast('Datum, Zweck und km sind Pflichtfelder', false); return
     }
     try {
-      const payload = {
+      const payload: any = {
         datum: form.datum,
         start_adresse: form.start_adresse,
         ziel_adresse: form.ziel_adresse,
@@ -433,6 +451,12 @@ export default function KMBuch() {
         rechnung_id: rechnungGewählt?.id || null,
         start_lat: startKoord?.lat || null, start_lon: startKoord?.lon || null,
         ziel_lat:  zielKoord?.lat  || null, ziel_lon:  zielKoord?.lon  || null,
+        // Beweis nur mitsenden wenn geändert (verhindert Überschreiben)
+        ...(beweisGeaendert && {
+          beweis_data: beweisData,
+          beweis_typ: beweisTyp,
+          beweis_name: beweisName,
+        }),
       }
       if (editFahrt) {
         await api.put(`/km-buch/${editFahrt.id}`, payload)
@@ -475,6 +499,49 @@ export default function KMBuch() {
     const ziel  = f.ziel_adresse  || (f.ziel_lat  ? `${f.ziel_lat},${f.ziel_lon}`   : null)
     if (start && ziel)
       window.open(`https://www.google.com/maps/dir/${encodeURIComponent(start)}/${encodeURIComponent(ziel)}`, '_blank')
+  }
+
+  // ── Beweis / Foto-Anhang ────────────────────────────────────────────────────
+  const handleBeweisUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      zeigeToast('Datei zu groß – max. 10 MB erlaubt', false); return
+    }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string
+      setBeweisData(result)
+      setBeweisName(file.name)
+      setBeweisTyp(file.type)
+      setBeweisGeaendert(true)
+    }
+    reader.readAsDataURL(file)
+    // Input zurücksetzen damit gleiche Datei nochmal wählbar
+    e.target.value = ''
+  }
+
+  const zeigeBeweis = async (fahrt: Fahrt) => {
+    setBeweisLaden(true)
+    try {
+      const res = await api.get(`/km-buch/${fahrt.id}/beweis`)
+      const { data, typ, name } = res.data
+      if (typ?.startsWith('image/')) {
+        setBeweisModal({ data, typ, name })
+      } else {
+        // PDF oder andere Datei: in neuem Tab öffnen
+        const win = window.open()
+        if (win) {
+          win.document.write(
+            `<html><head><title>${name || 'Beweis'}</title></head>` +
+            `<body style="margin:0;background:#222">` +
+            `<embed src="${data}" style="width:100%;height:100vh" type="${typ || 'application/pdf'}" />` +
+            `</body></html>`
+          )
+        }
+      }
+    } catch { zeigeToast('Fehler beim Laden des Beweises', false) }
+    setBeweisLaden(false)
   }
 
   // ── Filter & Berechnung ────────────────────────────────────────────────────
@@ -930,6 +997,41 @@ export default function KMBuch() {
                   {detailFahrt.in_guv ? '✅ In G&V übertragen' : '⏳ Noch nicht in G&V'}
                 </div>
               </div>
+
+              {/* Beweis / Foto */}
+              <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 10, background: detailFahrt.beweis_name ? '#f0fdf4' : '#fafaf8', border: `1px solid ${detailFahrt.beweis_name ? '#a7f3d044' : '#f0ece4'}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: detailFahrt.beweis_name ? GRUEN : '#ccc', marginBottom: 8 }}>
+                  📎 Fahrtbeweis
+                </div>
+                {detailFahrt.beweis_name ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>
+                      {detailFahrt.beweis_typ?.startsWith('image/') ? '🖼️' : detailFahrt.beweis_typ?.includes('pdf') ? '📄' : '📎'}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {detailFahrt.beweis_name}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>Finanzamt-Nachweis angehängt</div>
+                    </div>
+                    <button
+                      onClick={() => zeigeBeweis(detailFahrt)}
+                      disabled={beweisLaden}
+                      style={{ background: GRUEN, color: 'white', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: beweisLaden ? 0.6 : 1 }}>
+                      {beweisLaden ? '⏳' : '👁 Anzeigen'}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#bbb' }}>
+                    Kein Beweis angehängt ·{' '}
+                    <span
+                      style={{ color: BLAU, cursor: 'pointer', fontWeight: 600 }}
+                      onClick={() => { setDetailFahrt(null); oeffneForm(detailFahrt) }}>
+                      Jetzt hinzufügen ✏️
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer Aktionen */}
@@ -1221,6 +1323,61 @@ export default function KMBuch() {
                 )}
               </div>
 
+              {/* ── Beweis / Foto-Anhang ── */}
+              <div>
+                <label style={lbl}>📎 Fahrtbeweis (optional) – Foto / PDF / E-Mail</label>
+                {/* Vorschau wenn Datei geladen */}
+                {(beweisData || beweisName) && (
+                  <div style={{ marginBottom: 10, background: '#f8f6f2', borderRadius: 12, padding: '12px 14px', border: '1px solid #e5e0d8' }}>
+                    {beweisData && beweisTyp?.startsWith('image/') ? (
+                      <img src={beweisData} alt="Beweis" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain', display: 'block', marginBottom: 8 }} />
+                    ) : (
+                      <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 6 }}>
+                        {beweisTyp?.includes('pdf') ? '📄' : beweisTyp?.includes('image') ? '🖼️' : '📎'}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ flex: 1, fontSize: 12, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {beweisName || 'Datei angehängt'}
+                        {!beweisData && beweisName && (
+                          <span style={{ marginLeft: 6, fontSize: 10, color: GRUEN, fontWeight: 700 }}>✓ vorhanden</span>
+                        )}
+                      </span>
+                      <button
+                        onClick={() => { setBeweisData(null); setBeweisName(null); setBeweisTyp(null); setBeweisGeaendert(true) }}
+                        style={{ background: '#fef2f2', border: 'none', color: ROT, borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
+                        ✕ Entfernen
+                      </button>
+                    </div>
+                    {!beweisData && beweisName && (
+                      <div style={{ fontSize: 10, color: '#aaa', marginTop: 4 }}>
+                        Neues Foto hochladen um vorhandenen Beweis zu ersetzen
+                      </div>
+                    )}
+                  </div>
+                )}
+                <label style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: '12px', borderRadius: 10, cursor: 'pointer',
+                  border: `2px dashed ${beweisData || beweisName ? GRUEN : '#d1cdc7'}`,
+                  background: beweisData || beweisName ? '#f0fdf4' : '#fafaf8',
+                  color: beweisData || beweisName ? GRUEN : '#aaa',
+                  fontSize: 13, fontWeight: 700, transition: 'all 0.2s',
+                }}>
+                  <span style={{ fontSize: 18 }}>📷</span>
+                  {beweisData || beweisName ? '🔄 Anderen Beweis hochladen' : 'Foto / PDF / Screenshot hochladen'}
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf,.pdf,.eml,.msg,.png,.jpg,.jpeg,.webp,.heic"
+                    onChange={handleBeweisUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                <div style={{ fontSize: 10, color: '#bbb', marginTop: 5 }}>
+                  Foto, PDF, Screenshot als Nachweis fürs Finanzamt · max. 10 MB
+                </div>
+              </div>
+
               {/* KM-Geld Vorschau */}
               {form.km_gefahren && !isNaN(parseFloat(form.km_gefahren)) && (
                 <div style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 12, padding: '14px 18px' }}>
@@ -1251,6 +1408,31 @@ export default function KMBuch() {
           </div>
         </div>
       )}
+      {/* ── Beweis Lightbox ────────────────────────────────────────────────── */}
+      {beweisModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={() => setBeweisModal(null)}>
+          <div style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}
+            onClick={ev => ev.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+              <div style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                📎 {beweisModal.name}
+              </div>
+              <a href={beweisModal.data} download={beweisModal.name}
+                style={{ background: GOLD, color: '#0a0a0a', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}>
+                ⬇ Herunterladen
+              </a>
+              <button onClick={() => setBeweisModal(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>
+            </div>
+            <img
+              src={beweisModal.data}
+              alt={beweisModal.name}
+              style={{ maxWidth: '85vw', maxHeight: '80vh', borderRadius: 12, objectFit: 'contain', boxShadow: '0 8px 48px rgba(0,0,0,0.5)' }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* ── Rückfahrt-Modal ──────────────────────────────────────────────────── */}
       {rueckfahrtModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}
