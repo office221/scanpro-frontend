@@ -1013,16 +1013,6 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      {/* Vertrag-Status Button */}
-                      <button
-                        onClick={e => { e.stopPropagation(); ladeVertrag(d.id) }}
-                        title={d.vertragDateiname ? `Vertrag: ${d.vertragDateiname}` : 'Vertrag hochladen'}
-                        style={{ background: d.vertragDateiname ? '#ede9fe' : '#f0f0f0', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: d.vertragDateiname ? '#6366f1' : '#aaa', fontWeight: 600 }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6" />
-                        </svg>
-                        {d.vertragDateiname ? 'Vertrag' : 'Vertrag'}
-                      </button>
                       <button onClick={e => { e.stopPropagation(); oeffneEdit(d) }} style={{ background: '#f0ede8', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>✏️</button>
                       <button onClick={e => { e.stopPropagation(); loescheDarlehen(d.id) }} style={{ background: '#fee2e2', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>🗑</button>
                       <div style={{ fontSize: 18, color: '#aaa', marginLeft: 4 }}>{isExpanded ? '▲' : '▼'}</div>
@@ -1030,87 +1020,49 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
                   </div>
                 </div>
 
-                {/* Vertrag Upload – immer sichtbar, auch ohne Aufklappen */}
-                {(() => {
-                  const isDragging = dragOver === d.id
-                  const hatVertrag = !!d.vertragDateiname
-                  const isLaden   = vertragLaden === d.id
-                  return (
+                {/* Expanded Content */}
+                {isExpanded && (
+                  <div style={{ borderTop: '1px solid #f0ede8', padding: '20px 20px' }}>
+
+                    {/* Vertrag Upload */}
                     <div
                       onDragOver={e => { e.preventDefault(); setDragOver(d.id) }}
                       onDragEnter={e => { e.preventDefault(); setDragOver(d.id) }}
-                      onDragLeave={e => { e.preventDefault(); setDragOver(null) }}
-                      onDrop={async e => {
-                        e.preventDefault(); setDragOver(null)
-                        const file = e.dataTransfer.files?.[0]
-                        if (file) await uploadVertragDatei(d.id, file)
-                      }}
-                      style={{
-                        borderTop: '1px solid #f0ede8',
-                        padding: '10px 20px',
-                        background: isDragging ? 'rgba(99,102,241,0.05)' : hatVertrag ? 'rgba(99,102,241,0.02)' : 'transparent',
-                        transition: 'background 0.15s',
-                      }}>
-                      {isLaden ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#6366f1' }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                          Wird hochgeladen…
-                        </div>
-                      ) : hatVertrag ? (
+                      onDragLeave={() => setDragOver(null)}
+                      onDrop={async e => { e.preventDefault(); setDragOver(null); const f = e.dataTransfer.files?.[0]; if (f) await uploadVertragDatei(d.id, f) }}
+                      style={{ marginBottom: 20, border: `2px dashed ${dragOver === d.id ? '#6366f1' : '#e0ddf8'}`, borderRadius: 12, background: dragOver === d.id ? 'rgba(99,102,241,0.06)' : '#fafafe', padding: '14px 18px', transition: 'all 0.15s' }}>
+                      {vertragLaden === d.id ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6366f1', fontSize: 12 }}>⏳ Wird hochgeladen…</div>
+                      ) : d.vertragDateiname ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6"/></svg>
-                            <span style={{ fontSize: 11, color: '#6366f1', fontWeight: 500 }}>{d.vertragDateiname}</span>
-                            <span style={{ fontSize: 10, color: '#bbb' }}>· hierher ziehen zum Ersetzen</span>
+                            <span style={{ fontSize: 18 }}>📄</span>
+                            <div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2a3a' }}>Darlehensvertrag</div>
+                              <div style={{ fontSize: 11, color: '#6366f1' }}>{d.vertragDateiname}</div>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', gap: 5 }}>
-                            <button onClick={() => downloadVertrag(d.id)} style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>↓ Herunterladen</button>
-                            <button onClick={() => ladeVertrag(d.id)} style={{ background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer' }}>Ersetzen</button>
-                            <button onClick={() => loescheVertrag(d.id)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 6, padding: '5px 8px', fontSize: 11, cursor: 'pointer' }}>✕</button>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => downloadVertrag(d.id)} style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>↓ Herunterladen</button>
+                            <button onClick={() => ladeVertrag(d.id)} style={{ background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>Ersetzen</button>
+                            <button onClick={() => loescheVertrag(d.id)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 7, padding: '6px 9px', fontSize: 11, cursor: 'pointer' }}>✕</button>
                           </div>
                         </div>
                       ) : (
-                        <div
-                          onDragOver={e => e.preventDefault()}
-                          style={{
-                            border: `2px dashed ${isDragging ? '#6366f1' : '#d1d5db'}`,
-                            borderRadius: 10,
-                            padding: '14px 16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: 12,
-                            background: isDragging ? 'rgba(99,102,241,0.06)' : 'transparent',
-                            transition: 'all 0.15s',
-                            cursor: 'pointer',
-                          }}
-                          onClick={() => ladeVertrag(d.id)}
-                        >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isDragging ? '#6366f1' : '#bbb'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12"/>
-                            </svg>
+                            <span style={{ fontSize: 22, opacity: 0.4 }}>📎</span>
                             <div>
-                              <div style={{ fontSize: 12, fontWeight: 600, color: isDragging ? '#6366f1' : '#555' }}>
-                                {isDragging ? 'Loslassen zum Hochladen' : 'Darlehensvertrag hier ablegen'}
-                              </div>
-                              <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>PDF, Word, Bild · max. 20 MB</div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: dragOver === d.id ? '#6366f1' : '#666' }}>{dragOver === d.id ? 'Loslassen zum Hochladen' : 'Darlehensvertrag hochladen'}</div>
+                              <div style={{ fontSize: 11, color: '#aaa' }}>Drag & Drop oder Datei suchen · PDF, Word, Bild</div>
                             </div>
                           </div>
-                          <button
-                            onClick={e => { e.stopPropagation(); ladeVertrag(d.id) }}
-                            style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 7, padding: '7px 14px', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          <button onClick={() => ladeVertrag(d.id)} style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
                             Datei suchen
                           </button>
                         </div>
                       )}
                     </div>
-                  )
-                })()}
-
-                {/* Expanded Content */}
-                {isExpanded && (
-                  <div style={{ borderTop: '1px solid #f0ede8', padding: '20px 20px' }}>
 
                     {/* Zinsprognose */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
