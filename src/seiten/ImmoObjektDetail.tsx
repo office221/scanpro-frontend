@@ -15,15 +15,15 @@ const leer = { name: '', typ: 'Wohnung', adresse: '', flaeche: '', zimmer: '', b
 const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 const TABS = [
-  { id: 'uebersicht',      label: '📊 Übersicht' },
-  { id: 'bonitaet',        label: '💳 Bonität' },
-  { id: 'betriebskosten',  label: '🧾 Betriebskosten' },
-  { id: 'darlehen',        label: '🏦 Darlehen' },
-  { id: 'stammdaten',      label: '📋 Stammdaten' },
-  { id: 'finanzen',        label: '💶 Finanzen' },
-  { id: 'bau',             label: '🔨 Bau & Instandsetzung' },
-  { id: 'vermietung',      label: '🏠 Vermietung' },
-  { id: 'verwaltung',      label: '⚙️ Verwaltung' },
+  { id: 'uebersicht',      label: 'Übersicht' },
+  { id: 'bonitaet',        label: 'Bonität' },
+  { id: 'betriebskosten',  label: 'Betriebskosten' },
+  { id: 'darlehen',        label: 'Darlehen' },
+  { id: 'stammdaten',      label: 'Stammdaten' },
+  { id: 'finanzen',        label: 'Finanzen' },
+  { id: 'bau',             label: 'Bau & Instandsetzung' },
+  { id: 'vermietung',      label: 'Vermietung' },
+  { id: 'verwaltung',      label: 'Verwaltung' },
 ]
 const TAB_KAT: Record<string, string> = {
   stammdaten: 'Stammdaten', finanzen: 'Finanzen', bau: 'Bau', vermietung: 'Vermietung', verwaltung: 'Verwaltung'
@@ -874,22 +874,30 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
     setTimeout(() => win.print(), 800)
   }
 
+  const DarlSvg = ({ path, color }: { path: string; color: string }) => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d={path} />
+    </svg>
+  )
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 10 }}>
         {[
-          { icon: '🏦', label: 'Gesamtdarlehen', value: `€ ${fmtD(totalDarlehenssumme)}`, color: '#6366f1' },
-          { icon: '💸', label: 'Restschuld gesamt', value: `€ ${fmtD(totalRestsumme)}`, color: '#ef4444' },
-          { icon: '📅', label: 'Monatl. Raten', value: `€ ${fmtD(totalRate)}`, color: '#f59e0b' },
-          { icon: '✅', label: 'Abgezahlt', value: `${abgezahltPct.toFixed(1)}%`, color: '#10b981' },
+          { path: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10', label: 'Gesamtdarlehen', value: `€ ${fmtD(totalDarlehenssumme)}`, color: '#6366f1', bg: 'rgba(99,102,241,0.07)' },
+          { path: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z', label: 'Restschuld', value: `€ ${fmtD(totalRestsumme)}`, color: '#ef4444', bg: 'rgba(239,68,68,0.07)' },
+          { path: 'M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', label: 'Monatl. Rate', value: `€ ${fmtD(totalRate)}`, color: '#f59e0b', bg: 'rgba(245,158,11,0.07)' },
+          { path: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3', label: 'Abgezahlt', value: `${abgezahltPct.toFixed(1)}%`, color: '#10b981', bg: 'rgba(16,185,129,0.07)' },
         ].map(c => (
-          <div key={c.label} style={{ background: 'white', borderRadius: 14, border: '1px solid #e5e0d8', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ fontSize: 32, filter: 'drop-shadow(0px 4px 8px rgba(99,102,241,0.4))', transform: 'perspective(100px) rotateX(5deg)', flexShrink: 0 }}>{c.icon}</div>
-            <div>
-              <div style={{ fontSize: 11, color: '#888', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>{c.label}</div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: c.color }}>{c.value}</div>
+          <div key={c.label} style={{ background: 'white', borderRadius: 12, border: '1px solid #ece8e1', padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <DarlSvg path={c.path} color={c.color} />
+              </div>
+              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, letterSpacing: 0.2 }}>{c.label}</span>
             </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: c.color, letterSpacing: -0.3 }}>{c.value}</div>
           </div>
         ))}
       </div>
@@ -909,9 +917,11 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
 
       {/* Darlehen Liste */}
       {darlehen.length === 0 ? (
-        <div style={{ background: 'white', borderRadius: 14, border: '1px dashed #d1d5db', padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-          <div style={{ fontSize: 40, marginBottom: 10, filter: 'drop-shadow(0px 4px 8px rgba(99,102,241,0.3))' }}>🏦</div>
-          Noch keine Darlehen erfasst
+        <div style={{ background: 'white', borderRadius: 12, border: '1px dashed #d1d5db', padding: 40, textAlign: 'center', color: '#bbb', fontSize: 13 }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 10 }}>
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" />
+          </svg>
+          <div>Noch keine Darlehen erfasst</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
