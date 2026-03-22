@@ -1532,9 +1532,16 @@ const NK_DEFAULT = [
 
 function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: number }) {
   const storageKey = `kaufpreis_nk_${objektId}`
-  const [werte, setWerte] = useState<Record<string, { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }>>(() => {
-    try { const s = localStorage.getItem(storageKey); return s ? JSON.parse(s) : {} } catch { return {} }
-  })
+  type WertMap = Record<string, { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }>
+  const loadSaved = (): WertMap => { try { const s = localStorage.getItem(storageKey); return s ? JSON.parse(s) : {} } catch { return {} } }
+
+  // gespeicherte Werte → für Summen-Berechnung
+  const [werte, setWerte] = useState<WertMap>(loadSaved)
+  // Entwurf → was gerade getippt wird (kein Einfluss auf Summen)
+  const [draft, setDraft] = useState<WertMap>(loadSaved)
+  const [geaendert, setGeaendert] = useState(false)
+  const [gespeichert, setGespeichert] = useState(false)
+
   const [zeigeMwSt, setZeigeMwSt] = useState(true)
   const [belege, setBelege] = useState<Record<string, any>>({})
   const [belegLaden, setBelegLaden] = useState<string | null>(null)
@@ -1565,39 +1572,47 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
   const oeffneVorschau = async (id: number, dateiname: string) => {
     const r = await api.get(`/immo/kaufpreis-beleg-file/${id}`, { responseType: 'blob' })
     const url = window.URL.createObjectURL(r.data)
-    const typ = r.data.type || ''
-    setVorschau({ url, name: dateiname, typ })
+    setVorschau({ url, name: dateiname, typ: r.data.type || '' })
   }
 
   const kp = kaufpreis || 0
 
-  const save = (id: string, neu: { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }) => {
-    const updated = { ...werte, [id]: neu }
-    setWerte(updated)
-    localStorage.setItem(storageKey, JSON.stringify(updated))
-  }
-
-  const onPctChange = (id: string, defPct: number, val: string) => {
+  // Nur Draft aktualisieren — Summen bleiben unverändert
+  const onPctChange = (id: string, val: string) => {
     const pctNum = parseFloat(val)
     const betrag = (!isNaN(pctNum) && kp > 0) ? String((kp * pctNum / 100).toFixed(2)) : ''
-    save(id, { pct: val, betrag, letzteEingabe: 'pct' })
+    setDraft(p => ({ ...p, [id]: { pct: val, betrag, letzteEingabe: 'pct' } }))
+    setGeaendert(true); setGespeichert(false)
   }
 
-  const onBetragChange = (id: string, defPct: number, val: string) => {
+  const onBetragChange = (id: string, val: string) => {
     const bNum = parseFloat(val)
     const pct = (!isNaN(bNum) && kp > 0) ? String((bNum / kp * 100).toFixed(3)) : ''
-    save(id, { pct, betrag: val, letzteEingabe: 'betrag' })
+    setDraft(p => ({ ...p, [id]: { pct, betrag: val, letzteEingabe: 'betrag' } }))
+    setGeaendert(true); setGespeichert(false)
   }
 
+  // Speichern → Draft → werte übernehmen, Summen neu berechnen
+  const speichern = () => {
+    setWerte(draft)
+    localStorage.setItem(storageKey, JSON.stringify(draft))
+    setGeaendert(false); setGespeichert(true)
+    setTimeout(() => setGespeichert(false), 2000)
+  }
+
+  // Summen aus GESPEICHERTEN Werten
   const positionen = NK_DEFAULT.map(nk => {
     const w = werte[nk.id]
-    const pctStr = w ? w.pct : String(nk.pct)
-    const pctNum = parseFloat(pctStr)
+    const d = draft[nk.id]
+    const pctStr = d ? d.pct : String(nk.pct)
+    const pctNum = parseFloat(w ? w.pct : String(nk.pct))
     const pct = isNaN(pctNum) ? nk.pct : pctNum
-    let betragStr = w ? w.betrag : (kp > 0 ? (kp * nk.pct / 100).toFixed(2) : '')
-    let betragNum = parseFloat(betragStr)
+    let betragNum = parseFloat(w ? w.betrag : '')
     if (isNaN(betragNum)) betragNum = kp * pct / 100
-    return { ...nk, pct, pctStr, betragNum, betragStr }
+    // Für Eingabefelder: draft-Werte
+    const draftPct = d ? d.pct : String(nk.pct)
+    const draftBetrag = d ? d.betrag : (kp > 0 ? (kp * nk.pct / 100).toFixed(2) : '')
+    return { ...nk, pct, betragNum, draftPct, draftBetrag }
   })
 
   const nebenkostenSumme = positionen.reduce((s, p) => s + p.betragNum, 0)
@@ -1628,13 +1643,18 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Nebenkosten</div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#555', userSelect: 'none' }}>
-            <input type="checkbox" checked={zeigeMwSt} onChange={e => setZeigeMwSt(e.target.checked)}
-              style={{ width: 14, height: 14, accentColor: '#1a2a3a', cursor: 'pointer' }} />
-            MwSt-Aufschlüsselung anzeigen
-          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#555', userSelect: 'none' }}>
+              <input type="checkbox" checked={zeigeMwSt} onChange={e => setZeigeMwSt(e.target.checked)}
+                style={{ width: 14, height: 14, accentColor: '#1a2a3a', cursor: 'pointer' }} />
+              MwSt anzeigen
+            </label>
+            <button onClick={speichern} style={{ padding: '5px 14px', borderRadius: 8, border: 'none', background: gespeichert ? '#10b981' : geaendert ? '#1a2a3a' : '#e0ddd8', color: gespeichert ? 'white' : geaendert ? 'white' : '#aaa', fontSize: 12, fontWeight: 700, cursor: geaendert ? 'pointer' : 'default', transition: 'all 0.2s' }}>
+              {gespeichert ? '✓ Gespeichert' : '💾 Speichern'}
+            </button>
+          </div>
         </div>
-        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 14 }}>% oder € Betrag eingeben — der andere Wert wird automatisch berechnet</div>
+        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 14 }}>% oder € eingeben — Summen aktualisieren erst nach Speichern</div>
 
         {/* Header */}
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 90px 130px 110px', gap: 8, padding: '6px 0', borderBottom: '2px solid #e8e4dd', fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>
@@ -1673,16 +1693,16 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
             </div>
             {/* % Eingabe */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <input type="number" step="0.01" value={p.pctStr}
-                onChange={e => onPctChange(p.id, p.pct, e.target.value)}
+              <input type="number" step="0.01" value={p.draftPct}
+                onChange={e => onPctChange(p.id, e.target.value)}
                 style={{ ...iS, width: 62 }} />
               <span style={{ fontSize: 11, color: '#888' }}>%</span>
             </div>
             {/* € Eingabe */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <span style={{ fontSize: 11, color: '#888' }}>€</span>
-              <input type="number" step="1" value={p.betragStr}
-                onChange={e => onBetragChange(p.id, p.pct, e.target.value)}
+              <input type="number" step="1" value={p.draftBetrag}
+                onChange={e => onBetragChange(p.id, e.target.value)}
                 style={{ ...iS, width: 100 }} />
             </div>
             {/* Beleg */}
