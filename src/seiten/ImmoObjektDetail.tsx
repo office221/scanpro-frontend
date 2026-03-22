@@ -1535,6 +1535,7 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
   const [werte, setWerte] = useState<Record<string, { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }>>(() => {
     try { const s = localStorage.getItem(storageKey); return s ? JSON.parse(s) : {} } catch { return {} }
   })
+  const [zeigeMwSt, setZeigeMwSt] = useState(true)
   const [belege, setBelege] = useState<Record<string, any>>({})
   const [belegLaden, setBelegLaden] = useState<string | null>(null)
   const [vorschau, setVorschau] = useState<{ url: string; name: string; typ: string } | null>(null)
@@ -1625,7 +1626,14 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
 
       {/* Nebenkosten */}
       <div style={card}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Nebenkosten</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Nebenkosten</div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#555', userSelect: 'none' }}>
+            <input type="checkbox" checked={zeigeMwSt} onChange={e => setZeigeMwSt(e.target.checked)}
+              style={{ width: 14, height: 14, accentColor: '#1a2a3a', cursor: 'pointer' }} />
+            MwSt-Aufschlüsselung anzeigen
+          </label>
+        </div>
         <div style={{ fontSize: 11, color: '#aaa', marginBottom: 14 }}>% oder € Betrag eingeben — der andere Wert wird automatisch berechnet</div>
 
         {/* Header */}
@@ -1643,7 +1651,7 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2a3a' }}>{p.label}</div>
               <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{p.hint}</div>
-              {p.mwst > 0 && p.betragNum > 0 && (() => {
+              {zeigeMwSt && p.mwst > 0 && p.betragNum > 0 && (() => {
                 const netto = p.betragNum / (1 + p.mwst / 100)
                 const mwstBetrag = p.betragNum - netto
                 return (
@@ -1715,7 +1723,7 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
           </div>
         </div>
         {/* Vorsteuer Hinweis */}
-        {kp > 0 && (() => {
+        {zeigeMwSt && kp > 0 && (() => {
           const vorsteuerGesamt = positionen
             .filter(p => p.mwst > 0)
             .reduce((s, p) => s + (p.betragNum - p.betragNum / (1 + p.mwst / 100)), 0)
