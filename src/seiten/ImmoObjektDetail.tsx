@@ -469,8 +469,9 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
   const [saving,      setSaving]      = useState(false)
   const [zahlungForm, setZahlungForm] = useState<Record<number,any>>({})
   const [zahlungLaden, setZahlungLaden] = useState<number | null>(null)
-  const [vertragLaden, setVertragLaden] = useState<number | null>(null)
-  const [dragOver,     setDragOver]     = useState<number | null>(null)
+  const [vertragLaden,   setVertragLaden]   = useState<number | null>(null)
+  const [dragOver,       setDragOver]       = useState<number | null>(null)
+  const [vorschau,       setVorschau]       = useState<{ url: string; name: string; typ: string } | null>(null)
 
   const leerForm = { bezeichnung: '', bank: '', vertragsnummer: '', darlehenssumme: '', restsumme: '', monatlicheRate: '', sollzins: '', laufzeitBeginn: '', laufzeitEnde: '', zinsbindungEnde: '', notiz: '' }
   const [form, setForm] = useState<any>({ ...leerForm })
@@ -641,6 +642,18 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
       await uploadVertragDatei(darlehenId, file)
     }
     input.click()
+  }
+
+  const oeffneVorschau = async (darlehenId: number, dateiname: string) => {
+    try {
+      const res = await api.get(`/immo/darlehen/${darlehenId}/vertrag`, { responseType: 'blob' })
+      const ext = dateiname.split('.').pop()?.toLowerCase() || ''
+      const mimeMap: Record<string, string> = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif' }
+      const mime = mimeMap[ext] || 'application/octet-stream'
+      const blob = new Blob([res.data], { type: mime })
+      const url = window.URL.createObjectURL(blob)
+      setVorschau({ url, name: dateiname, typ: ext })
+    } catch { alert('Vorschau konnte nicht geladen werden') }
   }
 
   const downloadVertrag = (darlehenId: number) => {
@@ -1142,15 +1155,17 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6366f1', fontSize: 12 }}>⏳ Wird hochgeladen…</div>
                       ) : d.vertragDateiname ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 18 }}>📄</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => oeffneVorschau(d.id, d.vertragDateiname)}>
+                            <span style={{ fontSize: 22 }}>📄</span>
                             <div>
                               <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2a3a' }}>Darlehensvertrag</div>
-                              <div style={{ fontSize: 11, color: '#6366f1' }}>{d.vertragDateiname}</div>
+                              <div style={{ fontSize: 11, color: '#6366f1', textDecoration: 'underline' }}>{d.vertragDateiname}</div>
+                              <div style={{ fontSize: 10, color: '#aaa' }}>Klicken für Vorschau</div>
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => downloadVertrag(d.id)} style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>↓ Herunterladen</button>
+                            <button onClick={() => oeffneVorschau(d.id, d.vertragDateiname)} style={{ background: '#f0f4ff', color: '#6366f1', border: '1px solid #c7d2fe', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>👁 Vorschau</button>
+                            <button onClick={() => downloadVertrag(d.id)} style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>↓ Download</button>
                             <button onClick={() => ladeVertrag(d.id)} style={{ background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>Ersetzen</button>
                             <button onClick={() => loescheVertrag(d.id)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 7, padding: '6px 9px', fontSize: 11, cursor: 'pointer' }}>✕</button>
                           </div>
@@ -1318,6 +1333,57 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
                 {saving ? '⏳...' : '💾 Speichern'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vorschau Modal */}
+      {vorschau && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 2000, display: 'flex', flexDirection: 'column' }}
+          onClick={() => { window.URL.revokeObjectURL(vorschau.url); setVorschau(null) }}>
+          {/* Toolbar */}
+          <div style={{ background: '#1a2a3a', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 18 }}>📄</span>
+              <div>
+                <div style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>{vorschau.name}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Darlehensvertrag</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['pdf','jpg','jpeg','png'].includes(vorschau.typ) && (
+                <button onClick={() => { const w = window.open(''); if (w) { w.document.write(`<html><body style="margin:0"><${vorschau.typ === 'pdf' ? `iframe src="${vorschau.url}" width="100%" height="100%" style="border:none"` : `img src="${vorschau.url}" style="max-width:100%"`}/></body></html>`); w.focus(); setTimeout(() => w.print(), 500) } }}
+                  style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  🖨 Drucken
+                </button>
+              )}
+              <a href={vorschau.url} download={vorschau.name}
+                style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
+                ↓ Download
+              </a>
+              <button onClick={() => { window.URL.revokeObjectURL(vorschau.url); setVorschau(null) }}
+                style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 16, cursor: 'pointer' }}>✕</button>
+            </div>
+          </div>
+          {/* Vorschau Inhalt */}
+          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+            onClick={e => e.stopPropagation()}>
+            {vorschau.typ === 'pdf' ? (
+              <iframe src={vorschau.url} style={{ width: '100%', height: '100%', border: 'none', borderRadius: 8 }} title="Vorschau" />
+            ) : ['jpg','jpeg','png','gif'].includes(vorschau.typ) ? (
+              <img src={vorschau.url} alt={vorschau.name} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }} />
+            ) : (
+              <div style={{ background: 'white', borderRadius: 12, padding: 40, textAlign: 'center', maxWidth: 400 }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>📎</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a', marginBottom: 8 }}>{vorschau.name}</div>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 20 }}>Vorschau für diesen Dateityp nicht verfügbar</div>
+                <a href={vorschau.url} download={vorschau.name}
+                  style={{ background: '#1a2a3a', color: 'white', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}>
+                  ↓ Herunterladen
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
