@@ -1542,7 +1542,10 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
   const [geaendert, setGeaendert] = useState(false)
   const [gespeichert, setGespeichert] = useState(false)
 
-  const [zeigeMwSt, setZeigeMwSt] = useState(true)
+  const [zeigeMwSt, setZeigeMwSt] = useState(() => {
+    const s = localStorage.getItem(`kaufpreis_mwst_${objektId}`)
+    return s === null ? true : s === '1'
+  })
   const [belege, setBelege] = useState<Record<string, any>>({})
   const [belegLaden, setBelegLaden] = useState<string | null>(null)
   const [vorschau, setVorschau] = useState<{ url: string; name: string; typ: string } | null>(null)
@@ -1644,7 +1647,7 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
           <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Nebenkosten</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#555', userSelect: 'none' }}>
-              <input type="checkbox" checked={zeigeMwSt} onChange={e => setZeigeMwSt(e.target.checked)}
+              <input type="checkbox" checked={zeigeMwSt} onChange={e => { setZeigeMwSt(e.target.checked); localStorage.setItem(`kaufpreis_mwst_${objektId}`, e.target.checked ? '1' : '0') }}
                 style={{ width: 14, height: 14, accentColor: '#1a2a3a', cursor: 'pointer' }} />
               MwSt anzeigen
             </label>
