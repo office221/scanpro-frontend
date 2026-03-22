@@ -664,6 +664,111 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
     } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
   }
 
+  const druckeEinzelDarlehenPDF = async (d: any) => {
+    let zahlungen = darlehenZahlungen[d.id] || []
+    if (!darlehenZahlungen[d.id]) {
+      try { const res = await api.get(`/immo/darlehen-zahlungen/${d.id}`); zahlungen = res.data; setDarlehenZahlungen((prev: any) => ({ ...prev, [d.id]: res.data })) } catch {}
+    }
+    const datum = new Date().toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const gesamtBezahlt   = zahlungen.reduce((s: number, z: any) => s + n(z.betrag), 0)
+    const zinsenBezahlt   = zahlungen.reduce((s: number, z: any) => s + n(z.zinsanteil), 0)
+    const tilgungBezahlt  = zahlungen.reduce((s: number, z: any) => s + n(z.tilgungsanteil), 0)
+    const pct = n(d.darlehenssumme) > 0 ? Math.max(0, Math.min(100, ((n(d.darlehenssumme) - n(d.restsumme)) / n(d.darlehenssumme)) * 100)) : 0
+    const barColor = pct >= 75 ? '#10b981' : pct >= 50 ? '#6366f1' : pct >= 25 ? '#f59e0b' : '#ef4444'
+    const payoffDate = geschaetzteAbzahlung(d)
+    const restZins = geschaetzteZinskosten(d)
+    const MN = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
+
+    const zahlungZeilen = zahlungen.map((z: any, idx: number) => `
+      <tr style="background:${idx%2===0?'#fff':'#f9fafb'}">
+        <td>${MN[(z.monat||1)-1]} ${z.jahr}</td>
+        <td style="text-align:right;font-weight:600">€ ${fmtD(z.betrag)}</td>
+        <td style="text-align:right;color:#f59e0b">€ ${fmtD(z.zinsanteil)}</td>
+        <td style="text-align:right;color:#10b981">€ ${fmtD(z.tilgungsanteil)}</td>
+        <td style="text-align:right;color:#6366f1;font-weight:700">€ ${fmtD(z.restsummeNach)}</td>
+        <td style="color:#555">${z.beschreibung || '—'}</td>
+      </tr>`).join('')
+
+    const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+<title>${d.bezeichnung} – Darlehensübersicht</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a2a3a;padding:24px 32px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:14px;border-bottom:2px solid #1a2a3a}
+  .header h1{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+  .header p{font-size:11px;color:#888;margin-top:3px}
+  .header-right{text-align:right;font-size:11px;color:#888}
+  .header-right strong{display:block;font-size:13px;color:#1a2a3a;margin-bottom:2px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+  .box{background:#f8f9fa;border-radius:10px;padding:12px 14px;border:1px solid #e5e0d8}
+  .box .lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:#888;font-weight:600;margin-bottom:4px}
+  .box .val{font-size:16px;font-weight:800}
+  .progress-wrap{margin-bottom:20px}
+  .progress-label{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:5px}
+  .progress-bar{height:10px;background:#f0ede8;border-radius:99px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:99px;background:${barColor}}
+  .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+  .info-box{background:#f8f9fa;border-radius:8px;padding:10px 12px;border:1px solid #e5e0d8}
+  .info-box .lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#888;font-weight:600;margin-bottom:3px}
+  .info-box .val{font-size:13px;font-weight:700}
+  .section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{background:#1a2a3a;color:#fff;padding:7px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+  td{padding:7px 10px;border-top:1px solid #f0ede8}
+  tfoot tr{background:#f0ede8!important;border-top:2px solid #d1c9be}
+  tfoot td{font-weight:700;padding:8px 10px}
+  .keine{text-align:center;color:#aaa;padding:24px;font-style:italic;border:1px dashed #e5e0d8;border-radius:8px}
+  .footer{margin-top:28px;padding-top:10px;border-top:1px solid #e5e0d8;text-align:center;font-size:10px;color:#aaa}
+  @media print{body{padding:12px 20px}}
+</style></head><body>
+<div class="header">
+  <div>
+    <h1>${d.bezeichnung}</h1>
+    <p>${d.bank ? d.bank : ''}${d.vertragsnummer ? ' · Nr. ' + d.vertragsnummer : ''}</p>
+  </div>
+  <div class="header-right"><strong>BelegFix</strong>Stand: ${datum}</div>
+</div>
+
+<div class="grid">
+  <div class="box"><div class="lbl">Darlehenssumme</div><div class="val" style="color:#1a2a3a">€ ${fmtD(d.darlehenssumme)}</div></div>
+  <div class="box"><div class="lbl">Aktuelle Restschuld</div><div class="val" style="color:#ef4444">€ ${fmtD(d.restsumme)}</div></div>
+  <div class="box"><div class="lbl">Monatl. Rate</div><div class="val" style="color:#6366f1">€ ${fmtD(d.monatlicheRate)}</div></div>
+  <div class="box"><div class="lbl">Sollzins</div><div class="val" style="color:#f59e0b">${n(d.sollzins).toFixed(3)} %</div></div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-label"><span>Abgezahlt: <strong>${pct.toFixed(1)}%</strong> (€ ${fmtD(n(d.darlehenssumme)-n(d.restsumme))} von € ${fmtD(d.darlehenssumme)})</span>${payoffDate ? `<span>Voraussichtl. Abzahlung: <strong>${payoffDate.toLocaleDateString('de-AT',{month:'2-digit',year:'numeric'})}</strong></span>` : ''}</div>
+  <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+</div>
+
+<div class="info-grid">
+  <div class="info-box"><div class="lbl">Zinsen bereits gezahlt</div><div class="val" style="color:#f59e0b">€ ${fmtD(zinsenBezahlt)}</div></div>
+  <div class="info-box"><div class="lbl">Tilgung bereits gezahlt</div><div class="val" style="color:#10b981">€ ${fmtD(tilgungBezahlt)}</div></div>
+  <div class="info-box"><div class="lbl">Noch anfallende Zinsen</div><div class="val" style="color:#ef4444">≈ € ${fmtD(restZins)}</div></div>
+  ${d.laufzeitBeginn ? `<div class="info-box"><div class="lbl">Laufzeit von</div><div class="val">${new Date(d.laufzeitBeginn).toLocaleDateString('de-AT')}</div></div>` : ''}
+  ${d.laufzeitEnde ? `<div class="info-box"><div class="lbl">Laufzeit bis</div><div class="val">${new Date(d.laufzeitEnde).toLocaleDateString('de-AT')}</div></div>` : ''}
+  ${d.zinsbindungEnde ? `<div class="info-box" style="background:#fff7ed;border-color:#fed7aa"><div class="lbl">Zinsbindung bis</div><div class="val" style="color:#f59e0b">${new Date(d.zinsbindungEnde).toLocaleDateString('de-AT')}</div></div>` : ''}
+</div>
+
+<div class="section-title">Zahlungshistorie (${zahlungen.length} Buchungen)</div>
+${zahlungen.length === 0 ? '<div class="keine">Noch keine Zahlungen erfasst</div>' : `
+<table>
+  <thead><tr><th>Zeitraum</th><th style="text-align:right">Betrag</th><th style="text-align:right">Zinsanteil</th><th style="text-align:right">Tilgungsanteil</th><th style="text-align:right">Restschuld danach</th><th>Beschreibung</th></tr></thead>
+  <tbody>${zahlungZeilen}</tbody>
+  <tfoot><tr><td>Gesamt</td><td style="text-align:right">€ ${fmtD(gesamtBezahlt)}</td><td style="text-align:right;color:#f59e0b">€ ${fmtD(zinsenBezahlt)}</td><td style="text-align:right;color:#10b981">€ ${fmtD(tilgungBezahlt)}</td><td style="text-align:right;color:#6366f1">€ ${fmtD(d.restsumme)}</td><td></td></tr></tfoot>
+</table>`}
+${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e"><strong>Notiz:</strong> ${d.notiz}</div>` : ''}
+<div class="footer">Erstellt mit BelegFix · ${datum}</div>
+</body></html>`
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => win.print(), 600)
+  }
+
   const getBarColor = (pct: number) => {
     if (pct >= 75) return '#10b981'
     if (pct >= 50) return '#6366f1'
@@ -1010,6 +1115,11 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <button onClick={e => { e.stopPropagation(); druckeEinzelDarlehenPDF(d) }}
+                        style={{ background: '#f0f4ff', color: '#6366f1', border: '1px solid #c7d2fe', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8"/></svg>
+                        PDF
+                      </button>
                       <button onClick={e => { e.stopPropagation(); oeffneEdit(d) }} style={{ background: '#f0ede8', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>✏️</button>
                       <button onClick={e => { e.stopPropagation(); loescheDarlehen(d.id) }} style={{ background: '#fee2e2', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>🗑</button>
                       <div style={{ fontSize: 18, color: '#aaa', marginLeft: 4 }}>{isExpanded ? '▲' : '▼'}</div>
