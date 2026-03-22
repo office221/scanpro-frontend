@@ -695,11 +695,6 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
     } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
   }
 
-  const oeffneVorschauUrl = async (url: string, dateiname: string) => {
-    const ext = dateiname.split('.').pop()?.toLowerCase() || ''
-    setVorschau({ url, name: dateiname, typ: ext })
-  }
-
   const vorschauDokument = async (docId: number, dateiname: string) => {
     try {
       const res = await api.get(`/immo/darlehen-dokumente-file/${docId}`, { responseType: 'blob' })
