@@ -644,9 +644,6 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
   }
 
   const downloadVertrag = (darlehenId: number) => {
-    const token = localStorage.getItem('token') || ''
-    const a = document.createElement('a')
-    a.href = `${(api.defaults.baseURL || '')}immo/darlehen/${darlehenId}/vertrag`
     // Fetch mit Auth-Header
     api.get(`/immo/darlehen/${darlehenId}/vertrag`, { responseType: 'blob' }).then(res => {
       const url = window.URL.createObjectURL(new Blob([res.data]))
