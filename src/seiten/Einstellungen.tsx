@@ -243,7 +243,8 @@ export default function Einstellungen() {
       setGespeichert(true)
       setTimeout(() => setGespeichert(false), 3000)
     } catch (fehler: any) {
-      alert('Fehler: ' + fehler.message)
+      const msg = fehler.response?.data?.fehler || fehler.message
+      alert('Fehler: ' + msg)
     }
     setLaden(false)
   }
