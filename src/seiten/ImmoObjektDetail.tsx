@@ -470,6 +470,7 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
   const [zahlungForm, setZahlungForm] = useState<Record<number,any>>({})
   const [zahlungLaden, setZahlungLaden] = useState<number | null>(null)
   const [vertragLaden, setVertragLaden] = useState<number | null>(null)
+  const [dragOver,     setDragOver]     = useState<number | null>(null)
 
   const leerForm = { bezeichnung: '', bank: '', vertragsnummer: '', darlehenssumme: '', restsumme: '', monatlicheRate: '', sollzins: '', laufzeitBeginn: '', laufzeitEnde: '', zinsbindungEnde: '', notiz: '' }
   const [form, setForm] = useState<any>({ ...leerForm })
@@ -619,6 +620,17 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
     } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
   }
 
+  const uploadVertragDatei = async (darlehenId: number, file: File) => {
+    setVertragLaden(darlehenId)
+    try {
+      const formData = new FormData()
+      formData.append('vertrag', file)
+      const res = await api.post(`/immo/darlehen/${darlehenId}/vertrag`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setDarlehen((prev: any[]) => prev.map(d => d.id === darlehenId ? { ...d, vertragDateiname: res.data.vertragDateiname } : d))
+    } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
+    setVertragLaden(null)
+  }
+
   const ladeVertrag = async (darlehenId: number) => {
     const input = document.createElement('input')
     input.type = 'file'
@@ -626,14 +638,7 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
     input.onchange = async () => {
       const file = input.files?.[0]
       if (!file) return
-      setVertragLaden(darlehenId)
-      try {
-        const form = new FormData()
-        form.append('vertrag', file)
-        const res = await api.post(`/immo/darlehen/${darlehenId}/vertrag`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
-        setDarlehen((prev: any[]) => prev.map(d => d.id === darlehenId ? { ...d, vertragDateiname: res.data.vertragDateiname } : d))
-      } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
-      setVertragLaden(null)
+      await uploadVertragDatei(darlehenId, file)
     }
     input.click()
   }
@@ -1019,39 +1024,103 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
                 {isExpanded && (
                   <div style={{ borderTop: '1px solid #f0ede8', padding: '20px 20px' }}>
 
-                    {/* Vertrag Upload */}
-                    <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M12 18v-6 M9 15l3-3 3 3" />
-                        </svg>
-                        <div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#1a2a3a' }}>Darlehensvertrag</div>
-                          {d.vertragDateiname
-                            ? <div style={{ fontSize: 11, color: '#6366f1', marginTop: 1 }}>{d.vertragDateiname}</div>
-                            : <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>Kein Dokument hinterlegt</div>
-                          }
+                    {/* Vertrag Upload – Drag & Drop */}
+                    {(() => {
+                      const isDragging = dragOver === d.id
+                      const hatVertrag = !!d.vertragDateiname
+                      const isLaden   = vertragLaden === d.id
+                      return (
+                        <div
+                          onDragOver={e => { e.preventDefault(); setDragOver(d.id) }}
+                          onDragEnter={e => { e.preventDefault(); setDragOver(d.id) }}
+                          onDragLeave={e => { e.preventDefault(); setDragOver(null) }}
+                          onDrop={async e => {
+                            e.preventDefault()
+                            setDragOver(null)
+                            const file = e.dataTransfer.files?.[0]
+                            if (file) await uploadVertragDatei(d.id, file)
+                          }}
+                          style={{
+                            marginBottom: 16,
+                            borderRadius: 12,
+                            border: isDragging
+                              ? '2px dashed #6366f1'
+                              : hatVertrag
+                              ? '1.5px solid #e0ddf8'
+                              : '2px dashed #d1d5db',
+                            background: isDragging
+                              ? 'rgba(99,102,241,0.06)'
+                              : hatVertrag
+                              ? 'rgba(99,102,241,0.04)'
+                              : '#fafafa',
+                            transition: 'all 0.15s',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {isLaden ? (
+                            <div style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                </svg>
+                              </div>
+                              <span style={{ fontSize: 12, color: '#6366f1', fontWeight: 500 }}>Wird hochgeladen…</span>
+                            </div>
+                          ) : hatVertrag ? (
+                            <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6" />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1a2a3a' }}>Darlehensvertrag</div>
+                                  <div style={{ fontSize: 11, color: '#6366f1', marginTop: 2 }}>{d.vertragDateiname}</div>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                <span style={{ fontSize: 10, color: '#aaa' }}>Hierher ziehen zum Ersetzen</span>
+                                <button onClick={() => downloadVertrag(d.id)}
+                                  style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3"/></svg>
+                                  Herunterladen
+                                </button>
+                                <button onClick={() => ladeVertrag(d.id)}
+                                  style={{ background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                                  Ersetzen
+                                </button>
+                                <button onClick={() => loescheVertrag(d.id)}
+                                  style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 12, cursor: 'pointer' }}>✕</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              onClick={() => ladeVertrag(d.id)}
+                              style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                            >
+                              <div style={{ width: 40, height: 40, borderRadius: 10, background: isDragging ? 'rgba(99,102,241,0.15)' : '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isDragging ? '#6366f1' : '#aaa'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12" />
+                                </svg>
+                              </div>
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: isDragging ? '#6366f1' : '#555' }}>
+                                  {isDragging ? 'Loslassen zum Hochladen' : 'Darlehensvertrag hier ablegen'}
+                                </div>
+                                <div style={{ fontSize: 11, color: '#aaa', marginTop: 2, marginBottom: 10 }}>PDF, Word, Bild · max. 20 MB</div>
+                                <div
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a2a3a', color: 'white', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                                  onClick={e => { e.stopPropagation(); ladeVertrag(d.id) }}>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12"/></svg>
+                                  Datei suchen
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        {d.vertragDateiname && (
-                          <>
-                            <button onClick={() => downloadVertrag(d.id)}
-                              style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3"/></svg>
-                              Öffnen
-                            </button>
-                            <button onClick={() => loescheVertrag(d.id)}
-                              style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>✕</button>
-                          </>
-                        )}
-                        <button onClick={() => ladeVertrag(d.id)} disabled={vertragLaden === d.id}
-                          style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12"/></svg>
-                          {vertragLaden === d.id ? 'Lädt...' : d.vertragDateiname ? 'Ersetzen' : 'Hochladen'}
-                        </button>
-                      </div>
-                    </div>
+                      )
+                    })()}
 
                     {/* Zinsprognose */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
