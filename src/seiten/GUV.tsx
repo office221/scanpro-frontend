@@ -54,6 +54,8 @@ export default function GUV() {
   const [dateiLadenFertig, setDateiLadenFertig] = useState(false)
   const [confirmModal, setConfirmModal] = useState<{ text: string; onJa: () => void } | null>(null)
 
+  const [reiseDetail, setReiseDetail] = useState<any | null>(null)
+
   // Diagramm
   const [diagrammAnsicht, setDiagrammAnsicht] = useState<'jahr' | 'monat'>('jahr')
   const [diagrammMonat, setDiagrammMonat]     = useState<number>(new Date().getMonth() + 1)
@@ -111,6 +113,12 @@ export default function GUV() {
       } else if (e.quelle === 'rechnung') {
         // Rechnung: generierte PDF
         res = await api.get(`/pdf/${e.quelle_id}`, { responseType: 'blob' })
+      } else if (e.quelle === 'reisekosten') {
+        // Reisekosten: Detailkarte anzeigen (keine Datei, aber strukturierte Daten)
+        setDateiLaden(false)
+        const rRes = await api.get(`/reisekosten/${e.quelle_id}`)
+        setReiseDetail(rRes.data)
+        return
       } else {
         throw new Error('Keine Datei verfügbar')
       }
@@ -220,6 +228,99 @@ export default function GUV() {
     acc[k] = (acc[k] || 0) + Number(e.brutto)
     return acc
   }, {} as Record<string, number>)
+
+  // ── Export-Funktionen ───────────────────────────────────────────────────────
+  const exportCSV = () => {
+    const headers = ['Datum','Bezeichnung','Kategorie','Typ','Brutto €','Netto €','MwSt €','Quelle']
+    const rows = gefiltert.map(e => [
+      e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : '',
+      e.bezeichnung, e.kategorie,
+      e.typ === 'einnahme' ? 'Einnahme' : 'Ausgabe',
+      fmt(Number(e.brutto)), fmt(Number(e.netto)), fmt(Number(e.mwst_betrag)),
+      e.quelle || '',
+    ])
+    rows.push([])
+    rows.push(['GESAMT','','','',fmt(gewinnBrutto),fmt(gewinnNetto),fmt(mwstSaldo),''])
+    const csv = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';'))
+      .join('\n')
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `G&V-${jahr}.csv`
+    a.click()
+  }
+
+  const drucken = () => {
+    const win = window.open('', '_blank')
+    if (!win) return
+    const gewinn = gewinnBrutto
+    win.document.write(`
+      <html><head><title>G&V ${jahr}</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 10px; padding: 24px; color: #1a2a3a; }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        .meta { color: #888; font-size: 11px; margin-bottom: 20px; }
+        .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+        .sbox { padding: 12px; border-radius: 8px; }
+        .slabel { font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 4px; }
+        .sbetrag { font-size: 16px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { background: #1a2a3a; color: white; padding: 7px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 6px 8px; border-bottom: 1px solid #f0ece4; vertical-align: top; font-size: 10px; }
+        tr:nth-child(even) td { background: #fafaf8; }
+        .r { text-align: right; }
+        .ein { color: #059669; font-weight: bold; }
+        .aus { color: #dc2626; font-weight: bold; }
+        .total td { font-weight: bold; background: #f0ece4 !important; border-top: 2px solid #1a2a3a; }
+        @media print { body { padding: 10px; } }
+      </style></head><body>
+      <h1>📊 G&amp;V Abrechnung ${jahr}</h1>
+      <div class="meta">Erstellt: ${new Date().toLocaleDateString('de-AT')} &nbsp;·&nbsp; ${gefiltert.length} Einträge &nbsp;·&nbsp; Filter: ${filter === 'alle' ? 'Alle' : filter === 'einnahme' ? 'Einnahmen' : 'Ausgaben'}</div>
+      <div class="summary">
+        <div class="sbox" style="background:#f0fdf4;border:1px solid #bbf7d0">
+          <div class="slabel">↑ Einnahmen (Brutto)</div>
+          <div class="sbetrag" style="color:#059669">€ ${fmt(sumEBrutto)}</div>
+        </div>
+        <div class="sbox" style="background:#fff5f5;border:1px solid #fecaca">
+          <div class="slabel">↓ Ausgaben (Brutto)</div>
+          <div class="sbetrag" style="color:#dc2626">€ ${fmt(sumABrutto)}</div>
+        </div>
+        <div class="sbox" style="background:#fdf8f0;border:1px solid #e8c98e">
+          <div class="slabel">${gewinn >= 0 ? '✅ Gewinn' : '❌ Verlust'}</div>
+          <div class="sbetrag" style="color:${gewinn >= 0 ? '#854d0e' : '#dc2626'}">€ ${fmt(Math.abs(gewinn))}</div>
+        </div>
+        <div class="sbox" style="background:#f0f0fe;border:1px solid #c7d2fe">
+          <div class="slabel">MwSt-Saldo</div>
+          <div class="sbetrag" style="color:#4338ca">€ ${fmt(mwstSaldo)}</div>
+        </div>
+      </div>
+      <table>
+        <tr><th>Datum</th><th>Bezeichnung</th><th>Kategorie</th><th>Typ</th><th class="r">Netto €</th><th class="r">MwSt €</th><th class="r">Brutto €</th><th>Quelle</th></tr>
+        ${gefiltert.map(e => `
+          <tr>
+            <td>${e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : '—'}</td>
+            <td>${e.bezeichnung}</td>
+            <td>${e.kategorie}</td>
+            <td class="${e.typ === 'einnahme' ? 'ein' : 'aus'}">${e.typ === 'einnahme' ? '↑ Einnahme' : '↓ Ausgabe'}</td>
+            <td class="r">€ ${fmt(Number(e.netto))}</td>
+            <td class="r">€ ${fmt(Number(e.mwst_betrag))}</td>
+            <td class="r"><strong>€ ${fmt(Number(e.brutto))}</strong></td>
+            <td style="color:#aaa;font-size:9px">${e.quelle || ''}</td>
+          </tr>`).join('')}
+        <tr class="total">
+          <td colspan="4">GESAMT</td>
+          <td class="r">€ ${fmt(gewinnNetto)}</td>
+          <td class="r">€ ${fmt(mwstSaldo)}</td>
+          <td class="r">€ ${fmt(gewinn)}</td>
+          <td></td>
+        </tr>
+      </table>
+      <div style="margin-top:20px;font-size:9px;color:#aaa">Erstellt mit BelegFix · § 4 Abs. 3 EStG Österreich</div>
+      </body></html>`)
+    win.document.close()
+    setTimeout(() => win.print(), 600)
+  }
 
   // ── Monatliche Aggregate für Diagramm ──────────────────────────────────────
   const MONATSNAMEN = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
@@ -643,8 +744,8 @@ export default function GUV() {
         </div>
       )}
 
-      {/* ── Filter ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+      {/* ── Filter + Export ─────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         {[
           { key: 'alle',     label: 'Alle',      count: eintraege.length },
           { key: 'einnahme', label: '↑ Einnahmen', count: einnahmen.length },
@@ -660,6 +761,27 @@ export default function GUV() {
             {t.label} ({t.count})
           </button>
         ))}
+        {eintraege.length > 0 && (
+          <>
+            <div style={{ flex: 1 }} />
+            <button onClick={exportCSV} style={{
+              padding: '7px 13px', borderRadius: 9, border: '1px solid #e5e0d8',
+              background: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#555',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV
+            </button>
+            <button onClick={drucken} style={{
+              padding: '7px 13px', borderRadius: 9, border: 'none',
+              background: '#1a2a3a', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: 'white',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              PDF
+            </button>
+          </>
+        )}
       </div>
 
       {/* ── Liste ──────────────────────────────────────────────────────────── */}
@@ -771,7 +893,11 @@ export default function GUV() {
                             background: 'none', border: '1px solid #e0ecff',
                             borderRadius: 6, color: BLAU, cursor: 'pointer',
                             fontSize: 11, padding: '3px 8px',
-                          }}>👁 Datei</button>
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                          }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            {e.quelle === 'reisekosten' ? 'Details' : 'Datei'}
+                          </button>
                         )}
                         <button onClick={() => loeschen(e.id)} style={{
                           background: 'none', border: '1px solid #f0ece4',
@@ -837,7 +963,9 @@ export default function GUV() {
                         }}
                         onMouseEnter={ev => (ev.currentTarget.style.color = BLAU)}
                         onMouseLeave={ev => (ev.currentTarget.style.color = '#bbb')}
-                      >👁</button>
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
                     )}
                     <button
                       onClick={() => loeschen(e.id)}
@@ -1083,19 +1211,29 @@ export default function GUV() {
                   ) : (
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#ccc', minHeight: 200 }}>
                       <div style={{ fontSize: 48 }}>
-                        {!dateiLadenFertig && e.quelle !== 'manuell' ? '⏳' : '📄'}
+                        {e.quelle === 'reisekosten' ? '✈️' : (!dateiLadenFertig && e.quelle !== 'manuell' ? '⏳' : '📄')}
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#bbb', textAlign: 'center' }}>
                         {e.quelle === 'manuell'
                           ? 'Manuell erfasst'
+                          : e.quelle === 'reisekosten'
+                          ? 'Reisekostenabrechnung'
                           : !dateiLadenFertig
                           ? 'Wird geladen…'
                           : 'Kein Beleg vorhanden'}
                       </div>
-                      {e.quelle_id && e.quelle !== 'manuell' && dateiLadenFertig && (
+                      {e.quelle === 'reisekosten' && e.quelle_id && (
                         <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }}
-                          style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#888', cursor: 'pointer', fontWeight: 600 }}>
-                          👁 Datei öffnen
+                          style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}66`, borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#7a5c1e', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          Reisekosten-Details
+                        </button>
+                      )}
+                      {e.quelle_id && e.quelle !== 'manuell' && e.quelle !== 'reisekosten' && dateiLadenFertig && (
+                        <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }}
+                          style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#888', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          Datei öffnen
                         </button>
                       )}
                     </div>
@@ -1154,6 +1292,92 @@ export default function GUV() {
             </div>
           </div>
         </>
+      )}
+
+      {/* ── Reisekosten-Detail-Modal (aus G&V heraus) ──────────────────────── */}
+      {reiseDetail && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,20,0.65)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 20, maxWidth: 520, width: '100%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            {/* Header */}
+            <div style={{ background: `linear-gradient(135deg, ${GOLD}, #e8c98e)`, padding: '20px 24px' }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#0a0a0a' }}>✈️ {reiseDetail.zielort}</div>
+              <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginTop: 4 }}>{reiseDetail.zweck}</div>
+            </div>
+            {/* Inhalt */}
+            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '55vh', overflowY: 'auto' }}>
+              {[
+                { icon: '📅', bg: '#fff3e0', label: 'Datum', value: reiseDetail.datum ? new Date(reiseDetail.datum).toLocaleDateString('de-AT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '—' },
+                { icon: '🕐', bg: '#f0f0fe', label: 'Reisezeit', value: reiseDetail.uhrzeit_start && reiseDetail.uhrzeit_ende ? `${reiseDetail.uhrzeit_start} – ${reiseDetail.uhrzeit_ende} (${Number(reiseDetail.stunden_dauer || 0).toFixed(1)} Std.)` : '—' },
+                { icon: '📏', bg: '#f0fdf4', label: 'Strecke', value: `${Number(reiseDetail.km_einfach).toFixed(1)} km einfach · ${(Number(reiseDetail.km_einfach) * 2).toFixed(1)} km gesamt` },
+                { icon: '🍽', bg: '#fff0f0', label: 'Mahlzeit gestellt', value: reiseDetail.essen_bekommen ? 'Ja – Taggeld um € 15,00 reduziert' : 'Nein' },
+              ].map((r, i) => (
+                <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: r.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{r.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>{r.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2a3a', marginTop: 2 }}>{r.value}</div>
+                  </div>
+                </div>
+              ))}
+              {/* KM-Buch Verknüpfungen */}
+              {(reiseDetail.km_fahrt_hin_id || reiseDetail.km_fahrt_rueck_id) && (
+                <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f0f0fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🔗</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>KM-Buch Verknüpfung</div>
+                    {reiseDetail.km_fahrt_hin_id && (
+                      <div style={{ fontSize: 13, color: GRUEN, fontWeight: 600, marginBottom: 3 }}>
+                        ↗ Hinfahrt: {reiseDetail.km_hin_ziel?.split(',').slice(0, 2).join(',') || '—'} · {Number(reiseDetail.km_hin_km || 0).toFixed(1)} km
+                      </div>
+                    )}
+                    {reiseDetail.km_fahrt_rueck_id && (
+                      <div style={{ fontSize: 13, color: BLAU, fontWeight: 600 }}>
+                        ↙ Rückfahrt: {reiseDetail.km_rueck_ziel?.split(',').slice(0, 2).join(',') || '—'} · {Number(reiseDetail.km_rueck_km || 0).toFixed(1)} km
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* Abrechnung Box */}
+              <div style={{ background: '#fdf8f0', borderRadius: 14, padding: '14px 16px', border: `1px solid ${GOLD}44` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>Abrechnung § 26 EStG 2026</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, textAlign: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: BLAU, fontWeight: 700, marginBottom: 4 }}>KM-Geld</div>
+                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: BLAU }}>€ {fmt(Number(reiseDetail.km_geld))}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: GRUEN, fontWeight: 700, marginBottom: 4 }}>Taggeld</div>
+                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: GRUEN }}>€ {fmt(Number(reiseDetail.taggeld))}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: '#7a5c1e', fontWeight: 700, marginBottom: 4 }}>Gesamt</div>
+                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#7a5c1e' }}>€ {fmt(Number(reiseDetail.gesamt))}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* G&V Banner – immer grün, da aus G&V heraus geöffnet */}
+            <div style={{ margin: '0 24px 4px', padding: '10px 14px', background: '#d1fae5', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>✅</span>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#065f46' }}>In G&V eingetragen</div>
+                <div style={{ fontSize: 11, color: '#047857', marginTop: 1 }}>
+                  {(reiseDetail.km_fahrt_hin_id || reiseDetail.km_fahrt_rueck_id)
+                    ? `Taggeld € ${fmt(Number(reiseDetail.taggeld))} übertragen (KM-Geld via KM-Buch)`
+                    : `Gesamt € ${fmt(Number(reiseDetail.gesamt))} übertragen`}
+                </div>
+              </div>
+            </div>
+            {/* Footer */}
+            <div style={{ padding: '14px 24px', borderTop: '1px solid #f0ece4' }}>
+              <button onClick={() => setReiseDetail(null)} style={{
+                width: '100%', padding: '11px', borderRadius: 10, border: '1.5px solid #e5e0d8',
+                background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555',
+              }}>✕ Schließen</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Datei-Lade-Spinner ─────────────────────────────────────────────── */}

@@ -209,6 +209,11 @@ export default function KMBuch() {
   const [belegSuche, setBelegSuche]               = useState('')
   const [belegDropdownOffen, setBelegDropdownOffen] = useState(false)
 
+  // Diagramm KM
+  const [diagrammAnsichtKM, setDiagrammAnsichtKM] = useState<'jahr' | 'monat'>('jahr')
+  const [diagrammMonatKM, setDiagrammMonatKM]     = useState<number>(new Date().getMonth() + 1)
+  const [hoveredBarKM, setHoveredBarKM]           = useState<number | null>(null)
+
   const startTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const zielTimer  = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -611,6 +616,27 @@ export default function KMBuch() {
   const totalKm     = gefiltert.reduce((s, f) => s + Number(f.km_gefahren), 0)
   const totalBetrag = totalKm * kmSatz
 
+  // ── Monatliche KM-Aggregate für Diagramm ───────────────────────────────────
+  const MONATSNAMEN_KM      = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
+  const MONATSNAMEN_LANG_KM = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
+  const monatsDatenKM = Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1
+    const mF = fahrten.filter(f => new Date(f.datum).getMonth() + 1 === m)
+    const km = mF.reduce((s, f) => s + Number(f.km_gefahren), 0)
+    const inGuv = mF.filter(f => f.in_guv).length
+    return {
+      monat: m,
+      label: MONATSNAMEN_KM[i],
+      labelLang: MONATSNAMEN_LANG_KM[i],
+      km,
+      betrag: km * kmSatz,
+      anzahl: mF.length,
+      inGuv,
+      hatDaten: mF.length > 0,
+    }
+  })
+  const maxKmJahr = Math.max(...monatsDatenKM.map(m => m.km), 1)
+
   // ── CSV Export ─────────────────────────────────────────────────────────────
   const exportCSV = () => {
     const headers = ['Datum','Von','Nach','KM-Stand Anfang','KM-Stand Ende','km gefahren','Zweck','Notiz','Rechnung / Angebot','Google Maps Route','km-Satz €','Betrag €']
@@ -764,6 +790,274 @@ export default function KMBuch() {
           </div>
         ))}
       </div>
+
+      {/* ── KM-Diagramm ─────────────────────────────────────────────────────── */}
+      {fahrten.length > 0 && (() => {
+        const CHART_H = 180
+        const aktMonat = new Date().getMonth() + 1
+        const fmtKmChart = (km: number) =>
+          km >= 1000 ? `${(km / 1000).toFixed(1)}t` : `${Math.round(km)}`
+
+        return (
+          <div style={{ ...card, marginBottom: 20 }}>
+
+            {/* Header + Toggle */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#1a2a3a' }}>
+                  🚗 Kilometer-Statistik – {filterJahr}
+                </div>
+                <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
+                  {diagrammAnsichtKM === 'jahr'
+                    ? '12-Monats-Balkendiagramm · km gefahren · Hover für Details'
+                    : `Monatsdetail: ${MONATSNAMEN_LANG_KM[diagrammMonatKM - 1]} ${filterJahr}`}
+                </div>
+              </div>
+              {/* Toggle Jahr / Monat */}
+              <div style={{ display: 'flex', background: '#f4f1eb', borderRadius: 10, padding: 3, gap: 2 }}>
+                {[{ k: 'jahr' as const, l: '📅 Jahresansicht' }, { k: 'monat' as const, l: '🔍 Monatsdetail' }].map(t => (
+                  <button key={t.k} onClick={() => setDiagrammAnsichtKM(t.k)} style={{
+                    padding: '7px 13px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    fontSize: 12, fontWeight: 700,
+                    background: diagrammAnsichtKM === t.k ? 'white' : 'transparent',
+                    color: diagrammAnsichtKM === t.k ? '#1a2a3a' : '#aaa',
+                    boxShadow: diagrammAnsichtKM === t.k ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.2s',
+                  }}>{t.l}</button>
+                ))}
+              </div>
+            </div>
+
+            {diagrammAnsichtKM === 'jahr' ? (
+              /* ── JAHRES-BALKENDIAGRAMM ─────────────────────────────────── */
+              <>
+                <div style={{ display: 'flex', gap: 0, alignItems: 'flex-end' }}>
+                  {/* Y-Achse */}
+                  <div style={{ display: 'flex', flexDirection: 'column-reverse', justifyContent: 'space-between', height: CHART_H + 22, paddingBottom: 22, marginRight: 8, flexShrink: 0 }}>
+                    {[0,1,2,3,4].map(i => (
+                      <div key={i} style={{ fontSize: 9, color: '#ccc', textAlign: 'right', minWidth: 38, lineHeight: 1 }}>
+                        {i === 0 ? '0 km' : `${fmtKmChart(maxKmJahr * i / 4)} km`}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Chart-Area */}
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    {/* Gitterlinien */}
+                    {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
+                      <div key={i} style={{
+                        position: 'absolute', left: 0, right: 0,
+                        bottom: 22 + Math.round(p * CHART_H),
+                        height: 1, background: i === 0 ? '#e5e0d8' : '#f4f1eb', zIndex: 0,
+                      }} />
+                    ))}
+
+                    {/* Balken */}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', height: CHART_H + 22, paddingBottom: 22, gap: isMobile ? 2 : 4 }}>
+                      {monatsDatenKM.map((m, i) => {
+                        const bH = Math.round((m.km / maxKmJahr) * CHART_H)
+                        const istAktMonat = m.monat === aktMonat && filterJahr === new Date().getFullYear()
+                        const isHov = hoveredBarKM === i
+                        return (
+                          <div key={i}
+                            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', position: 'relative', zIndex: 1 }}
+                            onMouseEnter={() => setHoveredBarKM(i)}
+                            onMouseLeave={() => setHoveredBarKM(null)}>
+
+                            {/* Tooltip */}
+                            {isHov && (
+                              <div style={{
+                                position: 'absolute', bottom: CHART_H + 28, left: '50%', transform: 'translateX(-50%)',
+                                background: '#1a2a3a', color: 'white', borderRadius: 10, padding: '10px 14px',
+                                fontSize: 11, fontWeight: 600, zIndex: 20, whiteSpace: 'nowrap',
+                                boxShadow: '0 6px 20px rgba(0,0,0,0.25)', pointerEvents: 'none',
+                              }}>
+                                <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>{m.labelLang} {filterJahr}</div>
+                                <div style={{ color: `${BLAU}dd`, marginBottom: 3 }}>🚗 km: {Number(m.km).toFixed(1)} km</div>
+                                <div style={{ color: GOLD, marginBottom: 3 }}>💶 KM-Geld: € {m.betrag.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div style={{ color: '#aaa', marginBottom: 3 }}>📋 Fahrten: {m.anzahl}</div>
+                                {m.anzahl > 0 && (
+                                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', marginTop: 6, paddingTop: 6, color: m.inGuv === m.anzahl ? GRUEN : '#ffbb55', fontWeight: 700 }}>
+                                    {m.inGuv === m.anzahl ? '✅' : '⏳'} G&V: {m.inGuv}/{m.anzahl}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Balken */}
+                            <div style={{
+                              width: '75%',
+                              height: bH || (m.km > 0 ? 2 : 0),
+                              background: isHov
+                                ? `linear-gradient(180deg, ${BLAU}, #818cf8)`
+                                : istAktMonat
+                                  ? `linear-gradient(180deg, ${BLAU}cc, #818cf8aa)`
+                                  : `${BLAU}99`,
+                              borderRadius: '4px 4px 0 0',
+                              transition: 'background 0.15s',
+                              boxShadow: isHov ? `0 0 0 1px ${BLAU}` : 'none',
+                            }} />
+
+                            {/* X-Label */}
+                            <div style={{
+                              fontSize: isMobile ? 8 : 10, marginTop: 5,
+                              color: istAktMonat ? BLAU : m.hatDaten ? '#666' : '#ccc',
+                              fontWeight: istAktMonat ? 800 : 600,
+                            }}>{m.label}</div>
+                            {istAktMonat && <div style={{ width: 4, height: 4, borderRadius: '50%', background: BLAU, marginTop: 1 }} />}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legende */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: 3, background: BLAU }} />
+                      <span style={{ color: '#555', fontWeight: 600 }}>km gefahren</span>
+                    </div>
+                    {filterJahr === new Date().getFullYear() && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: BLAU }} />
+                        <span style={{ color: '#aaa' }}>aktueller Monat</span>
+                      </div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 11, color: '#ccc' }}>← Hover für Details</span>
+                </div>
+
+                {/* G&V-Status Mini-Chips je Monat */}
+                {monatsDatenKM.some(m => m.hatDaten) && (
+                  <div style={{ marginTop: 14, padding: '12px 14px', background: '#faf8f5', borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                      G&V-Status pro Monat
+                    </div>
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                      {monatsDatenKM.filter(m => m.hatDaten).map((m, i) => {
+                        const allInGuv = m.inGuv === m.anzahl
+                        return (
+                          <div key={i} style={{
+                            padding: '4px 9px', borderRadius: 7, fontSize: 10, fontWeight: 700,
+                            background: allInGuv ? '#d1fae5' : '#fef3c7',
+                            color: allInGuv ? '#065f46' : '#92400e',
+                          }}>
+                            {m.label} {Number(m.km).toFixed(0)} km {allInGuv ? '✓' : `${m.inGuv}/${m.anzahl}`}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+
+            ) : (
+              /* ── MONATSDETAIL ──────────────────────────────────────────── */
+              <>
+                {/* Monat-Selector */}
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 18 }}>
+                  {monatsDatenKM.map((m, i) => (
+                    <button key={i} onClick={() => setDiagrammMonatKM(m.monat)} style={{
+                      padding: '6px 11px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      fontSize: 11, fontWeight: 700,
+                      background: diagrammMonatKM === m.monat ? '#1a2a3a' : m.hatDaten ? '#f4f1eb' : '#fafafa',
+                      color:      diagrammMonatKM === m.monat ? 'white'    : m.hatDaten ? '#555'    : '#ccc',
+                      boxShadow:  diagrammMonatKM === m.monat ? '0 3px 10px rgba(0,0,0,0.15)' : 'none',
+                      position: 'relative',
+                    }}>
+                      {m.label}
+                      {m.hatDaten && <span style={{ position: 'absolute', top: 3, right: 3, width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'block' }} />}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Monats-Inhalt */}
+                {(() => {
+                  const mDat = monatsDatenKM[diagrammMonatKM - 1]
+                  const monatFahrten = fahrten.filter(f => new Date(f.datum).getMonth() + 1 === diagrammMonatKM)
+
+                  if (monatFahrten.length === 0) return (
+                    <div style={{ textAlign: 'center', padding: '30px 16px', color: '#ccc' }}>
+                      <div style={{ fontSize: 40, marginBottom: 8 }}>🚗</div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>Keine Fahrten für {mDat.labelLang}</div>
+                      <div style={{ fontSize: 11, marginTop: 4 }}>Monate mit Daten sind mit ● markiert</div>
+                    </div>
+                  )
+
+                  // Zweck-Aggregation
+                  const zweckMap: Record<string, { km: number; anzahl: number; inGuv: number }> = {}
+                  monatFahrten.forEach(f => {
+                    const z = f.zweck || 'Sonstiges'
+                    if (!zweckMap[z]) zweckMap[z] = { km: 0, anzahl: 0, inGuv: 0 }
+                    zweckMap[z].km     += Number(f.km_gefahren)
+                    zweckMap[z].anzahl += 1
+                    if (f.in_guv) zweckMap[z].inGuv += 1
+                  })
+                  const maxZweckKm = Math.max(...Object.values(zweckMap).map(v => v.km), 1)
+                  const inGuvCount = monatFahrten.filter(f => f.in_guv).length
+
+                  return (
+                    <>
+                      {/* 3 Kennzahlen-Karten */}
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+                        <div style={{ background: `${BLAU}10`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${BLAU}22` }}>
+                          <div style={{ fontSize: 10, color: BLAU, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>🚗 km gesamt</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: BLAU }}>{Number(mDat.km).toFixed(1)} km</div>
+                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>{mDat.anzahl} Fahrten</div>
+                        </div>
+                        <div style={{ background: `${GOLD}15`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${GOLD}33` }}>
+                          <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>💶 KM-Geld</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#b8922a' }}>€ {mDat.betrag.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>à € {kmSatz.toFixed(4)}/km</div>
+                        </div>
+                        <div style={{
+                          background: inGuvCount === mDat.anzahl ? '#d1fae520' : '#fef3c720',
+                          borderRadius: 12, padding: '12px 16px',
+                          border: `1px solid ${inGuvCount === mDat.anzahl ? GRUEN : GOLD}33`,
+                          gridColumn: isMobile ? '1 / -1' : 'auto',
+                        }}>
+                          <div style={{ fontSize: 10, color: inGuvCount === mDat.anzahl ? GRUEN : GOLD, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
+                            {inGuvCount === mDat.anzahl ? '✅ G&V komplett' : '⏳ G&V offen'}
+                          </div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: inGuvCount === mDat.anzahl ? '#065f46' : '#92400e' }}>
+                            {inGuvCount}/{mDat.anzahl}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Fahrten in G&V</div>
+                        </div>
+                      </div>
+
+                      {/* Horizontale Balken nach Zweck */}
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
+                        Aufschlüsselung nach Fahrtgrund (Zweck)
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {Object.entries(zweckMap)
+                          .sort((a, b) => b[1].km - a[1].km)
+                          .map(([zweck, v]) => (
+                          <div key={zweck}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a', flex: 1, marginRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{zweck}</span>
+                              <span style={{ fontSize: 12, display: 'flex', gap: 10, flexShrink: 0 }}>
+                                <span style={{ color: BLAU, fontWeight: 700 }}>{Number(v.km).toFixed(1)} km</span>
+                                <span style={{ color: '#aaa' }}>{v.anzahl}×</span>
+                              </span>
+                            </div>
+                            <div style={{ height: 9, background: `${BLAU}12`, borderRadius: 5, overflow: 'hidden', border: `1px solid ${BLAU}22` }}>
+                              <div style={{ height: '100%', width: `${(v.km / maxZweckKm) * 100}%`, background: `linear-gradient(90deg, ${BLAU}, #818cf8)`, borderRadius: 5, transition: 'width 0.6s' }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )
+                })()}
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Action Bar */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -1074,7 +1368,7 @@ export default function KMBuch() {
                       onClick={() => zeigeBeweis(detailFahrt)}
                       disabled={beweisLaden}
                       style={{ background: GRUEN, color: 'white', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: beweisLaden ? 0.6 : 1 }}>
-                      {beweisLaden ? '⏳' : '👁 Anzeigen'}
+                      {beweisLaden ? '⏳' : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:4}}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Anzeigen</>}
                     </button>
                   </div>
                 ) : (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
 interface Position {
@@ -16,6 +16,8 @@ interface Kunde {
   nachname: string
   firma?: string
 }
+
+const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
 
 export default function Angebote() {
   const [kunden, setKunden] = useState<Kunde[]>([])
@@ -43,9 +45,20 @@ export default function Angebote() {
   const [vorlagen, setVorlagen] = useState<any[]>([])
   const [autocomplete, setAutocomplete] = useState<{idx: number; items: any[]} | null>(null)
   const [vorlagenPickerOffen, setVorlagenPickerOffen] = useState(false)
+  const [kiTextLaden, setKiTextLaden] = useState(false)
+  const [kiVorschlag, setKiVorschlag]       = useState<Record<number, string>>({})
+  const [kiVerbLaden, setKiVerbLaden]       = useState<Record<number, boolean>>({})
+  const [kiVorlageLaden, setKiVorlageLaden] = useState<Record<number, boolean>>({})
+  const [kiHinweis, setKiHinweis]           = useState<Record<number, string>>({})
   const [abschlusstext, setAbschlusstext] = useState('')
   const [abschlusstextVorlagen, setAbschlusstextVorlagen] = useState<any[]>([])
   const [atPickerOffen, setAtPickerOffen] = useState(false)
+  const [kiAbschlussVorschlag, setKiAbschlussVorschlag] = useState('')
+  const [kiAbschlussHinweis,   setKiAbschlussHinweis]   = useState('')
+  const [kiAbschlussVerbLaden, setKiAbschlussVerbLaden] = useState(false)
+  const [kiAbschlussVorlageLaden, setKiAbschlussVorlageLaden] = useState(false)
+  const [vorlagenNameOffen, setVorlagenNameOffen] = useState(false)
+  const [vorlagenNameText, setVorlagenNameText]   = useState('')
 
   useEffect(() => {
     if (formOffen) {
@@ -135,6 +148,93 @@ export default function Angebote() {
     setPositionen([...positionen, { typ: 'Normal', beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }])
     setFormKey(k => k + 1)
     setVorlagenPickerOffen(false)
+  }
+
+  const kiTextGenerieren = async () => {
+    setKiTextLaden(true)
+    try {
+      const res = await api.post('/einstellungen/ki-text', {
+        projektName,
+        firmaName: '',
+        anzahl: 3
+      })
+      if (res.data.positionen?.length > 0) {
+        const nichtLeer = positionen.filter((p: Position) => p.beschreibung.trim())
+        setPositionen([...nichtLeer, ...res.data.positionen.map((p: any) => ({
+          typ: 'Normal', beschreibung: p.beschreibung,
+          menge: p.menge || 1, einheit: p.einheit || 'PA', einzelpreis: p.einzelpreis || 0
+        }))])
+        setFormKey(k => k + 1)
+      }
+    } catch { alert('KI-Positionen konnten nicht generiert werden') }
+    setKiTextLaden(false)
+  }
+
+  const kiTextVerbessern = async (idx: number) => {
+    const text = stripHtml(positionen[idx].beschreibung)
+    if (!text) return
+    setKiVerbLaden(p => ({ ...p, [idx]: true }))
+    try {
+      const hinweis = kiHinweis[idx]?.trim() || ''
+      const res = await api.post('/einstellungen/ki-verbessern', { text, hinweis })
+      setKiVorschlag(p => ({ ...p, [idx]: res.data.text }))
+      setKiHinweis(p => { const n = { ...p }; delete n[idx]; return n })
+    } catch { alert('KI-Verbesserung fehlgeschlagen') }
+    setKiVerbLaden(p => ({ ...p, [idx]: false }))
+  }
+
+  const kiVorschlagUebernehmen = (idx: number) => {
+    const text = kiVorschlag[idx]
+    if (!text) return
+    positionAendern(idx, 'beschreibung', text)
+    setKiVorschlag(p => { const n = { ...p }; delete n[idx]; return n })
+    setFormKey(k => k + 1) // RichEditor auf plain text zurücksetzen
+  }
+
+  const kiVorschlagAlsVorlage = async (idx: number) => {
+    const text = kiVorschlag[idx] || positionen[idx].beschreibung
+    if (!text.trim()) return
+    setKiVorlageLaden(p => ({ ...p, [idx]: true }))
+    try {
+      await api.post('/vorlagen', {
+        name: text.substring(0, 60),
+        beschreibung: text,
+        menge: positionen[idx].menge || 1,
+        einheit: positionen[idx].einheit || 'PA',
+        einzelpreis: positionen[idx].einzelpreis || 0,
+      })
+      // Vorlagenliste aktualisieren
+      const res = await api.get('/vorlagen')
+      setVorlagen(res.data)
+      alert('✅ Als Vorlage gespeichert!')
+    } catch { alert('Vorlage konnte nicht gespeichert werden') }
+    setKiVorlageLaden(p => ({ ...p, [idx]: false }))
+  }
+
+  const kiAbschlusstextVerbessern = async () => {
+    const text = abschlusstext.trim()
+    if (!text) return
+    setKiAbschlussVerbLaden(true)
+    try {
+      const res = await api.post('/einstellungen/ki-verbessern', { text, hinweis: kiAbschlussHinweis.trim() })
+      setKiAbschlussVorschlag(res.data.text)
+      setKiAbschlussHinweis('')
+    } catch { alert('KI-Verbesserung fehlgeschlagen') }
+    setKiAbschlussVerbLaden(false)
+  }
+
+  const abschlusstextAlsVorlage = async (text: string, name: string) => {
+    if (!text.trim() || !name.trim()) return
+    setKiAbschlussVorlageLaden(true)
+    try {
+      await api.post('/abschlusstexte', { name: name.trim(), text: text.trim() })
+      const res = await api.get('/abschlusstexte')
+      setAbschlusstextVorlagen(res.data)
+      setVorlagenNameOffen(false)
+      setVorlagenNameText('')
+      alert('✅ Als Abschlusstext-Vorlage gespeichert!')
+    } catch { alert('Fehler beim Speichern der Vorlage') }
+    setKiAbschlussVorlageLaden(false)
   }
 
   const speichern = async () => {
@@ -492,22 +592,24 @@ export default function Angebote() {
                           style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
                       <div style={{position:'relative'}}>
-                        <textarea style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block'}}
-                          placeholder="Beschreibung..."
-                          rows={1}
+                        <RichEditor
                           value={pos.beschreibung}
-                          onChange={e => {
-                            positionAendern(idx, 'beschreibung', e.target.value)
-                            e.target.style.height = 'auto'
-                            e.target.style.height = e.target.scrollHeight + 'px'
-                            const q = e.target.value.toLowerCase()
+                          formKey={formKey}
+                          placeholder="Beschreibung..."
+                          onChange={html => {
+                            positionAendern(idx, 'beschreibung', html)
+                            const q = stripHtml(html).toLowerCase()
                             if (q.length >= 1) {
                               const matches = vorlagen.filter(v => v.name.toLowerCase().includes(q) || (v.beschreibung||'').toLowerCase().includes(q))
                               setAutocomplete(matches.length > 0 ? {idx, items: matches.slice(0,6)} : null)
                             } else { setAutocomplete(null) }
                           }}
-                          onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
-                          onBlur={() => setTimeout(() => setAutocomplete(null), 200)} />
+                          onBlur={() => setTimeout(() => setAutocomplete(null), 200)}
+                          onKiClick={() => kiTextVerbessern(idx)}
+                          kiLaden={!!kiVerbLaden[idx]}
+                          onVorlageClick={() => kiVorschlagAlsVorlage(idx)}
+                          vorlageLaden={!!kiVorlageLaden[idx]}
+                        />
                         {autocomplete && autocomplete.idx === idx && (
                           <div style={{position:'absolute', top:'100%', left:0, right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:300, overflow:'hidden', marginTop:2}}>
                             {autocomplete.items.map((v, i) => (
@@ -546,7 +648,44 @@ export default function Angebote() {
                         onBlur={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value.replace(',', '.')) || 0)} />
                       <button onClick={() => positionLoeschen(idx)}
                         style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
-                    </div>
+                    </div>{/* Ende Grid */}
+
+                    {/* ── KI-Vorschlagsbox – volle Breite UNTER der Zeile ── */}
+                    {kiVorschlag[idx] && (
+                      <div style={{marginTop:6, background:'white', border:'1.5px solid #a78bfa', borderRadius:10, overflow:'hidden', boxShadow:'0 4px 16px rgba(124,58,237,0.12)'}}>
+                        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(135deg,#7c3aed,#6366f1)', padding:'6px 12px'}}>
+                          <div style={{display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:700, color:'white', textTransform:'uppercase', letterSpacing:0.8}}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.4L19 9l-5.2 2.6L12 17l-1.8-5.4L5 9l5.2-1.6L12 2z" fill="rgba(255,255,255,0.95)"/></svg>
+                            KI-Vorschlag
+                          </div>
+                          <button onMouseDown={e => { e.preventDefault(); setKiVorschlag(p => { const n={...p}; delete n[idx]; return n }); setKiHinweis(p => { const n={...p}; delete n[idx]; return n }) }}
+                            style={{background:'rgba(255,255,255,0.2)', border:'none', borderRadius:4, width:20, height:20, cursor:'pointer', color:'white', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center'}}>✕</button>
+                        </div>
+                        <div style={{padding:'10px 12px', fontSize:13, color:'#1a2a3a', lineHeight:1.7, borderBottom:'1px solid #ede9fe', fontWeight:400, whiteSpace:'pre-wrap'}}>
+                          {kiVorschlag[idx]}
+                        </div>
+                        <div style={{display:'flex', gap:6, padding:'8px 10px', background:'#faf9ff', alignItems:'center', flexWrap:'wrap'}}>
+                          <input type="text" value={kiHinweis[idx] || ''}
+                            onChange={e => setKiHinweis(p => ({ ...p, [idx]: e.target.value }))}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); kiTextVerbessern(idx) } }}
+                            placeholder='"kürzer", "formeller", "mit Garantie"...'
+                            style={{flex:1, border:'1px solid #e5e0d8', borderRadius:6, padding:'5px 9px', fontSize:11, fontFamily:'DM Sans, sans-serif', outline:'none', background:'white', minWidth:120}} />
+                          <button onMouseDown={e => { e.preventDefault(); kiTextVerbessern(idx) }} disabled={!!kiVerbLaden[idx]}
+                            style={{background: kiVerbLaden[idx] ? '#e5e0d8' : '#6366f1', color:'white', border:'none', borderRadius:6, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
+                            {kiVerbLaden[idx] ? '⏳' : '🔄 Neu'}
+                          </button>
+                          <button onMouseDown={e => { e.preventDefault(); kiVorschlagAlsVorlage(idx) }} disabled={!!kiVorlageLaden[idx]}
+                            style={{background: kiVorlageLaden[idx] ? '#e5e0d8' : '#1a2a3a', color:'white', border:'none', borderRadius:6, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
+                            {kiVorlageLaden[idx] ? '⏳' : '📁 Vorlage'}
+                          </button>
+                          <button onMouseDown={e => { e.preventDefault(); kiVorschlagUebernehmen(idx) }}
+                            style={{background:'linear-gradient(135deg,#10b981,#059669)', color:'white', border:'none', borderRadius:6, padding:'5px 14px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', boxShadow:'0 2px 6px rgba(16,185,129,0.35)'}}>
+                            ✓ Übernehmen
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Eventualposition Checkbox */}
                     <label style={{display:'flex', alignItems:'center', gap:6, marginTop:5, marginLeft:30, cursor:'pointer', userSelect:'none'}}>
                       <input type="checkbox"
@@ -599,6 +738,10 @@ export default function Angebote() {
                   <button onClick={() => { setPositionen([...positionen, { typ: 'Text', beschreibung: '', menge: 0, einheit: '', einzelpreis: 0 }]); setFormKey(k => k + 1) }}
                     style={{padding:'9px 14px', border:'2px dashed #c8a96e', borderRadius:8, background:'#fdf8f0', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>
                     + Textzeile
+                  </button>
+                  <button onClick={kiTextGenerieren} disabled={kiTextLaden}
+                    style={{padding:'9px 14px', border:'2px dashed #6366f1', borderRadius:8, background: kiTextLaden ? '#f0f0ff' : 'white', color:'#6366f1', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:700, cursor: kiTextLaden ? 'not-allowed' : 'pointer', whiteSpace:'nowrap'}}>
+                    {kiTextLaden ? '⏳ KI denkt...' : '✨ KI-Positionen'}
                   </button>
                 </div>
               </div>
@@ -714,8 +857,94 @@ export default function Angebote() {
                   style={{...inputStyle, resize:'vertical', minHeight:90, lineHeight:'1.7', fontFamily:'DM Sans, sans-serif'}}
                   placeholder="Abschlusstext eingeben oder aus Vorlage wählen..."
                   value={abschlusstext}
-                  onChange={e => setAbschlusstext(e.target.value)} />
-                {abschlusstext && (
+                  onChange={e => { setAbschlusstext(e.target.value); setKiAbschlussVorschlag('') }} />
+
+                {/* ── KI + Vorlage Buttons ── */}
+                {abschlusstext.trim().length >= 5 && !kiAbschlussVorschlag && (
+                  <div style={{display:'flex', gap:6, justifyContent:'flex-end', marginTop:4}}>
+                    <button
+                      onMouseDown={e => { e.preventDefault(); setVorlagenNameText(abschlusstext.substring(0,50)); setVorlagenNameOffen(true) }}
+                      disabled={kiAbschlussVorlageLaden}
+                      title="Als Abschlusstext-Vorlage speichern"
+                      style={{background:'#fef9e7', border:'1px solid #fde68a', borderRadius:5, padding:'2px 10px', fontSize:10, fontWeight:700, color:'#92400e', cursor:'pointer', lineHeight:'18px'}}>
+                      {kiAbschlussVorlageLaden ? '⏳' : '📁 Als Vorlage'}
+                    </button>
+                    <button
+                      onMouseDown={e => { e.preventDefault(); kiAbschlusstextVerbessern() }}
+                      disabled={kiAbschlussVerbLaden}
+                      title="Text bautechnisch verbessern"
+                      style={{background: kiAbschlussVerbLaden ? '#f0f0ff' : '#ede9fe', border:'1px solid #c4b5fd', borderRadius:5, padding:'2px 10px', fontSize:10, fontWeight:700, color:'#6366f1', cursor: kiAbschlussVerbLaden ? 'not-allowed' : 'pointer', lineHeight:'18px'}}>
+                      {kiAbschlussVerbLaden ? '⏳ KI...' : '✨ KI verbessern'}
+                    </button>
+                  </div>
+                )}
+
+                {/* ── KI-Vorschlagsbox Abschlusstext ── */}
+                {kiAbschlussVorschlag && (
+                  <div style={{marginTop:5, background:'white', border:'1.5px solid #a78bfa', borderRadius:10, overflow:'hidden', boxShadow:'0 4px 16px rgba(124,58,237,0.12)'}}>
+                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(135deg,#7c3aed,#6366f1)', padding:'5px 10px'}}>
+                      <div style={{display:'flex', alignItems:'center', gap:5, fontSize:10, fontWeight:700, color:'white', textTransform:'uppercase', letterSpacing:0.8}}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.4L19 9l-5.2 2.6L12 17l-1.8-5.4L5 9l5.2-1.6L12 2z" fill="rgba(255,255,255,0.95)"/></svg>
+                        KI-Vorschlag
+                      </div>
+                      <button onMouseDown={e => { e.preventDefault(); setKiAbschlussVorschlag(''); setKiAbschlussHinweis('') }}
+                        style={{background:'rgba(255,255,255,0.2)', border:'none', borderRadius:4, width:18, height:18, cursor:'pointer', color:'white', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center'}}>✕</button>
+                    </div>
+                    <div style={{padding:'7px 10px', fontSize:12, color:'#1a2a3a', lineHeight:1.65, maxHeight:90, overflowY:'auto', borderBottom:'1px solid #ede9fe', fontWeight:400, whiteSpace:'pre-wrap'}}>
+                      {kiAbschlussVorschlag}
+                    </div>
+                    <div style={{display:'flex', gap:5, padding:'5px 7px', background:'#faf9ff', alignItems:'center'}}>
+                      <input type="text" value={kiAbschlussHinweis}
+                        onChange={e => setKiAbschlussHinweis(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); kiAbschlusstextVerbessern() } }}
+                        placeholder='"kürzer", "formeller", "mit Garantie"...'
+                        style={{flex:1, border:'1px solid #e5e0d8', borderRadius:5, padding:'3px 7px', fontSize:10, fontFamily:'DM Sans, sans-serif', outline:'none', background:'white', minWidth:0}} />
+                      <button onMouseDown={e => { e.preventDefault(); kiAbschlusstextVerbessern() }} disabled={kiAbschlussVerbLaden}
+                        style={{background: kiAbschlussVerbLaden ? '#e5e0d8' : '#6366f1', color:'white', border:'none', borderRadius:5, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
+                        {kiAbschlussVerbLaden ? '⏳' : '🔄'}
+                      </button>
+                      <button onMouseDown={e => { e.preventDefault(); setVorlagenNameText(kiAbschlussVorschlag.substring(0,50)); setVorlagenNameOffen(true) }} disabled={kiAbschlussVorlageLaden}
+                        style={{background: kiAbschlussVorlageLaden ? '#e5e0d8' : '#1a2a3a', color:'white', border:'none', borderRadius:5, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
+                        {kiAbschlussVorlageLaden ? '⏳' : '📁'}
+                      </button>
+                      <button onMouseDown={e => { e.preventDefault(); setAbschlusstext(kiAbschlussVorschlag); setKiAbschlussVorschlag('') }}
+                        style={{background:'linear-gradient(135deg,#10b981,#059669)', color:'white', border:'none', borderRadius:5, padding:'3px 10px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', boxShadow:'0 2px 5px rgba(16,185,129,0.35)'}}>
+                        ✓ Übernehmen
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Vorlagen-Name Dialog ── */}
+                {vorlagenNameOffen && (
+                  <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:999, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <div style={{background:'white', borderRadius:12, padding:24, width:360, boxShadow:'0 16px 48px rgba(0,0,0,0.2)'}}>
+                      <div style={{fontFamily:'Syne, sans-serif', fontSize:15, fontWeight:700, marginBottom:14}}>📁 Vorlage benennen</div>
+                      <input
+                        autoFocus
+                        type="text"
+                        value={vorlagenNameText}
+                        onChange={e => setVorlagenNameText(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') abschlusstextAlsVorlage(kiAbschlussVorschlag || abschlusstext, vorlagenNameText) }}
+                        placeholder="Name der Vorlage..."
+                        style={{...inputStyle, marginBottom:14}}
+                      />
+                      <div style={{display:'flex', gap:8}}>
+                        <button onClick={() => { setVorlagenNameOffen(false); setVorlagenNameText('') }}
+                          style={{flex:1, padding:10, border:'1px solid #e5e0d8', borderRadius:7, background:'white', cursor:'pointer', fontSize:13}}>
+                          Abbrechen
+                        </button>
+                        <button onClick={() => abschlusstextAlsVorlage(kiAbschlussVorschlag || abschlusstext, vorlagenNameText)}
+                          disabled={!vorlagenNameText.trim() || kiAbschlussVorlageLaden}
+                          style={{flex:2, padding:10, border:'none', borderRadius:7, background: !vorlagenNameText.trim() ? '#e5e0d8' : '#1a2a3a', color: !vorlagenNameText.trim() ? '#aaa' : 'white', cursor:'pointer', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700}}>
+                          {kiAbschlussVorlageLaden ? '⏳ Speichern...' : '💾 Speichern'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {abschlusstext && !kiAbschlussVorschlag && (
                   <button onClick={() => setAbschlusstext('')}
                     style={{marginTop:4, background:'none', border:'none', color:'#aaa', fontSize:11, cursor:'pointer', padding:'2px 0'}}>
                     ✕ Text entfernen
@@ -752,4 +981,182 @@ const inputStyle: React.CSSProperties = {
   width:'100%', padding:'9px 12px', border:'1px solid #e5e0d8',
   borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none',
   boxSizing: 'border-box'
+}
+
+// ── RichEditor – contentEditable mit Formatierungsleiste ─────────────────────
+function RichEditor({ value, onChange, onBlur, placeholder, formKey, onKiClick, kiLaden, onVorlageClick, vorlageLaden }: {
+  value: string
+  onChange: (html: string) => void
+  onBlur?: () => void
+  placeholder?: string
+  formKey?: number
+  onKiClick?: () => void
+  kiLaden?: boolean
+  onVorlageClick?: () => void
+  vorlageLaden?: boolean
+}) {
+  const ref      = useRef<HTMLDivElement>(null)
+  const internal = useRef(false)
+  const lastKey  = useRef<number | undefined>(formKey)
+  const [toolbar, setToolbar] = useState(false)
+  const hasActions = !!(onKiClick || onVorlageClick)
+  const textLen = stripHtml(value).length
+
+  useEffect(() => {
+    if (!ref.current) return
+    const reset = formKey !== lastKey.current
+    lastKey.current = formKey
+    if (reset || !internal.current) ref.current.innerHTML = value || ''
+    internal.current = false
+  }, [value, formKey])
+
+  const fmt = (cmd: string, val?: string) => {
+    document.execCommand('styleWithCSS', false, 'true')
+    document.execCommand(cmd, false, val)
+    ref.current?.focus()
+    internal.current = true
+    onChange(ref.current?.innerHTML || '')
+  }
+
+  const SIZES = [
+    { label: 'S', val: '1', title: 'Klein' },
+    { label: 'M', val: '3', title: 'Normal' },
+    { label: 'L', val: '5', title: 'Groß' },
+  ]
+
+  return (
+    <div style={{ border: '1px solid #e5e0d8', borderRadius: 7, overflow: 'hidden', background: 'white', position: 'relative' }}
+      onFocus={() => setToolbar(true)}
+      onBlur={() => { setToolbar(false); onBlur?.() }}>
+
+      {/* Formatierungs-Toolbar */}
+      <div style={{
+        display: 'flex', gap: 2, padding: '3px 6px',
+        background: '#f8f6f2', borderBottom: toolbar ? '1px solid #e5e0d8' : '1px solid transparent',
+        transition: 'border-color 0.15s'
+      }}>
+        {[
+          { label: <b>B</b>, cmd: 'bold',   title: 'Fett (Strg+B)' },
+          { label: <i>I</i>, cmd: 'italic', title: 'Kursiv (Strg+I)' },
+        ].map((b, i) => (
+          <button key={i} onMouseDown={e => { e.preventDefault(); fmt(b.cmd) }} title={b.title}
+            style={{ background: 'white', border: '1px solid #e5e0d8', borderRadius: 4, width: 24, height: 22, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>
+            {b.label}
+          </button>
+        ))}
+        <div style={{ width: 1, background: '#e5e0d8', margin: '2px 2px' }} />
+        {SIZES.map(s => (
+          <button key={s.val} onMouseDown={e => { e.preventDefault(); fmt('fontSize', s.val) }} title={s.title}
+            style={{ background: 'white', border: '1px solid #e5e0d8', borderRadius: 4, width: 24, height: 22, fontSize: s.val === '1' ? 9 : s.val === '3' ? 11 : 13, fontWeight: 600, cursor: 'pointer', color: '#333' }}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Editierbereich */}
+      <div
+        ref={ref}
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        onInput={() => { internal.current = true; onChange(ref.current?.innerHTML || '') }}
+        style={{
+          minHeight: 42,
+          padding: hasActions && textLen >= 5 ? '7px 10px 30px 10px' : '7px 10px',
+          fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+          fontWeight: 400, lineHeight: '20px', outline: 'none', wordBreak: 'break-word',
+          transition: 'padding 0.15s',
+        }}
+      />
+
+      {/* ── Moderne 3D Buttons – unten rechts im Feld ── */}
+      {hasActions && textLen >= 5 && (
+        <div style={{ position: 'absolute', bottom: 5, right: 6, display: 'flex', gap: 5, zIndex: 10 }}>
+
+          {onVorlageClick && (
+            <button
+              onMouseDown={e => { e.preventDefault(); onVorlageClick() }}
+              disabled={vorlageLaden}
+              title="Als Vorlage speichern"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                background: vorlageLaden
+                  ? 'linear-gradient(145deg,#d4a847,#b8841e)'
+                  : 'linear-gradient(145deg,#f5c842,#d97706)',
+                border: 'none',
+                borderRadius: 6,
+                padding: '3px 8px 3px 5px',
+                cursor: vorlageLaden ? 'not-allowed' : 'pointer',
+                boxShadow: '0 3px 6px rgba(217,119,6,0.40), inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.12)',
+                fontSize: 10, fontWeight: 700, color: 'white',
+                textShadow: '0 1px 1px rgba(0,0,0,0.25)',
+                letterSpacing: 0.3,
+              }}>
+              {vorlageLaden ? (
+                <span style={{ fontSize: 11 }}>⏳</span>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <defs>
+                    <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="rgba(255,255,255,0.9)" />
+                      <stop offset="100%" stopColor="rgba(255,255,255,0.55)" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" fill="url(#fg)" />
+                  <path d="M3 9h18" stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
+                </svg>
+              )}
+              Vorlage
+            </button>
+          )}
+
+          {onKiClick && (
+            <button
+              onMouseDown={e => { e.preventDefault(); onKiClick() }}
+              disabled={kiLaden}
+              title="KI verbessert den Text bautechnisch-kaufmännisch"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                background: kiLaden
+                  ? 'linear-gradient(145deg,#7c5bc4,#5b21b6)'
+                  : 'linear-gradient(145deg,#a78bfa,#7c3aed)',
+                border: 'none',
+                borderRadius: 6,
+                padding: '3px 8px 3px 5px',
+                cursor: kiLaden ? 'not-allowed' : 'pointer',
+                boxShadow: '0 3px 6px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.12)',
+                fontSize: 10, fontWeight: 700, color: 'white',
+                textShadow: '0 1px 1px rgba(0,0,0,0.25)',
+                letterSpacing: 0.3,
+              }}>
+              {kiLaden ? (
+                <span style={{ fontSize: 11 }}>⏳</span>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <defs>
+                    <linearGradient id="kg" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+                      <stop offset="100%" stopColor="rgba(255,255,255,0.60)" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M12 2l1.8 5.4L19 9l-5.2 2.6L12 17l-1.8-5.4L5 9l5.2-1.6L12 2z" fill="url(#kg)" />
+                  <path d="M19 15l.9 2.6L22 18l-2.1 1-1 2.5-.9-2.5L16 18l2.1-1L19 15z" fill="rgba(255,255,255,0.75)" />
+                  <path d="M5 3l.7 2L7 5.5l-1.3.7-.7 2-.7-2L3 5.5l1.3-.5L5 3z" fill="rgba(255,255,255,0.65)" />
+                </svg>
+              )}
+              KI
+            </button>
+          )}
+        </div>
+      )}
+
+      <style>{`
+        [data-placeholder]:empty::before {
+          content: attr(data-placeholder);
+          color: #bbb;
+          pointer-events: none;
+        }
+      `}</style>
+    </div>
+  )
 }

@@ -67,6 +67,7 @@ export default function Rechnungen() {
   const [vorlagen, setVorlagen] = useState<any[]>([])
   const [autocomplete, setAutocomplete] = useState<{idx: number; items: any[]} | null>(null)
   const [vorlagenPickerOffen, setVorlagenPickerOffen] = useState(false)
+  const [kiTextLaden, setKiTextLaden] = useState(false)
 
   useEffect(() => {
     if (formOffen) {
@@ -314,6 +315,26 @@ export default function Rechnungen() {
     setPositionen([...positionen, { typ: 'Normal', beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }])
     setFormKey(k => k + 1)
     setVorlagenPickerOffen(false)
+  }
+
+  const kiTextGenerieren = async () => {
+    setKiTextLaden(true)
+    try {
+      const res = await api.post('/einstellungen/ki-text', {
+        projektName,
+        firmaName: '',
+        anzahl: 3
+      })
+      if (res.data.positionen?.length > 0) {
+        const nichtLeer = positionen.filter((p: Position) => p.beschreibung.trim())
+        setPositionen([...nichtLeer, ...res.data.positionen.map((p: any) => ({
+          typ: 'Normal', beschreibung: p.beschreibung,
+          menge: p.menge || 1, einheit: p.einheit || 'PA', einzelpreis: p.einzelpreis || 0
+        }))])
+        setFormKey(k => k + 1)
+      }
+    } catch { alert('KI-Positionen konnten nicht generiert werden') }
+    setKiTextLaden(false)
   }
 
   const speichern = async () => {
@@ -749,6 +770,10 @@ export default function Rechnungen() {
                   <button onClick={() => { setPositionen([...positionen, { typ: 'Text', beschreibung: '', menge: 0, einheit: '', einzelpreis: 0 }]); setFormKey(k => k + 1) }}
                     style={{padding:'9px 14px', border:'2px dashed #c8a96e', borderRadius:8, background:'#fdf8f0', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>
                     + Textzeile
+                  </button>
+                  <button onClick={kiTextGenerieren} disabled={kiTextLaden}
+                    style={{padding:'9px 14px', border:'2px dashed #6366f1', borderRadius:8, background: kiTextLaden ? '#f0f0ff' : 'white', color:'#6366f1', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:700, cursor: kiTextLaden ? 'not-allowed' : 'pointer', whiteSpace:'nowrap'}}>
+                    {kiTextLaden ? '⏳ KI denkt...' : '✨ KI-Positionen'}
                   </button>
                 </div>
               </div>

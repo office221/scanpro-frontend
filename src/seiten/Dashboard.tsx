@@ -10,6 +10,12 @@ import Belegscanner from './Belegscanner'
 import GUV from './GUV'
 import KMBuch from './KMBuch'
 import KMGuvDashboard from './KMGuvDashboard'
+import Reisekosten from './Reisekosten'
+import ImmoObjekte from './ImmoObjekte'
+import ImmoMieter from './ImmoMieter'
+import ImmoVertraege from './ImmoVertraege'
+import ImmoBetriebskosten from './ImmoBetriebskosten'
+import ImmoObjektDetail from './ImmoObjektDetail'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
@@ -25,9 +31,16 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   Positionsvorlagen:<Icon d="M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01" />,
   'G&V Abrechnung': <Icon d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20" />,
   'KM-Buch':        <Icon d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5a2 2 0 0 1-2 2h-2 M7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0 M15 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0" />,
+  Reisekosten:      <Icon d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 2 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M12 22V12 M3.27 6.96L12 12.01l8.73-5.05 M12 2.1v9.91" />,
   BuchDashboard:     <Icon d="M18 20V10 M12 20V4 M6 20v-6 M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5" />,
   Belegscanner:     <Icon d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
   Einstellungen:    <Icon d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />,
+  // Immobilien
+  ImmoHub:          <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" />,
+  Objekte:          <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" />,
+  Mieter:           <Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
+  'Mietverträge':   <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" />,
+  Betriebskosten:   <Icon d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20" />,
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -51,7 +64,16 @@ const NAV_GRUPPEN = [
     { name: 'BuchDashboard', label: 'Dashboard', badge: null, rot: false, ki: false, children: [] },
     { name: 'G&V Abrechnung', badge: null, rot: false, ki: false, children: [] },
     { name: 'KM-Buch',        badge: null, rot: false, ki: false, children: [] },
+    { name: 'Reisekosten',    badge: null, rot: false, ki: false, children: [] },
     { name: 'Belegscanner',   badge: null, rot: false, ki: true,  children: [] },
+  ]},
+  { gruppe: 'Immobilien', items: [
+    { name: 'ImmoHub', label: 'Immobilien', badge: null, rot: false, ki: false, children: [
+      { name: 'Objekte' },
+      { name: 'Mieter' },
+      { name: 'Mietverträge' },
+      { name: 'Betriebskosten' },
+    ]},
   ]},
   { gruppe: 'System', items: [{ name: 'Einstellungen', badge: null, rot: false, ki: false, children: [] }] },
 ]
@@ -61,7 +83,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const benutzer = JSON.parse(localStorage.getItem('benutzer') || '{}')
   const [darkMode,       setDarkMode]       = useState(() => localStorage.getItem('belegfix_dark') !== 'false')
   const [aktivNav,       setAktivNav]       = useState('Dashboard')
-  const [navExpanded,    setNavExpanded]    = useState<string[]>(['Vorlagen'])
+  const [navExpanded,    setNavExpanded]    = useState<string[]>(['Vorlagen', 'ImmoHub'])
   const [activityFilter, setActivityFilter] = useState('Alle')
   const [isMobile,       setIsMobile]       = useState(window.innerWidth < 768)
   const [navOffen,       setNavOffen]       = useState(false)
@@ -71,6 +93,8 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [alleKundenDaten,     setAlleKundenDaten]     = useState<any[]>([])
   const [alleRechnungenDaten, setAlleRechnungenDaten] = useState<any[]>([])
   const [ueberfaelligeListe,  setUeberfaelligeListe]  = useState<any[]>([])
+  const [immoObjListe,    setImmoObjListe]    = useState<any[]>([])
+  const [navExpObjekte,  setNavExpObjekte]  = useState(true)
   const [sharedFile,  setSharedFile]  = useState<File | null>(null)
   const [sucheOffen,  setSucheOffen]  = useState(false)
   const [sucheText,   setSucheText]   = useState('')
@@ -203,7 +227,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     }).catch(err => console.error('Share cache error:', err))
   }, [])
 
-  useEffect(() => { ladeDaten() }, [])
+  useEffect(() => { ladeDaten(); ladeImmoObjekte() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const ladeDaten = async () => {
     try {
@@ -223,6 +247,13 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
       setAlleRechnungenDaten(alleRechnungen)
       setUeberfaelligeListe(ueberfaellig)
     } catch (e) { console.error(e) }
+  }
+
+  const ladeImmoObjekte = async () => {
+    try {
+      const res = await api.get('/immo/objekte')
+      setImmoObjListe(res.data)
+    } catch {}
   }
 
   // ── Computed ───────────────────────────────────────────────────────────
@@ -363,7 +394,42 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                     {hatKinder && istExpanded && (
                       <div style={{ margin: '2px 0 2px 14px' }}>
                         {item.children.map((child: any) => {
-                          const childAktiv = aktivNav === child.name
+                          const childAktiv = aktivNav === child.name || (child.name === 'Objekte' && aktivNav.startsWith('ImmoObj_'))
+                          if (child.name === 'Objekte') {
+                            return (
+                              <div key={child.name}>
+                                <div
+                                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 12, background: childAktiv ? GOLD_DIM : 'transparent', color: childAktiv ? GOLD : D ? 'rgba(255,255,255,0.35)' : '#94a3b8', borderLeft: `2px solid ${childAktiv ? GOLD : theme.navBorderChild}`, marginLeft: 4, transition: 'all 0.15s' }}
+                                  onClick={() => { setAktivNav('Objekte'); if (isMobile) setNavOffen(false) }}
+                                  onMouseEnter={e => { if (!childAktiv) (e.currentTarget as HTMLElement).style.background = theme.navHoverBg }}
+                                  onMouseLeave={e => { if (!childAktiv) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">{NAV_ICONS['Objekte']}</svg>
+                                  <span style={{ flex: 1, fontWeight: childAktiv ? 600 : 400 }}>Objekte</span>
+                                  {immoObjListe.length > 0 && (
+                                    <span onClick={e => { e.stopPropagation(); setNavExpObjekte(p => !p) }}
+                                      style={{ fontSize: 9, color: theme.navGroupLabel, display: 'inline-block', transition: 'transform 0.2s', transform: navExpObjekte ? 'rotate(90deg)' : 'none' }}>▶</span>
+                                  )}
+                                </div>
+                                {navExpObjekte && immoObjListe.length > 0 && (
+                                  <div style={{ margin: '1px 0 1px 14px' }}>
+                                    {immoObjListe.map((o: any) => {
+                                      const oAktiv = aktivNav === `ImmoObj_${o.id}`
+                                      return (
+                                        <div key={o.id}
+                                          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 7, cursor: 'pointer', fontSize: 11, background: oAktiv ? GOLD_DIM : 'transparent', color: oAktiv ? GOLD : D ? 'rgba(255,255,255,0.22)' : '#94a3b8', borderLeft: `2px solid ${oAktiv ? GOLD : theme.navBorderChild}`, marginLeft: 4, transition: 'all 0.15s' }}
+                                          onClick={() => { setAktivNav(`ImmoObj_${o.id}`); if (isMobile) setNavOffen(false) }}
+                                          onMouseEnter={e => { if (!oAktiv) (e.currentTarget as HTMLElement).style.background = theme.navHoverBg }}
+                                          onMouseLeave={e => { if (!oAktiv) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+                                          <span style={{ fontSize: 11, flexShrink: 0 }}>🏠</span>
+                                          <span style={{ fontWeight: oAktiv ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{o.name}</span>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          }
                           return (
                             <div key={child.name}
                               style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 12, background: childAktiv ? GOLD_DIM : 'transparent', color: childAktiv ? GOLD : D ? 'rgba(255,255,255,0.35)' : '#94a3b8', borderLeft: `2px solid ${childAktiv ? GOLD : theme.navBorderChild}`, marginLeft: 4, transition: 'all 0.15s' }}
@@ -415,7 +481,11 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
             </button>
           )}
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: theme.textStrong, letterSpacing: -0.3 }}>{aktivNav}</div>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: theme.textStrong, letterSpacing: -0.3 }}>
+              {aktivNav.startsWith('ImmoObj_')
+                ? (immoObjListe.find((o: any) => o.id === parseInt(aktivNav.replace('ImmoObj_', '')))?.name || 'Objekt')
+                : aktivNav}
+            </div>
             <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 1 }}>
               {aktivNav === 'Dashboard'   ? `${gruss}, ${benutzer.vorname || 'Chef'}!` :
                aktivNav === 'Rechnungen' ? `${stats.rechnungen} Rechnungen · ${stats.ueberfaellig} überfällig` :
@@ -736,7 +806,13 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           {aktivNav === 'BuchDashboard'       && <div style={{ flex: 1, overflow: 'auto' }}><KMGuvDashboard /></div>}
           {aktivNav === 'G&V Abrechnung'   && <div style={{ flex: 1, overflow: 'auto' }}><GUV /></div>}
           {aktivNav === 'KM-Buch'          && <div style={{ flex: 1, overflow: 'auto' }}><KMBuch /></div>}
+          {aktivNav === 'Reisekosten'       && <div style={{ flex: 1, overflow: 'auto' }}><Reisekosten /></div>}
           {aktivNav === 'Einstellungen'     && <div style={{ flex: 1, overflow: 'auto', padding: '4px 0' }}><Einstellungen /></div>}
+          {aktivNav === 'Objekte'           && <div style={{ flex: 1, overflow: 'auto' }}><ImmoObjekte onChanged={ladeImmoObjekte} onNavigate={id => setAktivNav(`ImmoObj_${id}`)} /></div>}
+          {aktivNav === 'Mieter'            && <div style={{ flex: 1, overflow: 'auto' }}><ImmoMieter /></div>}
+          {aktivNav === 'Mietverträge'      && <div style={{ flex: 1, overflow: 'auto' }}><ImmoVertraege /></div>}
+          {aktivNav === 'Betriebskosten'    && <div style={{ flex: 1, overflow: 'auto' }}><ImmoBetriebskosten /></div>}
+          {aktivNav.startsWith('ImmoObj_')  && <div style={{ flex: 1, overflow: 'auto' }}><ImmoObjektDetail objektId={parseInt(aktivNav.replace('ImmoObj_', ''))} initialObjekt={immoObjListe.find((o: any) => o.id === parseInt(aktivNav.replace('ImmoObj_', '')))} onChanged={ladeImmoObjekte} /></div>}
         </div>
       </div>
     </div>
