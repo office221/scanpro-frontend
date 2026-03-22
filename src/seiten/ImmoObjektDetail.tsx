@@ -1653,8 +1653,11 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
                       <span style={{ fontWeight: 600 }}>€ {fmtE(netto)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#e65100', marginTop: 2 }}>
-                      <span>MwSt {p.mwst}% <span style={{ color: '#2e7d32', fontWeight: 700 }}>(← Vorsteuer rückforderbar)</span></span>
+                      <span>MwSt {p.mwst}%</span>
                       <span style={{ fontWeight: 700, color: '#e65100' }}>€ {fmtE(mwstBetrag)}</span>
+                    </div>
+                    <div style={{ marginTop: 4, color: '#777', borderTop: '1px solid #ffe082', paddingTop: 3 }}>
+                      ⚠️ Vorsteuerabzug <strong>nur</strong> bei gewerblicher Vermietung mit Optierung zur USt-Pflicht (§ 6 Abs. 2 UStG). Bei privater Wohnraumvermietung <strong>nicht</strong> möglich.
                     </div>
                   </div>
                 )
@@ -1721,7 +1724,7 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
             <div style={{ background: '#e8f5e9', borderRadius: 8, padding: '8px 12px', marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontSize: 11, color: '#2e7d32', fontWeight: 600 }}>
                 ✅ Rückforderbare Vorsteuer gesamt
-                <div style={{ fontSize: 10, color: '#4caf50', fontWeight: 400, marginTop: 1 }}>als Unternehmer beim Finanzamt geltend machen</div>
+                <div style={{ fontSize: 10, color: '#4caf50', fontWeight: 400, marginTop: 1 }}>nur bei gewerblicher Vermietung mit USt-Optierung möglich</div>
               </div>
               <div style={{ fontSize: 15, fontWeight: 800, color: '#2e7d32' }}>€ {fmtE(vorsteuerGesamt)}</div>
             </div>
