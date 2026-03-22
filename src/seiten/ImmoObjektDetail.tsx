@@ -16,6 +16,7 @@ const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2,
 
 const TABS = [
   { id: 'uebersicht',      label: 'Übersicht' },
+  { id: 'kaufpreis',       label: 'Kaufpreis & Nebenkosten' },
   { id: 'bonitaet',        label: 'Bonität' },
   { id: 'betriebskosten',  label: 'Betriebskosten' },
   { id: 'darlehen',        label: 'Darlehen' },
@@ -408,6 +409,9 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
           {renderCheckliste('Verwaltung')}
         </div>
       )}
+
+      {/* KAUFPREIS & NEBENKOSTEN */}
+      {aktTab === 'kaufpreis' && <KaufpreisTab kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} objektId={objektId} />}
 
       {/* BETRIEBSKOSTEN */}
       {aktTab === 'betriebskosten' && <BetriebskostenTab objektId={objektId} vertraege={bkVertraege} setVertraege={setBkVertraege} belege={bkBelege} setBelege={setBkBelege} monat={bkMonat} setMonat={setBkMonat} bkJahr={bkJahr} setBkJahr={setBkJahr} />}
@@ -1512,6 +1516,136 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// KAUFPREIS & NEBENKOSTEN TAB
+// ─────────────────────────────────────────────────────────────
+const NK_DEFAULT = [
+  { id: 'grunderwerbsteuer', label: 'Grunderwerbsteuer',         pct: 3.5,  hint: 'Gesetzlich festgelegt (§ 7 GrEStG)' },
+  { id: 'grundbuch',         label: 'Grundbucheintragungsgebühr', pct: 1.1,  hint: 'Gerichtliche Eintragungsgebühr' },
+  { id: 'notar',             label: 'Notar / Rechtsanwalt',      pct: 1.8,  hint: 'Inkl. 20% MwSt. – ca. 1–3% je nach Aufwand' },
+  { id: 'makler',            label: 'Maklerprovision',           pct: 3.6,  hint: '3% + 20% MwSt (Käuferseite, max. laut MaklerG)' },
+]
+
+function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: number }) {
+  const storageKey = `kaufpreis_nk_${objektId}`
+  const [raten, setRaten] = useState<Record<string, string>>(() => {
+    try { const s = localStorage.getItem(storageKey); return s ? JSON.parse(s) : {} } catch { return {} }
+  })
+
+  const getPct = (id: string, def: number) => {
+    const v = parseFloat(raten[id] ?? String(def))
+    return isNaN(v) ? def : v
+  }
+  const savePct = (id: string, val: string) => {
+    const neu = { ...raten, [id]: val }
+    setRaten(neu)
+    localStorage.setItem(storageKey, JSON.stringify(neu))
+  }
+
+  const kp = kaufpreis || 0
+  const positionen = NK_DEFAULT.map(nk => {
+    const pct = getPct(nk.id, nk.pct)
+    const betrag = kp * pct / 100
+    return { ...nk, pct, betrag }
+  })
+  const nebenkostenSumme = positionen.reduce((s, p) => s + p.betrag, 0)
+  const gesamtpreis = kp + nebenkostenSumme
+  const nebenkostenPct = kp > 0 ? (nebenkostenSumme / kp * 100) : 0
+
+  const card: React.CSSProperties = { background: 'white', borderRadius: 14, border: '1px solid #e8e4dd', padding: '20px 24px', marginBottom: 16 }
+  const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f0ede8' }
+  const fmtE = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  return (
+    <div style={{ padding: '0 2px' }}>
+
+      {/* Kaufpreis Karte */}
+      <div style={card}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Kaufpreis</div>
+        {kp > 0 ? (
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#1a2a3a', fontFamily: 'Syne, sans-serif' }}>
+            € {fmtE(kp)}
+          </div>
+        ) : (
+          <div style={{ color: '#aaa', fontSize: 13 }}>Kein Kaufpreis in den Stammdaten eingetragen</div>
+        )}
+      </div>
+
+      {/* Nebenkosten */}
+      <div style={card}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Nebenkosten (editierbare Sätze)</div>
+        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 14 }}>Sätze können angepasst werden – werden lokal gespeichert</div>
+
+        {/* Header */}
+        <div style={{ display: 'flex', gap: 12, padding: '6px 0', borderBottom: '2px solid #e8e4dd', fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>
+          <div style={{ flex: 3 }}>Position</div>
+          <div style={{ flex: 1, textAlign: 'center' }}>Satz %</div>
+          <div style={{ flex: 2, textAlign: 'right' }}>Betrag (€)</div>
+          <div style={{ flex: 1, textAlign: 'right' }}>vom KP</div>
+        </div>
+
+        {positionen.map(p => (
+          <div key={p.id} style={row}>
+            <div style={{ flex: 3 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2a3a' }}>{p.label}</div>
+              <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{p.hint}</div>
+            </div>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <input
+                type="number"
+                step="0.1"
+                value={raten[p.id] ?? String(p.pct)}
+                onChange={e => savePct(p.id, e.target.value)}
+                style={{ width: 60, padding: '4px 6px', borderRadius: 6, border: '1.5px solid #e8e4dd', fontSize: 12, textAlign: 'center', fontWeight: 700, color: '#1a2a3a' }}
+              />
+              <span style={{ fontSize: 11, color: '#888', marginLeft: 2 }}>%</span>
+            </div>
+            <div style={{ flex: 2, textAlign: 'right', fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>
+              € {kp > 0 ? fmtE(p.betrag) : '–'}
+            </div>
+            <div style={{ flex: 1, textAlign: 'right', fontSize: 11, color: '#888' }}>
+              {kp > 0 ? `${p.pct.toFixed(1)} %` : '–'}
+            </div>
+          </div>
+        ))}
+
+        {/* Nebenkosten Summe */}
+        <div style={{ display: 'flex', gap: 12, padding: '12px 0 4px', borderTop: '2px solid #1a2a3a', marginTop: 4 }}>
+          <div style={{ flex: 3, fontSize: 13, fontWeight: 700, color: '#555' }}>Nebenkosten gesamt</div>
+          <div style={{ flex: 1 }} />
+          <div style={{ flex: 2, textAlign: 'right', fontSize: 14, fontWeight: 800, color: '#555' }}>
+            € {kp > 0 ? fmtE(nebenkostenSumme) : '–'}
+          </div>
+          <div style={{ flex: 1, textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#e67e22' }}>
+            {kp > 0 ? `${nebenkostenPct.toFixed(1)} %` : '–'}
+          </div>
+        </div>
+      </div>
+
+      {/* Gesamtpreis */}
+      <div style={{ ...card, background: '#1a2a3a', border: 'none' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Gesamtpreis inkl. Nebenkosten</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <div style={{ fontSize: 30, fontWeight: 800, color: 'white', fontFamily: 'Syne, sans-serif' }}>
+              € {kp > 0 ? fmtE(gesamtpreis) : '–'}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+              Kaufpreis + {nebenkostenPct.toFixed(1)}% Nebenkosten
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Kaufpreis</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'white' }}>€ {kp > 0 ? fmtE(kp) : '–'}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>Nebenkosten</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#f59e0b' }}>€ {kp > 0 ? fmtE(nebenkostenSumme) : '–'}</div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
