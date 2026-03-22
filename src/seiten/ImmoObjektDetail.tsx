@@ -1604,7 +1604,6 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
   const positionen = NK_DEFAULT.map(nk => {
     const w = werte[nk.id]
     const d = draft[nk.id]
-    const pctStr = d ? d.pct : String(nk.pct)
     const pctNum = parseFloat(w ? w.pct : String(nk.pct))
     const pct = isNaN(pctNum) ? nk.pct : pctNum
     let betragNum = parseFloat(w ? w.betrag : '')
