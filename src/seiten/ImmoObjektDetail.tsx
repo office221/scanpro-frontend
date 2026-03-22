@@ -469,6 +469,7 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
   const [saving,      setSaving]      = useState(false)
   const [zahlungForm, setZahlungForm] = useState<Record<number,any>>({})
   const [zahlungLaden, setZahlungLaden] = useState<number | null>(null)
+  const [vertragLaden, setVertragLaden] = useState<number | null>(null)
 
   const leerForm = { bezeichnung: '', bank: '', vertragsnummer: '', darlehenssumme: '', restsumme: '', monatlicheRate: '', sollzins: '', laufzeitBeginn: '', laufzeitEnde: '', zinsbindungEnde: '', notiz: '' }
   const [form, setForm] = useState<any>({ ...leerForm })
@@ -615,6 +616,49 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
       if (geloeschte) {
         setDarlehen((prev: any[]) => prev.map(d => d.id === darlehenId ? { ...d, restsumme: n(d.restsumme) + n(geloeschte.tilgungsanteil) } : d))
       }
+    } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
+  }
+
+  const ladeVertrag = async (darlehenId: number) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      setVertragLaden(darlehenId)
+      try {
+        const form = new FormData()
+        form.append('vertrag', file)
+        const res = await api.post(`/immo/darlehen/${darlehenId}/vertrag`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+        setDarlehen((prev: any[]) => prev.map(d => d.id === darlehenId ? { ...d, vertragDateiname: res.data.vertragDateiname } : d))
+      } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
+      setVertragLaden(null)
+    }
+    input.click()
+  }
+
+  const downloadVertrag = (darlehenId: number) => {
+    const token = localStorage.getItem('token') || ''
+    const a = document.createElement('a')
+    a.href = `${(api.defaults.baseURL || '')}immo/darlehen/${darlehenId}/vertrag`
+    // Fetch mit Auth-Header
+    api.get(`/immo/darlehen/${darlehenId}/vertrag`, { responseType: 'blob' }).then(res => {
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      const d = darlehen.find(x => x.id === darlehenId)
+      link.download = d?.vertragDateiname || 'vertrag'
+      link.click()
+      window.URL.revokeObjectURL(url)
+    }).catch(() => alert('Datei konnte nicht geladen werden'))
+  }
+
+  const loescheVertrag = async (darlehenId: number) => {
+    if (!window.confirm('Vertrag entfernen?')) return
+    try {
+      await api.delete(`/immo/darlehen/${darlehenId}/vertrag`)
+      setDarlehen((prev: any[]) => prev.map(d => d.id === darlehenId ? { ...d, vertragDateiname: null, vertragPfad: null } : d))
     } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
   }
 
@@ -974,6 +1018,41 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
                 {/* Expanded Content */}
                 {isExpanded && (
                   <div style={{ borderTop: '1px solid #f0ede8', padding: '20px 20px' }}>
+
+                    {/* Vertrag Upload */}
+                    <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M12 18v-6 M9 15l3-3 3 3" />
+                        </svg>
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#1a2a3a' }}>Darlehensvertrag</div>
+                          {d.vertragDateiname
+                            ? <div style={{ fontSize: 11, color: '#6366f1', marginTop: 1 }}>{d.vertragDateiname}</div>
+                            : <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>Kein Dokument hinterlegt</div>
+                          }
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {d.vertragDateiname && (
+                          <>
+                            <button onClick={() => downloadVertrag(d.id)}
+                              style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3"/></svg>
+                              Öffnen
+                            </button>
+                            <button onClick={() => loescheVertrag(d.id)}
+                              style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>✕</button>
+                          </>
+                        )}
+                        <button onClick={() => ladeVertrag(d.id)} disabled={vertragLaden === d.id}
+                          style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12"/></svg>
+                          {vertragLaden === d.id ? 'Lädt...' : d.vertragDateiname ? 'Ersetzen' : 'Hochladen'}
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Zinsprognose */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
                       <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '12px 14px' }}>
