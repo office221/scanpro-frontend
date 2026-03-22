@@ -1524,10 +1524,10 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
 // KAUFPREIS & NEBENKOSTEN TAB
 // ─────────────────────────────────────────────────────────────
 const NK_DEFAULT = [
-  { id: 'grunderwerbsteuer', label: 'Grunderwerbsteuer',         pct: 3.5,  hint: 'Gesetzlich festgelegt (§ 7 GrEStG)' },
-  { id: 'grundbuch',         label: 'Grundbucheintragungsgebühr', pct: 1.1,  hint: 'Gerichtliche Eintragungsgebühr' },
-  { id: 'notar',             label: 'Notar / Rechtsanwalt',      pct: 1.8,  hint: 'Inkl. 20% MwSt. – ca. 1–3% je nach Aufwand' },
-  { id: 'makler',            label: 'Maklerprovision',           pct: 3.6,  hint: '3% + 20% MwSt (Käuferseite, max. laut MaklerG)' },
+  { id: 'grunderwerbsteuer', label: 'Grunderwerbsteuer',          pct: 3.5,  hint: 'Gesetzlich festgelegt (§ 7 GrEStG)',                  mwst: 0 },
+  { id: 'grundbuch',         label: 'Grundbucheintragungsgebühr', pct: 1.1,  hint: 'Gerichtliche Eintragungsgebühr',                       mwst: 0 },
+  { id: 'notar',             label: 'Notar / Rechtsanwalt',       pct: 1.8,  hint: 'Bruttobetrag inkl. 20% MwSt (als Vorsteuer rückforderbar)', mwst: 20 },
+  { id: 'makler',            label: 'Maklerprovision',            pct: 3.6,  hint: '3% + 20% MwSt (Käuferseite, max. laut MaklerG)',      mwst: 20 },
 ]
 
 function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: number }) {
@@ -1643,6 +1643,22 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2a3a' }}>{p.label}</div>
               <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{p.hint}</div>
+              {p.mwst > 0 && p.betragNum > 0 && (() => {
+                const netto = p.betragNum / (1 + p.mwst / 100)
+                const mwstBetrag = p.betragNum - netto
+                return (
+                  <div style={{ marginTop: 5, background: '#fff8e1', borderRadius: 6, padding: '4px 8px', fontSize: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555' }}>
+                      <span>Netto</span>
+                      <span style={{ fontWeight: 600 }}>€ {fmtE(netto)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#e65100', marginTop: 2 }}>
+                      <span>MwSt {p.mwst}% <span style={{ color: '#2e7d32', fontWeight: 700 }}>(← Vorsteuer rückforderbar)</span></span>
+                      <span style={{ fontWeight: 700, color: '#e65100' }}>€ {fmtE(mwstBetrag)}</span>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
             {/* % Eingabe */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1695,6 +1711,22 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
             {kp > 0 ? `${nebenkostenPct.toFixed(1)} %` : '–'}
           </div>
         </div>
+        {/* Vorsteuer Hinweis */}
+        {kp > 0 && (() => {
+          const vorsteuerGesamt = positionen
+            .filter(p => p.mwst > 0)
+            .reduce((s, p) => s + (p.betragNum - p.betragNum / (1 + p.mwst / 100)), 0)
+          if (vorsteuerGesamt <= 0) return null
+          return (
+            <div style={{ background: '#e8f5e9', borderRadius: 8, padding: '8px 12px', marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 11, color: '#2e7d32', fontWeight: 600 }}>
+                ✅ Rückforderbare Vorsteuer gesamt
+                <div style={{ fontSize: 10, color: '#4caf50', fontWeight: 400, marginTop: 1 }}>als Unternehmer beim Finanzamt geltend machen</div>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#2e7d32' }}>€ {fmtE(vorsteuerGesamt)}</div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Gesamtpreis */}
