@@ -1532,10 +1532,41 @@ const NK_DEFAULT = [
 
 function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: number }) {
   const storageKey = `kaufpreis_nk_${objektId}`
-  // Speichert pro ID: { pct: string, betrag: string, letzteEingabe: 'pct'|'betrag' }
   const [werte, setWerte] = useState<Record<string, { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }>>(() => {
     try { const s = localStorage.getItem(storageKey); return s ? JSON.parse(s) : {} } catch { return {} }
   })
+  const [belege, setBelege] = useState<Record<string, any>>({})
+  const [belegLaden, setBelegLaden] = useState<string | null>(null)
+  const [vorschau, setVorschau] = useState<{ url: string; name: string; typ: string } | null>(null)
+
+  useEffect(() => {
+    api.get(`/immo/kaufpreis-belege/${objektId}`).then(r => {
+      const map: Record<string, any> = {}
+      r.data.forEach((b: any) => { map[b.positionId] = b })
+      setBelege(map)
+    }).catch(() => {})
+  }, [objektId])
+
+  const uploadBeleg = async (posId: string, file: File) => {
+    setBelegLaden(posId)
+    try {
+      const fd = new FormData(); fd.append('beleg', file)
+      const r = await api.post(`/immo/kaufpreis-belege/${objektId}/${posId}`, fd)
+      setBelege(p => ({ ...p, [posId]: r.data }))
+    } catch {} finally { setBelegLaden(null) }
+  }
+
+  const loescheBeleg = async (posId: string, id: number) => {
+    await api.delete(`/immo/kaufpreis-belege/${id}`)
+    setBelege(p => { const n = { ...p }; delete n[posId]; return n })
+  }
+
+  const oeffneVorschau = async (id: number, dateiname: string) => {
+    const r = await api.get(`/immo/kaufpreis-beleg-file/${id}`, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(r.data)
+    const typ = r.data.type || ''
+    setVorschau({ url, name: dateiname, typ })
+  }
 
   const kp = kaufpreis || 0
 
@@ -1598,40 +1629,60 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
         <div style={{ fontSize: 11, color: '#aaa', marginBottom: 14 }}>% oder € Betrag eingeben — der andere Wert wird automatisch berechnet</div>
 
         {/* Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 90px 120px', gap: 8, padding: '6px 0', borderBottom: '2px solid #e8e4dd', fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 90px 130px 110px', gap: 8, padding: '6px 0', borderBottom: '2px solid #e8e4dd', fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>
           <div>Position</div>
           <div style={{ textAlign: 'center' }}>%</div>
           <div style={{ textAlign: 'right' }}>Betrag €</div>
+          <div style={{ textAlign: 'center' }}>Beleg</div>
         </div>
 
-        {positionen.map(p => (
-          <div key={p.id} style={{ ...row, display: 'grid', gridTemplateColumns: '2fr 90px 120px', gap: 8 }}>
+        {positionen.map(p => {
+          const beleg = belege[p.id]
+          return (
+          <div key={p.id} style={{ ...row, display: 'grid', gridTemplateColumns: '2fr 90px 130px 110px', gap: 8 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2a3a' }}>{p.label}</div>
               <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{p.hint}</div>
             </div>
             {/* % Eingabe */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <input
-                type="number" step="0.01"
-                value={p.pctStr}
+              <input type="number" step="0.01" value={p.pctStr}
                 onChange={e => onPctChange(p.id, p.pct, e.target.value)}
-                style={{ ...iS, width: 62 }}
-              />
+                style={{ ...iS, width: 62 }} />
               <span style={{ fontSize: 11, color: '#888' }}>%</span>
             </div>
             {/* € Eingabe */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <span style={{ fontSize: 11, color: '#888' }}>€</span>
-              <input
-                type="number" step="1"
-                value={p.betragStr}
+              <input type="number" step="1" value={p.betragStr}
                 onChange={e => onBetragChange(p.id, p.pct, e.target.value)}
-                style={{ ...iS, width: 100 }}
-              />
+                style={{ ...iS, width: 100 }} />
+            </div>
+            {/* Beleg */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              {beleg ? (
+                <>
+                  <button onClick={() => oeffneVorschau(beleg.id, beleg.dateiname)}
+                    title={beleg.dateiname}
+                    style={{ background: '#e8f5e9', border: 'none', borderRadius: 6, padding: '3px 8px', fontSize: 11, color: '#2e7d32', cursor: 'pointer', fontWeight: 600, width: '100%' }}>
+                    📄 Vorschau
+                  </button>
+                  <button onClick={() => loescheBeleg(p.id, beleg.id)}
+                    style={{ background: '#fdecea', border: 'none', borderRadius: 6, padding: '2px 8px', fontSize: 10, color: '#c62828', cursor: 'pointer', width: '100%' }}>
+                    🗑 Löschen
+                  </button>
+                </>
+              ) : (
+                <label style={{ cursor: 'pointer', background: '#f0f4ff', border: '1.5px dashed #90a4e8', borderRadius: 6, padding: '4px 8px', fontSize: 11, color: '#3949ab', textAlign: 'center', width: '100%' }}>
+                  {belegLaden === p.id ? '…' : '📎 Anhängen'}
+                  <input type="file" style={{ display: 'none' }} accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={e => e.target.files?.[0] && uploadBeleg(p.id, e.target.files[0])} />
+                </label>
+              )}
             </div>
           </div>
-        ))}
+          )
+        })}
 
         {/* Nebenkosten Summe */}
         <div style={{ display: 'flex', gap: 12, padding: '12px 0 4px', borderTop: '2px solid #1a2a3a', marginTop: 4 }}>
@@ -1666,6 +1717,25 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
           </div>
         </div>
       </div>
+
+      {/* Vorschau Modal */}
+      {vorschau && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#1a2a3a', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ color: 'white', fontWeight: 600, fontSize: 13, flex: 1 }}>{vorschau.name}</span>
+            <a href={vorschau.url} download={vorschau.name} style={{ color: '#90caf9', fontSize: 12, textDecoration: 'none' }}>⬇ Download</a>
+            <button onClick={() => { window.URL.revokeObjectURL(vorschau.url); setVorschau(null) }}
+              style={{ background: 'none', border: 'none', color: 'white', fontSize: 20, cursor: 'pointer' }}>✕</button>
+          </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {vorschau.typ.startsWith('image/') ? (
+              <img src={vorschau.url} alt={vorschau.name} style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8 }} />
+            ) : (
+              <iframe src={vorschau.url} title={vorschau.name} style={{ width: '95%', height: '95%', border: 'none', borderRadius: 8 }} />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
