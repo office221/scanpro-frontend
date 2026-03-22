@@ -1532,33 +1532,50 @@ const NK_DEFAULT = [
 
 function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: number }) {
   const storageKey = `kaufpreis_nk_${objektId}`
-  const [raten, setRaten] = useState<Record<string, string>>(() => {
+  // Speichert pro ID: { pct: string, betrag: string, letzteEingabe: 'pct'|'betrag' }
+  const [werte, setWerte] = useState<Record<string, { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }>>(() => {
     try { const s = localStorage.getItem(storageKey); return s ? JSON.parse(s) : {} } catch { return {} }
   })
 
-  const getPct = (id: string, def: number) => {
-    const v = parseFloat(raten[id] ?? String(def))
-    return isNaN(v) ? def : v
-  }
-  const savePct = (id: string, val: string) => {
-    const neu = { ...raten, [id]: val }
-    setRaten(neu)
-    localStorage.setItem(storageKey, JSON.stringify(neu))
+  const kp = kaufpreis || 0
+
+  const save = (id: string, neu: { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }) => {
+    const updated = { ...werte, [id]: neu }
+    setWerte(updated)
+    localStorage.setItem(storageKey, JSON.stringify(updated))
   }
 
-  const kp = kaufpreis || 0
+  const onPctChange = (id: string, defPct: number, val: string) => {
+    const pctNum = parseFloat(val)
+    const betrag = (!isNaN(pctNum) && kp > 0) ? String((kp * pctNum / 100).toFixed(2)) : ''
+    save(id, { pct: val, betrag, letzteEingabe: 'pct' })
+  }
+
+  const onBetragChange = (id: string, defPct: number, val: string) => {
+    const bNum = parseFloat(val)
+    const pct = (!isNaN(bNum) && kp > 0) ? String((bNum / kp * 100).toFixed(3)) : ''
+    save(id, { pct, betrag: val, letzteEingabe: 'betrag' })
+  }
+
   const positionen = NK_DEFAULT.map(nk => {
-    const pct = getPct(nk.id, nk.pct)
-    const betrag = kp * pct / 100
-    return { ...nk, pct, betrag }
+    const w = werte[nk.id]
+    const pctStr = w ? w.pct : String(nk.pct)
+    const pctNum = parseFloat(pctStr)
+    const pct = isNaN(pctNum) ? nk.pct : pctNum
+    let betragStr = w ? w.betrag : (kp > 0 ? (kp * nk.pct / 100).toFixed(2) : '')
+    let betragNum = parseFloat(betragStr)
+    if (isNaN(betragNum)) betragNum = kp * pct / 100
+    return { ...nk, pct, pctStr, betragNum, betragStr }
   })
-  const nebenkostenSumme = positionen.reduce((s, p) => s + p.betrag, 0)
+
+  const nebenkostenSumme = positionen.reduce((s, p) => s + p.betragNum, 0)
   const gesamtpreis = kp + nebenkostenSumme
   const nebenkostenPct = kp > 0 ? (nebenkostenSumme / kp * 100) : 0
 
   const card: React.CSSProperties = { background: 'white', borderRadius: 14, border: '1px solid #e8e4dd', padding: '20px 24px', marginBottom: 16 }
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f0ede8' }
   const fmtE = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const iS: React.CSSProperties = { padding: '4px 6px', borderRadius: 6, border: '1.5px solid #e8e4dd', fontSize: 12, textAlign: 'right', fontWeight: 700, color: '#1a2a3a', width: '100%' }
 
   return (
     <div style={{ padding: '0 2px' }}>
@@ -1577,38 +1594,41 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
 
       {/* Nebenkosten */}
       <div style={card}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Nebenkosten (editierbare Sätze)</div>
-        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 14 }}>Sätze können angepasst werden – werden lokal gespeichert</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Nebenkosten</div>
+        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 14 }}>% oder € Betrag eingeben — der andere Wert wird automatisch berechnet</div>
 
         {/* Header */}
-        <div style={{ display: 'flex', gap: 12, padding: '6px 0', borderBottom: '2px solid #e8e4dd', fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>
-          <div style={{ flex: 3 }}>Position</div>
-          <div style={{ flex: 1, textAlign: 'center' }}>Satz %</div>
-          <div style={{ flex: 2, textAlign: 'right' }}>Betrag (€)</div>
-          <div style={{ flex: 1, textAlign: 'right' }}>vom KP</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 90px 120px', gap: 8, padding: '6px 0', borderBottom: '2px solid #e8e4dd', fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>
+          <div>Position</div>
+          <div style={{ textAlign: 'center' }}>%</div>
+          <div style={{ textAlign: 'right' }}>Betrag €</div>
         </div>
 
         {positionen.map(p => (
-          <div key={p.id} style={row}>
-            <div style={{ flex: 3 }}>
+          <div key={p.id} style={{ ...row, display: 'grid', gridTemplateColumns: '2fr 90px 120px', gap: 8 }}>
+            <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2a3a' }}>{p.label}</div>
               <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{p.hint}</div>
             </div>
-            <div style={{ flex: 1, textAlign: 'center' }}>
+            {/* % Eingabe */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <input
-                type="number"
-                step="0.1"
-                value={raten[p.id] ?? String(p.pct)}
-                onChange={e => savePct(p.id, e.target.value)}
-                style={{ width: 60, padding: '4px 6px', borderRadius: 6, border: '1.5px solid #e8e4dd', fontSize: 12, textAlign: 'center', fontWeight: 700, color: '#1a2a3a' }}
+                type="number" step="0.01"
+                value={p.pctStr}
+                onChange={e => onPctChange(p.id, p.pct, e.target.value)}
+                style={{ ...iS, width: 62 }}
               />
-              <span style={{ fontSize: 11, color: '#888', marginLeft: 2 }}>%</span>
+              <span style={{ fontSize: 11, color: '#888' }}>%</span>
             </div>
-            <div style={{ flex: 2, textAlign: 'right', fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>
-              € {kp > 0 ? fmtE(p.betrag) : '–'}
-            </div>
-            <div style={{ flex: 1, textAlign: 'right', fontSize: 11, color: '#888' }}>
-              {kp > 0 ? `${p.pct.toFixed(1)} %` : '–'}
+            {/* € Eingabe */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <span style={{ fontSize: 11, color: '#888' }}>€</span>
+              <input
+                type="number" step="1"
+                value={p.betragStr}
+                onChange={e => onBetragChange(p.id, p.pct, e.target.value)}
+                style={{ ...iS, width: 100 }}
+              />
             </div>
           </div>
         ))}
