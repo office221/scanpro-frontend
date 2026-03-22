@@ -472,6 +472,9 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
   const [vertragLaden,   setVertragLaden]   = useState<number | null>(null)
   const [dragOver,       setDragOver]       = useState<number | null>(null)
   const [vorschau,       setVorschau]       = useState<{ url: string; name: string; typ: string } | null>(null)
+  const [dokumente,      setDokumente]      = useState<Record<number, any[]>>({})
+  const [dokDragOver,    setDokDragOver]    = useState<number | null>(null)
+  const [belegLaden,     setBelegLaden]     = useState<number | null>(null)
 
   const leerForm = { bezeichnung: '', bank: '', vertragsnummer: '', darlehenssumme: '', restsumme: '', monatlicheRate: '', sollzins: '', laufzeitBeginn: '', laufzeitEnde: '', zinsbindungEnde: '', notiz: '' }
   const [form, setForm] = useState<any>({ ...leerForm })
@@ -499,6 +502,7 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
     if (expandedId === id) { setExpandedId(null); return }
     setExpandedId(id)
     if (!darlehenZahlungen[id]) await ladeZahlungen(id)
+    if (!dokumente[id]) await ladeDokumente(id)
     const d = darlehen.find(x => x.id === id)
     if (d) {
       const jetzt = new Date()
@@ -667,6 +671,74 @@ function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahl
       link.click()
       window.URL.revokeObjectURL(url)
     }).catch(() => alert('Datei konnte nicht geladen werden'))
+  }
+
+  const ladeDokumente = async (darlehenId: number) => {
+    try {
+      const res = await api.get(`/immo/darlehen-dokumente/${darlehenId}`)
+      setDokumente(prev => ({ ...prev, [darlehenId]: res.data }))
+    } catch {}
+  }
+
+  const uploadDokument = async (darlehenId: number, file: File) => {
+    const fd = new FormData(); fd.append('dokument', file)
+    try {
+      const res = await api.post(`/immo/darlehen-dokumente/${darlehenId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setDokumente(prev => ({ ...prev, [darlehenId]: [res.data, ...(prev[darlehenId] || [])] }))
+    } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
+  }
+
+  const loescheDokument = async (darlehenId: number, docId: number) => {
+    try {
+      await api.delete(`/immo/darlehen-dokumente/${docId}`)
+      setDokumente(prev => ({ ...prev, [darlehenId]: (prev[darlehenId] || []).filter((d: any) => d.id !== docId) }))
+    } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
+  }
+
+  const oeffneVorschauUrl = async (url: string, dateiname: string) => {
+    const ext = dateiname.split('.').pop()?.toLowerCase() || ''
+    setVorschau({ url, name: dateiname, typ: ext })
+  }
+
+  const vorschauDokument = async (docId: number, dateiname: string) => {
+    try {
+      const res = await api.get(`/immo/darlehen-dokumente-file/${docId}`, { responseType: 'blob' })
+      const ext = dateiname.split('.').pop()?.toLowerCase() || ''
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      setVorschau({ url, name: dateiname, typ: ext })
+    } catch { alert('Vorschau nicht möglich') }
+  }
+
+  const uploadZahlungBeleg = async (zahlungId: number, darlehenId: number, file: File) => {
+    setBelegLaden(zahlungId)
+    const fd = new FormData(); fd.append('beleg', file)
+    try {
+      const res = await api.post(`/immo/darlehen-zahlungen/${zahlungId}/beleg`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setDarlehenZahlungen((prev: any) => ({
+        ...prev,
+        [darlehenId]: (prev[darlehenId] || []).map((z: any) => z.id === zahlungId ? { ...z, belegDateiname: res.data.belegDateiname } : z)
+      }))
+    } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
+    setBelegLaden(null)
+  }
+
+  const vorschauZahlungBeleg = async (zahlungId: number, dateiname: string) => {
+    try {
+      const res = await api.get(`/immo/darlehen-zahlungen/${zahlungId}/beleg`, { responseType: 'blob' })
+      const ext = dateiname.split('.').pop()?.toLowerCase() || ''
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      setVorschau({ url, name: dateiname, typ: ext })
+    } catch { alert('Vorschau nicht möglich') }
+  }
+
+  const loescheZahlungBeleg = async (zahlungId: number, darlehenId: number) => {
+    try {
+      await api.delete(`/immo/darlehen-zahlungen/${zahlungId}/beleg`)
+      setDarlehenZahlungen((prev: any) => ({
+        ...prev,
+        [darlehenId]: (prev[darlehenId] || []).map((z: any) => z.id === zahlungId ? { ...z, belegDateiname: null } : z)
+      }))
+    } catch (err: any) { alert('Fehler: ' + (err?.response?.data?.fehler || err?.message)) }
   }
 
   const loescheVertrag = async (darlehenId: number) => {
@@ -1261,7 +1333,7 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                             <thead>
                               <tr style={{ background: '#f8f9fa' }}>
-                                {['Datum','Betrag','Zinsanteil','Tilgungsanteil','Restsumme danach',''].map(h => (
+                                {['Datum','Betrag','Zinsanteil','Tilgungsanteil','Restsumme danach','Beleg',''].map(h => (
                                   <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                               </tr>
@@ -1275,6 +1347,25 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
                                   <td style={{ padding: '8px 10px', color: '#10b981' }}>€ {fmtD(z.tilgungsanteil)}</td>
                                   <td style={{ padding: '8px 10px', color: '#6366f1', fontWeight: 700 }}>€ {fmtD(z.restsummeNach)}</td>
                                   <td style={{ padding: '8px 10px' }}>
+                                    {belegLaden === z.id ? (
+                                      <span style={{ fontSize: 11, color: '#aaa' }}>⏳</span>
+                                    ) : z.belegDateiname ? (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <button onClick={() => vorschauZahlungBeleg(z.id, z.belegDateiname)}
+                                          style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 5, padding: '3px 7px', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
+                                          title={z.belegDateiname}>📎 Beleg</button>
+                                        <button onClick={() => loescheZahlungBeleg(z.id, d.id)}
+                                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', fontSize: 11 }}
+                                          onMouseEnter={e => (e.currentTarget.style.color='#ef4444')} onMouseLeave={e => (e.currentTarget.style.color='#ddd')}>✕</button>
+                                      </div>
+                                    ) : (
+                                      <button onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'; inp.onchange=async()=>{ if(inp.files?.[0]) await uploadZahlungBeleg(z.id, d.id, inp.files[0]) }; inp.click() }}
+                                        style={{ background: 'none', border: '1px dashed #d1d5db', borderRadius: 5, padding: '3px 7px', fontSize: 10, color: '#aaa', cursor: 'pointer' }}>
+                                        + Beleg
+                                      </button>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: '8px 10px' }}>
                                     <button onClick={() => loescheZahlung(d.id, z.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 13 }}
                                       onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}>🗑</button>
                                   </td>
@@ -1285,6 +1376,45 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
                         </div>
                       </div>
                     )}
+
+                    {/* Sonstige Unterlagen */}
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: '#1a2a3a', marginBottom: 10 }}>Sonstige Unterlagen</div>
+                      <div
+                        onDragOver={e => { e.preventDefault(); setDokDragOver(d.id) }}
+                        onDragEnter={e => { e.preventDefault(); setDokDragOver(d.id) }}
+                        onDragLeave={() => setDokDragOver(null)}
+                        onDrop={async e => { e.preventDefault(); setDokDragOver(null); const f = e.dataTransfer.files?.[0]; if (f) await uploadDokument(d.id, f) }}
+                        style={{ border: `2px dashed ${dokDragOver === d.id ? '#6366f1' : '#e0ddf8'}`, borderRadius: 10, padding: '12px 16px', background: dokDragOver === d.id ? 'rgba(99,102,241,0.06)' : '#fafafe', marginBottom: 12, transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 11, color: dokDragOver === d.id ? '#6366f1' : '#aaa' }}>
+                          {dokDragOver === d.id ? '📂 Loslassen zum Hochladen' : '📎 Datei hierher ziehen oder auswählen'}
+                        </div>
+                        <button onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'; inp.onchange=async()=>{ if(inp.files?.[0]) await uploadDokument(d.id, inp.files[0]) }; inp.click() }}
+                          style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                          Datei suchen
+                        </button>
+                      </div>
+                      {(dokumente[d.id] || []).length === 0 ? (
+                        <div style={{ fontSize: 11, color: '#ccc', textAlign: 'center', padding: '8px 0' }}>Noch keine Unterlagen hochgeladen</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {(dokumente[d.id] || []).map((dok: any) => (
+                            <div key={dok.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8f9fa', borderRadius: 8, padding: '8px 12px', border: '1px solid #e5e0d8' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => vorschauDokument(dok.id, dok.dateiname)}>
+                                <span style={{ fontSize: 16 }}>📄</span>
+                                <div>
+                                  <div style={{ fontSize: 11, fontWeight: 600, color: '#6366f1', textDecoration: 'underline' }}>{dok.dateiname}</div>
+                                  <div style={{ fontSize: 10, color: '#aaa' }}>{new Date(dok.createdAt).toLocaleDateString('de-AT')}</div>
+                                </div>
+                              </div>
+                              <button onClick={() => loescheDokument(d.id, dok.id)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', fontSize: 14 }}
+                                onMouseEnter={e => (e.currentTarget.style.color='#ef4444')} onMouseLeave={e => (e.currentTarget.style.color='#ddd')}>🗑</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
