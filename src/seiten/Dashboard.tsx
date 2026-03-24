@@ -96,6 +96,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [immoObjListe,    setImmoObjListe]    = useState<any[]>([])
   const [navExpObjekte,  setNavExpObjekte]  = useState(true)
   const [sharedFile,  setSharedFile]  = useState<File | null>(null)
+  const [belegTransfer, setBelegTransfer] = useState<{ datei: File; vorschlag: any } | null>(null)
   const [sucheOffen,  setSucheOffen]  = useState(false)
   const [sucheText,   setSucheText]   = useState('')
   const [glockeOffen, setGlockeOffen] = useState(false)
@@ -799,10 +800,10 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           )}
 
           {aktivNav === 'Kunden'           && <div style={{ flex: 1, overflow: 'auto' }}><Kunden /></div>}
-          {aktivNav === 'Rechnungen'        && <div style={{ flex: 1, overflow: 'auto' }}><Rechnungen /></div>}
+          {aktivNav === 'Rechnungen'        && <div style={{ flex: 1, overflow: 'auto' }}><Rechnungen onTransferBeleg={(datei, vorschlag) => { setBelegTransfer({ datei, vorschlag }); setAktivNav('Belegscanner') }} /></div>}
           {aktivNav === 'Angebote'          && <div style={{ flex: 1, overflow: 'auto' }}><Angebote /></div>}
           {aktivNav === 'Positionsvorlagen' && <div style={{ flex: 1, overflow: 'auto' }}><Vorlagen /></div>}
-          {aktivNav === 'Belegscanner'     && <div style={{ flex: 1, overflow: 'auto' }}><Belegscanner initialDatei={sharedFile} onSharedFileUsed={() => setSharedFile(null)} /></div>}
+          {aktivNav === 'Belegscanner'     && <div style={{ flex: 1, overflow: 'auto' }}><Belegscanner initialDatei={sharedFile || belegTransfer?.datei || null} belegVorschlag={belegTransfer?.vorschlag || null} onSharedFileUsed={() => { setSharedFile(null); setBelegTransfer(null) }} /></div>}
           {aktivNav === 'BuchDashboard'       && <div style={{ flex: 1, overflow: 'auto' }}><KMGuvDashboard /></div>}
           {aktivNav === 'G&V Abrechnung'   && <div style={{ flex: 1, overflow: 'auto' }}><GUV /></div>}
           {aktivNav === 'KM-Buch'          && <div style={{ flex: 1, overflow: 'auto' }}><KMBuch /></div>}

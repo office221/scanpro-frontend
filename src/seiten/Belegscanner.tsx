@@ -64,9 +64,10 @@ const inputStyle: React.CSSProperties = {
 interface BelegscannerProps {
   initialDatei?: File | null
   onSharedFileUsed?: () => void
+  belegVorschlag?: { beschreibung: string; betrag: string; datum: string; rechnungsnummer: string; kategorie: string; lieferant: string } | null
 }
 
-export default function Belegscanner({ initialDatei, onSharedFileUsed }: BelegscannerProps = {}) {
+export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVorschlag }: BelegscannerProps = {}) {
   const [belege, setBelege]               = useState<Beleg[]>([])
   const [laden, setLaden]                 = useState(false)
   const [formOffen, setFormOffen]         = useState(false)
@@ -100,7 +101,15 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed }: Belegsc
   useEffect(() => {
     if (!initialDatei) return
     setEditBeleg(null)
-    setForm(emptyForm())
+    setForm(belegVorschlag ? {
+      ...emptyForm(),
+      beschreibung:    belegVorschlag.beschreibung,
+      betrag:          belegVorschlag.betrag,
+      datum:           belegVorschlag.datum,
+      rechnungsnummer: belegVorschlag.rechnungsnummer,
+      kategorie:       belegVorschlag.kategorie,
+      lieferant:       belegVorschlag.lieferant,
+    } : emptyForm())
     onDatei(initialDatei)
     setFormOffen(true)
     onSharedFileUsed?.()
