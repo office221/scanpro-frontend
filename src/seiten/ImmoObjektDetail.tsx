@@ -17,6 +17,7 @@ const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2,
 const TABS = [
   { id: 'uebersicht',      label: 'Übersicht' },
   { id: 'kaufpreis',       label: 'Kaufpreis & Nebenkosten' },
+  { id: 'kostenrechner',   label: 'Kostenrechner' },
   { id: 'bonitaet',        label: 'Bonität' },
   { id: 'betriebskosten',  label: 'Betriebskosten' },
   { id: 'darlehen',        label: 'Darlehen' },
@@ -412,6 +413,9 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
 
       {/* KAUFPREIS & NEBENKOSTEN */}
       {aktTab === 'kaufpreis' && <KaufpreisTab kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} objektId={objektId} />}
+
+      {/* KOSTENRECHNER */}
+      {aktTab === 'kostenrechner' && <KostenrechnerTab objektId={objektId} kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} vertraege={vertraege} darlehen={darlehen} bkBelege={bkBelege} bkJahr={bkJahr} />}
 
       {/* BETRIEBSKOSTEN */}
       {aktTab === 'betriebskosten' && <BetriebskostenTab objektId={objektId} vertraege={bkVertraege} setVertraege={setBkVertraege} belege={bkBelege} setBelege={setBkBelege} monat={bkMonat} setMonat={setBkMonat} bkJahr={bkJahr} setBkJahr={setBkJahr} />}
@@ -1529,6 +1533,197 @@ const NK_DEFAULT = [
   { id: 'notar',             label: 'Notar / Rechtsanwalt',       pct: 1.8,  hint: 'Bruttobetrag inkl. 20% MwSt (als Vorsteuer rückforderbar)', mwst: 20 },
   { id: 'makler',            label: 'Maklerprovision',            pct: 3.6,  hint: '3% + 20% MwSt (Käuferseite, max. laut MaklerG)',      mwst: 20 },
 ]
+
+// ─── KOSTENRECHNER ──────────────────────────────────────────────────────────
+const ZUSATZ_FELDER = [
+  { id: 'instandhaltung', label: 'Instandhaltung / Reparaturen', hint: 'Rücklagen ca. 1–1,5% des Kaufpreises/Jahr' },
+  { id: 'versicherung',   label: 'Gebäudeversicherung',          hint: 'Feuer, Wasser, Haftpflicht' },
+  { id: 'hausverwaltung', label: 'Hausverwaltung',               hint: 'Ca. 3–5% der Jahresmiete' },
+  { id: 'grundsteuer',    label: 'Grundsteuer',                  hint: 'Einheitswert × Steuermesszahl × Hebesatz' },
+  { id: 'steuerberater',  label: 'Steuerberater',                hint: 'Für Vermietung & Verpachtung' },
+  { id: 'sonstige',       label: 'Sonstige Kosten',              hint: 'Kontogebühren, Anzeigen etc.' },
+]
+
+function KostenrechnerTab({ objektId, kaufpreis, vertraege, darlehen, bkBelege, bkJahr }: { objektId: number; kaufpreis: number; vertraege: any[]; darlehen: any[]; bkBelege: any[]; bkJahr: number }) {
+  const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const n = (v: any) => parseFloat(v) || 0
+
+  const [zusatz, setZusatz] = useState<Record<string, string>>({})
+  const [laden, setLaden] = useState(true)
+  const [gespeichert, setGespeichert] = useState(false)
+  const [jahr, setJahr] = useState(bkJahr || new Date().getFullYear())
+
+  useEffect(() => {
+    setLaden(true)
+    api.get(`/immo/kostenrechner/${objektId}`).then(r => {
+      setZusatz(r.data.daten || {})
+    }).catch(() => {}).finally(() => setLaden(false))
+  }, [objektId])
+
+  const speichern = async () => {
+    await api.put(`/immo/kostenrechner/${objektId}`, { daten: zusatz }).catch(() => {})
+    setGespeichert(true); setTimeout(() => setGespeichert(false), 2000)
+  }
+
+  // Einnahmen aus aktivem Mietvertrag
+  const aktivV = vertraege.find(v => v.objektId === objektId && v.status === 'Aktiv') || vertraege.find(v => v.objektId === objektId)
+  const jahresmiete = aktivV ? n(aktivV.nettomiete) * 12 : 0
+  const jahresBK_einnahmen = aktivV ? n(aktivV.betriebskosten) * 12 : 0
+  const gesamtEinnahmen = jahresmiete + jahresBK_einnahmen
+
+  // Darlehen-Kosten
+  const darlehenJahr = darlehen.filter(d => d.objektId === objektId || true).reduce((s, d) => s + n(d.monatlicheRate) * 12, 0)
+  const darlehenZinsen = darlehen.reduce((s, d) => {
+    const zinsen = n(d.restsumme) * (n(d.sollzins) / 100)
+    return s + zinsen
+  }, 0)
+  const darlehenTilgung = darlehenJahr - darlehenZinsen
+
+  // Betriebskosten aus Belegen (aktuelles Jahr)
+  const bkJahrBelege = bkBelege.filter(b => b.jahr === jahr).reduce((s, b) => s + n(b.betrag), 0)
+
+  // Zusatzkosten
+  const zusatzGesamt = ZUSATZ_FELDER.reduce((s, f) => s + n(zusatz[f.id]), 0)
+
+  const gesamtAusgaben = darlehenJahr + bkJahrBelege + zusatzGesamt
+  const cashflow = gesamtEinnahmen - gesamtAusgaben
+  const cashflowMonat = cashflow / 12
+  const bruttoRendite = kaufpreis > 0 ? (jahresmiete / kaufpreis) * 100 : 0
+  const nettoRendite = kaufpreis > 0 ? (cashflow / kaufpreis) * 100 : 0
+  const amortisation = cashflow > 0 ? kaufpreis / cashflow : 0
+
+  const card: React.CSSProperties = { background: 'white', borderRadius: 14, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 14 }
+  const iS: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e0d8', fontSize: 13, outline: 'none', textAlign: 'right' as const, boxSizing: 'border-box' }
+
+  if (laden) return <div style={{ padding: 32, textAlign: 'center', color: '#888' }}>⏳ Lade…</div>
+
+  return (
+    <div style={{ padding: '0 2px' }}>
+
+      {/* Jahr-Auswahl */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <span style={{ fontSize: 12, color: '#888' }}>Auswertungsjahr:</span>
+        {[bkJahr - 1, bkJahr, bkJahr + 1].map(y => (
+          <button key={y} onClick={() => setJahr(y)} style={{ padding: '4px 12px', borderRadius: 8, border: `1.5px solid ${jahr === y ? '#1a2a3a' : '#e5e0d8'}`, background: jahr === y ? '#1a2a3a' : 'white', color: jahr === y ? 'white' : '#555', fontSize: 12, cursor: 'pointer' }}>{y}</button>
+        ))}
+      </div>
+
+      {/* EINNAHMEN */}
+      <div style={card}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#10b981', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Einnahmen / Jahr
+        </div>
+        {!aktivV && <div style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic', marginBottom: 8 }}>Kein aktiver Mietvertrag gefunden</div>}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '6px 16px', fontSize: 13 }}>
+          <span style={{ color: '#555' }}>Nettomiete</span><span style={{ textAlign: 'right', fontWeight: 600 }}>€ {fmt(jahresmiete)}</span>
+          <span style={{ color: '#555' }}>BK-Vorauszahlung</span><span style={{ textAlign: 'right', fontWeight: 600 }}>€ {fmt(jahresBK_einnahmen)}</span>
+          <span style={{ color: '#888', fontSize: 11 }}>monatlich: € {fmt(gesamtEinnahmen / 12)}</span><span></span>
+        </div>
+        <div style={{ borderTop: '2px solid #10b981', marginTop: 10, paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 15, color: '#10b981' }}>
+          <span>Gesamt Einnahmen</span><span>€ {fmt(gesamtEinnahmen)}</span>
+        </div>
+      </div>
+
+      {/* AUSGABEN DARLEHEN */}
+      <div style={card}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Finanzierung (Darlehen)
+        </div>
+        {darlehen.length === 0 && <div style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic' }}>Kein Darlehen erfasst</div>}
+        {darlehen.map(d => (
+          <div key={d.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 16px', fontSize: 13, marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid #f5f5f5' }}>
+            <span style={{ fontWeight: 600 }}>{d.bezeichnung || 'Darlehen'}</span><span></span>
+            <span style={{ color: '#555' }}>Jahresrate</span><span style={{ textAlign: 'right', fontWeight: 600 }}>€ {fmt(n(d.monatlicheRate) * 12)}</span>
+            <span style={{ color: '#888', fontSize: 11 }}>Zinsen ca. (Restsumme × {n(d.sollzins)}%)</span><span style={{ textAlign: 'right', fontSize: 11, color: '#888' }}>€ {fmt(n(d.restsumme) * n(d.sollzins) / 100)}</span>
+            <span style={{ color: '#888', fontSize: 11 }}>Tilgung ca.</span><span style={{ textAlign: 'right', fontSize: 11, color: '#888' }}>€ {fmt(n(d.monatlicheRate) * 12 - n(d.restsumme) * n(d.sollzins) / 100)}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13, color: '#1a2a3a', marginTop: 4 }}>
+          <span>Gesamt Darlehen/Jahr</span><span>€ {fmt(darlehenJahr)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginTop: 2 }}>
+          <span>davon Zinsaufwand (steuerlich absetzbar)</span><span>€ {fmt(darlehenZinsen)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginTop: 2 }}>
+          <span>davon Tilgung</span><span>€ {fmt(darlehenTilgung > 0 ? darlehenTilgung : 0)}</span>
+        </div>
+      </div>
+
+      {/* BETRIEBSKOSTEN */}
+      <div style={card}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Betriebskosten {jahr}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
+          <span>Aus BK-Belegen ({bkBelege.filter(b => b.jahr === jahr).length} Einträge)</span>
+          <span style={{ fontWeight: 700 }}>€ {fmt(bkJahrBelege)}</span>
+        </div>
+      </div>
+
+      {/* ZUSATZKOSTEN (editierbar) */}
+      <div style={card}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Weitere Ausgaben / Jahr
+        </div>
+        {ZUSATZ_FELDER.map(f => (
+          <div key={f.id} style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{f.label}</div>
+              <div style={{ fontSize: 11, color: '#aaa' }}>{f.hint}</div>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#888', fontSize: 13 }}>€</span>
+              <input type="number" value={zusatz[f.id] || ''} onChange={e => setZusatz(p => ({ ...p, [f.id]: e.target.value }))}
+                style={{ ...iS, paddingLeft: 24 }} placeholder="0,00" />
+            </div>
+          </div>
+        ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13, color: '#1a2a3a', borderTop: '1px solid #f0ede8', paddingTop: 10, marginTop: 4 }}>
+          <span>Gesamt Zusatzkosten/Jahr</span><span>€ {fmt(zusatzGesamt)}</span>
+        </div>
+        <button onClick={speichern} style={{ marginTop: 12, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: gespeichert ? '#10b981' : '#1a2a3a', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
+          {gespeichert ? '✅ Gespeichert!' : '💾 Zusatzkosten speichern'}
+        </button>
+      </div>
+
+      {/* ERGEBNIS */}
+      <div style={{ ...card, background: cashflow >= 0 ? '#f0fdf4' : '#fef2f2', border: `2px solid ${cashflow >= 0 ? '#10b981' : '#ef4444'}` }}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#1a2a3a', marginBottom: 14 }}>📊 Ergebnis</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px 16px', fontSize: 13 }}>
+          <span style={{ color: '#555' }}>Gesamte Einnahmen/Jahr</span><span style={{ textAlign: 'right', fontWeight: 600, color: '#10b981' }}>€ {fmt(gesamtEinnahmen)}</span>
+          <span style={{ color: '#555' }}>Gesamte Ausgaben/Jahr</span><span style={{ textAlign: 'right', fontWeight: 600, color: '#ef4444' }}>€ {fmt(gesamtAusgaben)}</span>
+        </div>
+        <div style={{ borderTop: `2px solid ${cashflow >= 0 ? '#10b981' : '#ef4444'}`, marginTop: 12, paddingTop: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 16, color: cashflow >= 0 ? '#10b981' : '#ef4444', marginBottom: 8 }}>
+            <span>Cashflow / Jahr</span><span>€ {fmt(cashflow)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 14, color: cashflow >= 0 ? '#10b981' : '#ef4444', marginBottom: 12 }}>
+            <span>Cashflow / Monat</span><span>€ {fmt(cashflowMonat)}</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            {[
+              { label: 'Brutto-Rendite', value: bruttoRendite.toFixed(2) + '%', sub: 'Jahresmiete / KP', color: '#6366f1' },
+              { label: 'Netto-Rendite',  value: nettoRendite.toFixed(2) + '%',  sub: 'Cashflow / KP',   color: nettoRendite >= 4 ? '#10b981' : nettoRendite >= 2 ? '#f59e0b' : '#ef4444' },
+              { label: 'Amortisation',   value: amortisation > 0 ? amortisation.toFixed(0) + ' J.' : '—', sub: 'bei aktuellem CF', color: '#1a2a3a' },
+            ].map(k => (
+              <div key={k.label} style={{ background: 'white', borderRadius: 10, padding: '10px 12px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: k.color, fontFamily: 'Syne, sans-serif' }}>{k.value}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginTop: 2 }}>{k.label}</div>
+                <div style={{ fontSize: 10, color: '#aaa' }}>{k.sub}</div>
+              </div>
+            ))}
+          </div>
+          {kaufpreis === 0 && <div style={{ fontSize: 11, color: '#aaa', fontStyle: 'italic', marginTop: 8, textAlign: 'center' }}>⚠️ Kaufpreis in Stammdaten eintragen für Rendite-Berechnung</div>}
+        </div>
+      </div>
+
+    </div>
+  )
+}
 
 function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: number }) {
   type WertMap = Record<string, { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }>
