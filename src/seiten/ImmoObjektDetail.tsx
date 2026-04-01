@@ -1531,16 +1531,15 @@ const NK_DEFAULT = [
 ]
 
 function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: number }) {
-  const storageKey = `kaufpreis_nk_${objektId}`
   type WertMap = Record<string, { pct: string; betrag: string; letzteEingabe: 'pct' | 'betrag' }>
-  const loadSaved = (): WertMap => { try { const s = localStorage.getItem(storageKey); return s ? JSON.parse(s) : {} } catch { return {} } }
 
   // gespeicherte Werte → für Summen-Berechnung
-  const [werte, setWerte] = useState<WertMap>(loadSaved)
+  const [werte, setWerte] = useState<WertMap>({})
   // Entwurf → was gerade getippt wird (kein Einfluss auf Summen)
-  const [draft, setDraft] = useState<WertMap>(loadSaved)
+  const [draft, setDraft] = useState<WertMap>({})
   const [geaendert, setGeaendert] = useState(false)
   const [gespeichert, setGespeichert] = useState(false)
+  const [dbLaden, setDbLaden] = useState(true)
 
   const [zeigeMwSt, setZeigeMwSt] = useState(() => {
     const s = localStorage.getItem(`kaufpreis_mwst_${objektId}`)
@@ -1551,6 +1550,12 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
   const [vorschau, setVorschau] = useState<{ url: string; name: string; typ: string } | null>(null)
 
   useEffect(() => {
+    setDbLaden(true)
+    api.get(`/immo/kaufpreis-nk/${objektId}`).then(r => {
+      const d = r.data.daten || {}
+      setWerte(d)
+      setDraft(d)
+    }).catch(() => {}).finally(() => setDbLaden(false))
     api.get(`/immo/kaufpreis-belege/${objektId}`).then(r => {
       const map: Record<string, any> = {}
       r.data.forEach((b: any) => { map[b.positionId] = b })
@@ -1595,10 +1600,12 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
     setGeaendert(true); setGespeichert(false)
   }
 
-  // Speichern → Draft → werte übernehmen, Summen neu berechnen
-  const speichern = () => {
+  // Speichern → Draft → werte übernehmen, in DB speichern
+  const speichern = async () => {
     setWerte(draft)
-    localStorage.setItem(storageKey, JSON.stringify(draft))
+    try {
+      await api.put(`/immo/kaufpreis-nk/${objektId}`, { daten: draft })
+    } catch { }
     setGeaendert(false); setGespeichert(true)
     setTimeout(() => setGespeichert(false), 2000)
   }
@@ -1625,6 +1632,8 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f0ede8' }
   const fmtE = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const iS: React.CSSProperties = { padding: '4px 6px', borderRadius: 6, border: '1.5px solid #e8e4dd', fontSize: 12, textAlign: 'right', fontWeight: 700, color: '#1a2a3a', width: '100%' }
+
+  if (dbLaden) return <div style={{ padding: 32, textAlign: 'center', color: '#888', fontSize: 13 }}>⏳ Lade gespeicherte Werte…</div>
 
   return (
     <div style={{ padding: '0 2px' }}>
