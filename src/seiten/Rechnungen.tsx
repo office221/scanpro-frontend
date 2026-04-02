@@ -583,7 +583,8 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {/* FORMULAR MODAL */}
       {formOffen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-start', justifyContent:'center', zIndex:100, overflowY:'auto', padding:'20px 0'}}>
-          <div style={{background:'white', borderRadius:14, width:'min(900px, 96vw)', minWidth:560, maxWidth:'98vw', margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)', resize:'both', overflow:'auto', minHeight:400}}>
+          <div style={{background:'white', borderRadius:14, width:'min(900px, 96vw)', minWidth:560, maxWidth:'98vw', margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)', resize:'both', overflow:'hidden', minHeight:400, display:'flex', flexDirection:'column'}}>
+            <div style={{flex:1, overflowY:'auto', overflowX:'hidden', display:'flex', flexDirection:'column'}}>
             <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
               <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1}}>{bearbeitenId ? '✏️ Rechnung bearbeiten' : '📋 Neue Rechnung'}</div>
               <button
@@ -930,6 +931,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                   style={{padding:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:9, cursor:'pointer'}}
                   onClick={() => setFormOffen(false)}>Abbrechen</button>
               </div>
+            </div>
             </div>
           </div>
         </div>
