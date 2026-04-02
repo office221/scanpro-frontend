@@ -679,9 +679,9 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               {/* POSITIONEN */}
               <div style={{marginBottom:16}}>
                 <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:10}}>Positionen</div>
-                <div style={{display:'grid', gridTemplateColumns:'22px 2fr 65px 80px auto', gap:8, marginBottom:4}}>
-                  {['', 'Beschreibung', 'Menge', 'Einheit', '€ Preis'].map((h, i) => (
-                    <div key={i} style={{fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#aaa', fontWeight:700}}>{h}</div>
+                <div style={{display:'flex', gap:8, marginBottom:4, paddingLeft:30}}>
+                  {[['flex:1','Beschreibung'],['60px','Menge'],['78px','Einheit'],['100px','€ Preis'],['34px','']].map(([w,h],i) => (
+                    <div key={i} style={{width:h===''?34:undefined, flex:h==='Beschreibung'?1:undefined, flexShrink:0, fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#aaa', fontWeight:700}}>{h}</div>
                   ))}
                 </div>
                 {positionen.map((pos, idx) => (
@@ -706,14 +706,14 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                     </div>
                   ) : (
                     /* ── Normale Position ── */
-                    <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 2fr 65px 80px auto', gap:8, marginBottom:8, alignItems:'center'}}>
-                      <div style={{display:'flex', flexDirection:'column', gap:2}}>
+                    <div key={idx} style={{display:'flex', gap:8, marginBottom:8, alignItems:'center'}}>
+                      <div style={{width:22, flexShrink:0, display:'flex', flexDirection:'column', gap:2}}>
                         <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
                           style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
                         <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
                           style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
-                      <div style={{position:'relative'}}>
+                      <div style={{flex:1, minWidth:80, position:'relative'}}>
                         <textarea style={{...inputStyle, resize:'vertical', overflow:'auto', lineHeight:'20px', minHeight:38, display:'block'}}
                           placeholder="Beschreibung..."
                           rows={1}
@@ -749,7 +749,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           </div>
                         )}
                       </div>
-                      <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a'}} type="text" inputMode="decimal"
+                      <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a', width:60, flexShrink:0}} type="text" inputMode="decimal"
                         value={pos.rawMenge !== undefined ? pos.rawMenge : (pos.menge === 0 ? '' : String(pos.menge))}
                         onFocus={e => { positionAendern(idx, 'rawMenge', pos.menge === 0 ? '' : String(pos.menge)); setTimeout(() => e.target.select(), 10) }}
                         onChange={e => positionAendern(idx, 'rawMenge', e.target.value)}
@@ -757,25 +757,23 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           const n = parseFloat(e.target.value.replace(',', '.')) || 0
                           const neu = [...positionen]; neu[idx] = { ...neu[idx], menge: n, rawMenge: undefined }; setPositionen(neu)
                         }} />
-                      <select style={{...inputStyle, background:'white'}}
+                      <select style={{...inputStyle, background:'white', width:78, flexShrink:0}}
                         value={pos.einheit}
                         onChange={e => positionAendern(idx, 'einheit', e.target.value)}>
                         {['PA', 'M2', 'M3', 'LFM', 'STD', 'OBJ'].map(e => (
                           <option key={e} value={e}>{e}</option>
                         ))}
                       </select>
-                      <div style={{display:'flex', alignItems:'center', gap:6, minWidth:140}}>
-                        <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a', flex:1, minWidth:90, width:'auto'}} type="text" inputMode="decimal"
-                          value={pos.rawPreis !== undefined ? pos.rawPreis : (pos.einzelpreis === 0 ? '' : String(pos.einzelpreis))}
-                          onFocus={e => { positionAendern(idx, 'rawPreis', pos.einzelpreis === 0 ? '' : String(pos.einzelpreis)); setTimeout(() => e.target.select(), 10) }}
-                          onChange={e => positionAendern(idx, 'rawPreis', e.target.value)}
-                          onBlur={e => {
-                            const n = parseFloat(e.target.value.replace(',', '.')) || 0
-                            const neu = [...positionen]; neu[idx] = { ...neu[idx], einzelpreis: n, rawPreis: undefined }; setPositionen(neu)
-                          }} />
-                        <button onClick={() => positionLoeschen(idx)}
-                          style={{background:'#fde8e6', border:'none', borderRadius:6, width:34, height:36, flexShrink:0, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
-                      </div>
+                      <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a', width:100, flexShrink:0}} type="text" inputMode="decimal"
+                        value={pos.rawPreis !== undefined ? pos.rawPreis : (pos.einzelpreis === 0 ? '' : String(pos.einzelpreis))}
+                        onFocus={e => { positionAendern(idx, 'rawPreis', pos.einzelpreis === 0 ? '' : String(pos.einzelpreis)); setTimeout(() => e.target.select(), 10) }}
+                        onChange={e => positionAendern(idx, 'rawPreis', e.target.value)}
+                        onBlur={e => {
+                          const n = parseFloat(e.target.value.replace(',', '.')) || 0
+                          const neu = [...positionen]; neu[idx] = { ...neu[idx], einzelpreis: n, rawPreis: undefined }; setPositionen(neu)
+                        }} />
+                      <button onClick={() => positionLoeschen(idx)}
+                        style={{background:'#fde8e6', border:'none', borderRadius:6, width:34, height:36, flexShrink:0, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
                     </div>
                   )
                 ))}
