@@ -953,8 +953,12 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
             </div>
             {!vollbild && (
               <div onMouseDown={onResizeDrag}
-                style={{position:'absolute', bottom:0, right:0, width:20, height:20, cursor:'nwse-resize', display:'flex', alignItems:'center', justifyContent:'center', color:'#ccc', fontSize:14, userSelect:'none'}}>
-                ⋰
+                style={{position:'absolute', bottom:0, right:0, width:28, height:28, cursor:'nwse-resize', userSelect:'none', overflow:'hidden'}}>
+                <svg width="28" height="28" viewBox="0 0 28 28" style={{display:'block'}}>
+                  <line x1="8" y1="26" x2="26" y2="8" stroke="#d0cbc3" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="14" y1="26" x2="26" y2="14" stroke="#d0cbc3" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="20" y1="26" x2="26" y2="20" stroke="#d0cbc3" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
               </div>
             )}
           </div>
