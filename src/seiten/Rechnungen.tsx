@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
 
+let _uidSeq = 0
+const newUid = () => ++_uidSeq
+
 interface Position {
+  uid?: number
   typ: string
   beschreibung: string
   menge: number
@@ -104,7 +108,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     setProjektAdresse('')
     setFaelligBis('')
     setDatum(new Date().toISOString().split('T')[0])
-    setPositionen([{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+    setPositionen([{ uid: newUid(), typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
     setFormKey(k => k + 1)
     setRabattProzent(0)
     setSkontoAktiv(false)
@@ -143,7 +147,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setZahlungsModus(zm.modus)
       setZahlungsEigenText(zm.eigen)
       setPositionen(posRes.data.length > 0
-        ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
+        ? posRes.data.map((p: any) => ({ uid: newUid(), ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
       setFormKey(k => k + 1)
       setFormOffen(true)
@@ -167,7 +171,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setSkontoProzent(rechnung.skontoProzent || 2)
       setSkontoTage(rechnung.skontoTage || 7)
       setPositionen(posRes.data.length > 0
-        ? posRes.data.map((p: any) => ({ ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
+        ? posRes.data.map((p: any) => ({ uid: newUid(), ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
       setFormKey(k => k + 1)
       setFormOffen(true)
@@ -185,7 +189,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setIstKleinunternehmer(angebot.istKleinunternehmer)
       setDatum(new Date().toISOString().split('T')[0])
       setFaelligBis('')
-      setPositionen(posRes.data.length > 0 ? posRes.data : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+      setPositionen(posRes.data.length > 0 ? posRes.data.map((p: any) => ({ uid: newUid(), ...p })) : [{ uid: newUid(), typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
       setAngebotWaehlenOffen(false)
     } catch (e) {
       alert('Fehler beim Laden der Positionen!')
@@ -305,7 +309,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const gesamtNachSkonto = gesamt - skontoBetrag
 
   const positionHinzufuegen = () => {
-    setPositionen([...positionen, { typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
+    setPositionen([...positionen, { uid: newUid(), typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
   }
 
   const positionAendern = (idx: number, feld: string, wert: any) => {
@@ -316,7 +320,6 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
 
   const positionLoeschen = (idx: number) => {
     setPositionen(positionen.filter((_, i) => i !== idx))
-    setFormKey(k => k + 1)
   }
 
   const positionVerschieben = (idx: number, richtung: 'hoch' | 'runter') => {
@@ -325,20 +328,17 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     if (ziel < 0 || ziel >= neu.length) return
     ;[neu[idx], neu[ziel]] = [neu[ziel], neu[idx]]
     setPositionen(neu)
-    setFormKey(k => k + 1)
   }
 
   const vorlageEinfuegen = (idx: number, v: any) => {
     const neu = [...positionen]
     neu[idx] = { ...neu[idx], beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }
     setPositionen(neu)
-    setFormKey(k => k + 1)
     setAutocomplete(null)
   }
 
   const vorlageAlsPositionHinzufuegen = (v: any) => {
-    setPositionen([...positionen, { typ: 'Normal', beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }])
-    setFormKey(k => k + 1)
+    setPositionen([...positionen, { uid: newUid(), typ: 'Normal', beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }])
     setVorlagenPickerOffen(false)
   }
 
@@ -353,10 +353,9 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       if (res.data.positionen?.length > 0) {
         const nichtLeer = positionen.filter((p: Position) => p.beschreibung.trim())
         setPositionen([...nichtLeer, ...res.data.positionen.map((p: any) => ({
-          typ: 'Normal', beschreibung: p.beschreibung,
+          uid: newUid(), typ: 'Normal', beschreibung: p.beschreibung,
           menge: p.menge || 1, einheit: p.einheit || 'PA', einzelpreis: p.einzelpreis || 0
         }))])
-        setFormKey(k => k + 1)
       }
     } catch { alert('KI-Positionen konnten nicht generiert werden') }
     setKiTextLaden(false)
@@ -581,7 +580,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {/* FORMULAR MODAL */}
       {formOffen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-start', justifyContent:'center', zIndex:100, overflowY:'auto', padding:'20px 0'}}>
-          <div style={{background:'white', borderRadius:14, width:680, margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
+          <div style={{background:'white', borderRadius:14, width:'min(900px, 96vw)', minWidth:340, margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)', resize:'horizontal', overflow:'auto'}}>
             <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
               <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1}}>{bearbeitenId ? '✏️ Rechnung bearbeiten' : '📋 Neue Rechnung'}</div>
               <button
@@ -686,7 +685,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
                       <textarea
-                        style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'#f5f3ef', borderColor:'#e5e0d8', color:'#3a2e1e'}}
+                        style={{...inputStyle, resize:'vertical', overflow:'auto', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'#f5f3ef', borderColor:'#e5e0d8', color:'#3a2e1e'}}
                         placeholder="Zwischentitel / Abschnittsbezeichnung..."
                         rows={1}
                         value={pos.beschreibung}
@@ -705,7 +704,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
                       <div style={{position:'relative'}}>
-                        <textarea style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block'}}
+                        <textarea style={{...inputStyle, resize:'vertical', overflow:'auto', lineHeight:'20px', minHeight:38, display:'block'}}
                           placeholder="Beschreibung..."
                           rows={1}
                           value={pos.beschreibung}
@@ -741,7 +740,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                         )}
                       </div>
                       <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
-                        key={`${formKey}-${idx}-menge`}
+                        key={`${pos.uid ?? idx}-menge`}
                         defaultValue={pos.menge || ''}
                         onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
                         onBlur={e => positionAendern(idx, 'menge', parseFloat(e.target.value.replace(',', '.')) || 0)} />
@@ -753,7 +752,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                         ))}
                       </select>
                       <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
-                        key={`${formKey}-${idx}-preis`}
+                        key={`${pos.uid ?? idx}-preis`}
                         defaultValue={pos.einzelpreis || ''}
                         onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
                         onBlur={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value.replace(',', '.')) || 0)} />
@@ -798,7 +797,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                     style={{flex:1, padding:'9px', border:'2px dashed #e5e0d8', borderRadius:8, background:'transparent', color:'#888', fontFamily:'DM Sans, sans-serif', fontSize:13, cursor:'pointer'}}>
                     + Position hinzufügen
                   </button>
-                  <button onClick={() => { setPositionen([...positionen, { typ: 'Text', beschreibung: '', menge: 0, einheit: '', einzelpreis: 0 }]); setFormKey(k => k + 1) }}
+                  <button onClick={() => setPositionen([...positionen, { uid: newUid(), typ: 'Text', beschreibung: '', menge: 0, einheit: '', einzelpreis: 0 }])}
                     style={{padding:'9px 14px', border:'2px dashed #c8a96e', borderRadius:8, background:'#fdf8f0', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>
                     + Textzeile
                   </button>
