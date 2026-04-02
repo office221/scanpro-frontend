@@ -74,7 +74,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const [mahnungFrist1, setMahnungFrist1] = useState(14)
   const [mahnungFrist2, setMahnungFrist2] = useState(7)
   const [mahnungFrist3, setMahnungFrist3] = useState(5)
-  const [formKey, setFormKey] = useState(0)
+
   const [vorlagen, setVorlagen] = useState<any[]>([])
   const [autocomplete, setAutocomplete] = useState<{idx: number; items: any[]} | null>(null)
   const [vorlagenPickerOffen, setVorlagenPickerOffen] = useState(false)
@@ -112,7 +112,6 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     setFaelligBis('')
     setDatum(new Date().toISOString().split('T')[0])
     setPositionen([{ uid: newUid(), typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
-    setFormKey(k => k + 1)
     setRabattProzent(0)
     setSkontoAktiv(false)
     setSkontoProzent(2)
@@ -152,7 +151,6 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setPositionen(posRes.data.length > 0
         ? posRes.data.map((p: any) => ({ uid: newUid(), ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
-      setFormKey(k => k + 1)
       setFormOffen(true)
     } catch (e) {
       alert('Fehler beim Laden der Rechnung!')
@@ -176,7 +174,6 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setPositionen(posRes.data.length > 0
         ? posRes.data.map((p: any) => ({ uid: newUid(), ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
-      setFormKey(k => k + 1)
       setFormOffen(true)
     } catch (e) {
       alert('Fehler beim Duplizieren!')
