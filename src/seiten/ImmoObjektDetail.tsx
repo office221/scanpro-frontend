@@ -59,6 +59,7 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
   const [verbEditId,      setVerbEditId]      = useState<number | null>(null)
   const [verbFormOffen,   setVerbFormOffen]   = useState(false)
   const [finanzSaved,     setFinanzSaved]     = useState(false)
+  const [gesamtLaden,     setGesamtLaden]     = useState(false)
   const jahr = new Date().getFullYear()
 
   const ladeDaten = async () => {
@@ -175,6 +176,43 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
     return Math.round((checkliste.filter(c => c.erledigt).length / checkliste.length) * 100)
   }
 
+  const gesamtkostenDrucken = async () => {
+    setGesamtLaden(true)
+    try {
+      const [nkRes, plRes, bkRes] = await Promise.all([
+        api.get(`/immo/kaufpreis-nk/${objektId}`).catch(() => ({ data: { daten: {} } })),
+        api.get(`/immo/planungskosten/${objektId}`).catch(() => ({ data: { daten: {} } })),
+        api.get(`/immo/baukosten/${objektId}`).catch(() => ({ data: { daten: {} } })),
+      ])
+      const nkDaten = nkRes.data.daten || {}
+      const plDaten = plRes.data.daten || {}
+      const bkDaten = bkRes.data.daten || {}
+      const kp = objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : undefined
+
+      // Kaufpreis+Nebenkosten als eigene Sektion
+      const nkZeilen = NK_DEFAULT.map(nk => {
+        const w = nkDaten[nk.id] || {}
+        const betrag = parseFloat(w.betrag || '') || (kp ? kp * nk.pct / 100 : 0)
+        return { id: nk.id, label: nk.label, budget: String(betrag.toFixed(2)), tatsaechlich: String(betrag.toFixed(2)), status: 'Abgeschlossen', notiz: '' }
+      })
+      const nkFakeDaten: KostenMap = {}
+      nkZeilen.forEach(z => { nkFakeDaten[z.id] = { budget: z.budget, tatsaechlich: z.tatsaechlich, status: z.status, notiz: z.notiz } })
+
+      kostenDrucken(
+        'Projektkosten Gesamtübersicht',
+        objekt?.name || `Objekt #${objektId}`,
+        [
+          { label: 'Kaufpreis & Nebenkosten', positionen: NK_DEFAULT, daten: nkFakeDaten },
+          { label: 'Planungskosten', positionen: PLANUNGS_POSITIONEN, daten: plDaten },
+          { label: 'Baukosten', positionen: BAU_POSITIONEN, daten: bkDaten },
+        ],
+        kp
+      )
+    } finally {
+      setGesamtLaden(false)
+    }
+  }
+
   const renderCheckliste = (kategorie: string) => {
     const items = ckKat(kategorie)
     const pct = progress(kategorie)
@@ -263,7 +301,7 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
       </div>
 
       {/* ── Tabs ── */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16, overflowX: 'auto', paddingBottom: 2 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8, overflowX: 'auto', paddingBottom: 2 }}>
         {TABS.map(t => {
           const kat = TAB_KAT[t.id]
           const pct = kat ? progress(kat) : null
@@ -276,6 +314,14 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
             </button>
           )
         })}
+      </div>
+
+      {/* Gesamtkosten PDF — immer sichtbar */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button onClick={gesamtkostenDrucken} disabled={gesamtLaden}
+          style={{ padding: '6px 16px', borderRadius: 8, border: '1.5px solid #e0ddd8', background: 'white', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: '#555', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {gesamtLaden ? '⏳' : '🖨️'} Gesamtkosten PDF
+        </button>
       </div>
 
       {/* ── Tab Inhalte ── */}
@@ -417,10 +463,10 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
       {aktTab === 'kaufpreis' && <KaufpreisTab kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} objektId={objektId} />}
 
       {/* PLANUNGSKOSTEN */}
-      {aktTab === 'planungskosten' && <PlanungskostenTab objektId={objektId} />}
+      {aktTab === 'planungskosten' && <PlanungskostenTab objektId={objektId} objektName={objekt?.name || `Objekt #${objektId}`} />}
 
       {/* BAUKOSTEN */}
-      {aktTab === 'baukosten' && <BaukostenTab objektId={objektId} />}
+      {aktTab === 'baukosten' && <BaukostenTab objektId={objektId} objektName={objekt?.name || `Objekt #${objektId}`} />}
 
       {/* KOSTENRECHNER */}
       {aktTab === 'kostenrechner' && <KostenrechnerTab objektId={objektId} kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} vertraege={vertraege} darlehen={darlehen} bkBelege={bkBelege} bkJahr={bkJahr} />}
@@ -2599,7 +2645,8 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
 // PLANUNGSKOSTEN TAB
 // ─────────────────────────────────────────────────────────────
 type KostenZeile = { budget: string; tatsaechlich: string; status: string; notiz: string }
-type KostenMap = Record<string, KostenZeile>
+type EigeneReihe = { id: string; label: string }
+type KostenMap = Record<string, any>
 
 const PLANUNGS_POSITIONEN = [
   { id: 'architekt',      label: 'Architekt / Planer',           hint: 'Honorar nach HOAI / freie Vereinbarung' },
@@ -2620,7 +2667,66 @@ const STATUS_FARBE: Record<string, { bg: string; text: string }> = {
   Abgeschlossen: { bg: '#d1f5e0', text: '#2d6a4f' },
 }
 
-function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, onSpeichern, laden }: {
+// ── Print helper ──────────────────────────────────────────────
+function kostenDrucken(titel: string, objektName: string, sektionen: { label: string; positionen: { id: string; label: string }[]; daten: KostenMap }[], kp?: number) {
+  const fmtE = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const num = (v: string) => parseFloat(v) || 0
+  const sfTexts: Record<string, string> = { Geplant: '#888', Beauftragt: '#1e40af', 'In Arbeit': '#92400e', Abgeschlossen: '#2d6a4f' }
+
+  let gesamtBudget = 0; let gesamtTats = 0
+  const sektionenHTML = sektionen.map(sek => {
+    const eigene: EigeneReihe[] = Array.isArray(sek.daten.__eigene) ? sek.daten.__eigene : []
+    const allePros = [...sek.positionen, ...eigene.map(e => ({ id: e.id, label: e.label }))]
+    const zeilen = allePros.map(pos => {
+      const z: KostenZeile = sek.daten[pos.id] || { budget: '', tatsaechlich: '', status: 'Geplant', notiz: '' }
+      const b = num(z.budget); const t = num(z.tatsaechlich)
+      gesamtBudget += b; gesamtTats += t
+      const diff = b - t
+      return `<tr><td>${pos.label}</td><td style="color:${sfTexts[z.status||'Geplant']||'#888'}">${z.status||'Geplant'}</td><td style="text-align:right">€ ${fmtE(b)}</td><td style="text-align:right">€ ${fmtE(t)}</td><td style="text-align:right;color:${diff>=0?'#2d6a4f':'#dc2626'}">${diff>=0?'+':''}€ ${fmtE(diff)}</td><td style="color:#888;font-size:10px">${z.notiz||''}</td></tr>`
+    }).join('')
+    const sb = allePros.reduce((s,p)=>s+num(sek.daten[p.id]?.budget||''),0)
+    const st = allePros.reduce((s,p)=>s+num(sek.daten[p.id]?.tatsaechlich||''),0)
+    const sd = sb - st
+    return `<h3 style="margin:20px 0 6px;font-size:13px;color:#1a2a3a;border-bottom:2px solid #1a2a3a;padding-bottom:4px">${sek.label}</h3>
+<table><thead><tr><th>Position</th><th>Status</th><th>Budget</th><th>Tatsächlich</th><th>Differenz</th><th>Notiz</th></tr></thead><tbody>${zeilen}
+<tr style="background:#f5f5f5;font-weight:700"><td>Summe ${sek.label}</td><td></td><td style="text-align:right">€ ${fmtE(sb)}</td><td style="text-align:right">€ ${fmtE(st)}</td><td style="text-align:right;color:${sd>=0?'#2d6a4f':'#dc2626'}">${sd>=0?'+':''}€ ${fmtE(sd)}</td><td></td></tr>
+</tbody></table>`
+  }).join('')
+
+  const kaufpreisHTML = kp != null ? `<div style="margin-bottom:6px"><span style="font-size:12px;color:#555">Kaufpreis:&nbsp;</span><strong style="font-size:14px">€ ${fmtE(kp)}</strong></div>` : ''
+  const gd = gesamtBudget - gesamtTats
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${titel}</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:11px;margin:24px;color:#222}
+h1{font-size:18px;margin:0 0 4px}
+p{margin:0 0 16px;color:#555;font-size:11px}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+th{background:#1a2a3a;color:white;padding:5px 7px;text-align:left;font-size:10px}
+td{padding:4px 7px;border-bottom:1px solid #eee;vertical-align:top}
+.total-box{background:#1a2a3a;color:white;padding:14px 18px;border-radius:8px;margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.total-box .lbl{font-size:9px;opacity:.6;margin-bottom:2px}
+.total-box .val{font-size:15px;font-weight:800}
+@media print{body{margin:12px}}
+</style></head><body>
+<h1>${titel}</h1>
+<p>Objekt: <strong>${objektName}</strong> &nbsp;|&nbsp; Datum: ${new Date().toLocaleDateString('de-AT')}</p>
+${kaufpreisHTML}
+${sektionenHTML}
+<div class="total-box">
+<div><div class="lbl">GESAMTBUDGET</div><div class="val">€ ${fmtE(gesamtBudget)}</div></div>
+<div><div class="lbl">GESAMTKOSTEN TATSÄCHLICH</div><div class="val">€ ${fmtE(gesamtTats)}</div></div>
+<div><div class="lbl">DIFFERENZ</div><div class="val" style="color:${gd>=0?'#6ee7b7':'#fca5a5'}">${gd>=0?'+':''}€ ${fmtE(gd)}</div></div>
+</div>
+<script>window.onload=function(){window.print()}</script>
+</body></html>`
+
+  const w = window.open('', '_blank')
+  if (w) { w.document.write(html); w.document.close() }
+}
+
+function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, onSpeichern, laden, titel, objektName }: {
   positionen: { id: string; label: string; hint: string }[]
   daten: KostenMap
   setDaten: React.Dispatch<React.SetStateAction<KostenMap>>
@@ -2628,17 +2734,45 @@ function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, o
   geaendert: boolean
   onSpeichern: () => void
   laden: boolean
+  titel: string
+  objektName: string
 }) {
   const fmtE = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const num = (v: string) => parseFloat(v) || 0
+
+  // Eigene (custom) Kategorien
+  const eigene: EigeneReihe[] = Array.isArray(daten.__eigene) ? daten.__eigene : []
+
   const upd = (id: string, field: keyof KostenZeile, val: string) =>
     setDaten((p: KostenMap) => {
       const prev: KostenZeile = p[id] || { budget: '', tatsaechlich: '', status: 'Geplant', notiz: '' }
       return { ...p, [id]: { ...prev, [field]: val } }
     })
 
-  const budgetGes = positionen.reduce((s, p) => s + num(daten[p.id]?.budget || ''), 0)
-  const tatsGes   = positionen.reduce((s, p) => s + num(daten[p.id]?.tatsaechlich || ''), 0)
+  const addEigene = () => {
+    const id = 'c_' + Date.now()
+    setDaten((p: KostenMap) => ({ ...p, __eigene: [...eigene, { id, label: 'Neue Kategorie' }] }))
+  }
+
+  const updateLabel = (id: string, label: string) => {
+    setDaten((p: KostenMap) => ({ ...p, __eigene: eigene.map(e => e.id === id ? { ...e, label } : e) }))
+  }
+
+  const deleteEigene = (id: string) => {
+    setDaten((p: KostenMap) => {
+      const next: KostenMap = { ...p, __eigene: eigene.filter(e => e.id !== id) }
+      delete next[id]
+      return next
+    })
+  }
+
+  const allePositionen = [
+    ...positionen.map(p => ({ ...p, isCustom: false })),
+    ...eigene.map(e => ({ id: e.id, label: e.label, hint: '', isCustom: true })),
+  ]
+
+  const budgetGes = allePositionen.reduce((s, p) => s + num(daten[p.id]?.budget || ''), 0)
+  const tatsGes   = allePositionen.reduce((s, p) => s + num(daten[p.id]?.tatsaechlich || ''), 0)
   const differenz = budgetGes - tatsGes
 
   const card: React.CSSProperties = { background: 'white', borderRadius: 14, border: '1px solid #e8e4dd', padding: '18px 20px', marginBottom: 14 }
@@ -2648,23 +2782,47 @@ function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, o
 
   return (
     <div style={{ padding: '0 2px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+      {/* Buttons oben */}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 10 }}>
+        <button onClick={() => kostenDrucken(titel, objektName, [{ label: titel, positionen, daten }])}
+          style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e0ddd8', background: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#555' }}>
+          🖨️ Drucken
+        </button>
         <button onClick={onSpeichern} style={{ padding: '6px 18px', borderRadius: 8, border: 'none', background: gespeichert ? '#10b981' : geaendert ? '#1a2a3a' : '#e0ddd8', color: gespeichert ? 'white' : geaendert ? 'white' : '#aaa', fontSize: 12, fontWeight: 700, cursor: geaendert ? 'pointer' : 'default', transition: 'all 0.2s' }}>
           {gespeichert ? '✓ Gespeichert' : '💾 Speichern'}
         </button>
       </div>
-      {positionen.map(pos => {
-        const z = daten[pos.id] || { budget: '', tatsaechlich: '', status: 'Geplant', notiz: '' }
+
+      {/* Positionen */}
+      {allePositionen.map(pos => {
+        const z: KostenZeile = daten[pos.id] || { budget: '', tatsaechlich: '', status: 'Geplant', notiz: '' }
         const diff = num(z.budget) - num(z.tatsaechlich)
         const sf = STATUS_FARBE[z.status] || STATUS_FARBE['Geplant']
         return (
           <div key={pos.id} style={card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{pos.label}</div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{pos.hint}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {pos.isCustom ? (
+                  <input
+                    style={{ ...iSt, fontSize: 13, fontWeight: 700, border: '1.5px dashed #ccc', background: '#fafaf8' }}
+                    value={pos.label}
+                    onChange={e => updateLabel(pos.id, e.target.value)}
+                    placeholder="Kategoriename eingeben…"
+                  />
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{pos.label}</div>
+                    {pos.hint && <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{pos.hint}</div>}
+                  </>
+                )}
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: sf.bg, color: sf.text, whiteSpace: 'nowrap' }}>{z.status || 'Geplant'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: sf.bg, color: sf.text, whiteSpace: 'nowrap' }}>{z.status || 'Geplant'}</span>
+                {pos.isCustom && (
+                  <button onClick={() => deleteEigene(pos.id)} title="Löschen"
+                    style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: '#dc2626', lineHeight: 1, padding: '0 2px' }}>×</button>
+                )}
+              </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
               <div>
@@ -2690,6 +2848,13 @@ function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, o
           </div>
         )
       })}
+
+      {/* Eigene Kategorie hinzufügen */}
+      <button onClick={addEigene} style={{ width: '100%', padding: '10px', borderRadius: 10, border: '2px dashed #d0ccc5', background: 'transparent', fontSize: 12, fontWeight: 600, color: '#888', cursor: 'pointer', marginBottom: 14 }}>
+        + Kategorie hinzufügen
+      </button>
+
+      {/* Zusammenfassung */}
       <div style={{ background: '#1a2a3a', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.6, marginBottom: 10 }}>Zusammenfassung</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
@@ -2702,7 +2867,7 @@ function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, o
   )
 }
 
-function PlanungskostenTab({ objektId }: { objektId: number }) {
+function PlanungskostenTab({ objektId, objektName }: { objektId: number; objektName: string }) {
   const [daten, setDaten] = useState<KostenMap>({})
   const [laden, setLaden] = useState(true)
   const [geaendert, setGeaendert] = useState(false)
@@ -2728,7 +2893,7 @@ function PlanungskostenTab({ objektId }: { objektId: number }) {
     } catch {}
   }
 
-  return <KostenTabInner positionen={PLANUNGS_POSITIONEN} daten={daten} setDaten={onChange} gespeichert={gespeichert} geaendert={geaendert} onSpeichern={speichern} laden={laden} />
+  return <KostenTabInner positionen={PLANUNGS_POSITIONEN} daten={daten} setDaten={onChange} gespeichert={gespeichert} geaendert={geaendert} onSpeichern={speichern} laden={laden} titel="Planungskosten" objektName={objektName} />
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -2752,7 +2917,7 @@ const BAU_POSITIONEN = [
   { id: 'sonstiges_bau',  label: 'Sonstiges / Reserve',          hint: 'Puffer ca. 10–15 % der Bausumme empfohlen' },
 ]
 
-function BaukostenTab({ objektId }: { objektId: number }) {
+function BaukostenTab({ objektId, objektName }: { objektId: number; objektName: string }) {
   const [daten, setDaten] = useState<KostenMap>({})
   const [laden, setLaden] = useState(true)
   const [geaendert, setGeaendert] = useState(false)
@@ -2778,5 +2943,5 @@ function BaukostenTab({ objektId }: { objektId: number }) {
     } catch {}
   }
 
-  return <KostenTabInner positionen={BAU_POSITIONEN} daten={daten} setDaten={onChange} gespeichert={gespeichert} geaendert={geaendert} onSpeichern={speichern} laden={laden} />
+  return <KostenTabInner positionen={BAU_POSITIONEN} daten={daten} setDaten={onChange} gespeichert={gespeichert} geaendert={geaendert} onSpeichern={speichern} laden={laden} titel="Baukosten" objektName={objektName} />
 }
