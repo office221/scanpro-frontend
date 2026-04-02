@@ -9,8 +9,10 @@ interface Position {
   typ: string
   beschreibung: string
   menge: number
+  rawMenge?: string
   einheit: string
   einzelpreis: number
+  rawPreis?: string
 }
 
 interface Kunde {
@@ -740,11 +742,14 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           </div>
                         )}
                       </div>
-                      <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
-                        key={`${pos.uid ?? idx}-menge`}
-                        defaultValue={pos.menge || ''}
-                        onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
-                        onBlur={e => positionAendern(idx, 'menge', parseFloat(e.target.value.replace(',', '.')) || 0)} />
+                      <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a'}} type="text" inputMode="decimal"
+                        value={pos.rawMenge !== undefined ? pos.rawMenge : (pos.menge === 0 ? '' : String(pos.menge))}
+                        onFocus={e => { positionAendern(idx, 'rawMenge', pos.menge === 0 ? '' : String(pos.menge)); setTimeout(() => e.target.select(), 10) }}
+                        onChange={e => positionAendern(idx, 'rawMenge', e.target.value)}
+                        onBlur={e => {
+                          const n = parseFloat(e.target.value.replace(',', '.')) || 0
+                          const neu = [...positionen]; neu[idx] = { ...neu[idx], menge: n, rawMenge: undefined }; setPositionen(neu)
+                        }} />
                       <select style={{...inputStyle, background:'white'}}
                         value={pos.einheit}
                         onChange={e => positionAendern(idx, 'einheit', e.target.value)}>
@@ -752,11 +757,14 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           <option key={e} value={e}>{e}</option>
                         ))}
                       </select>
-                      <input style={{...inputStyle, textAlign:'right'}} type="text" inputMode="decimal"
-                        key={`${pos.uid ?? idx}-preis`}
-                        defaultValue={pos.einzelpreis || ''}
-                        onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
-                        onBlur={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value.replace(',', '.')) || 0)} />
+                      <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a'}} type="text" inputMode="decimal"
+                        value={pos.rawPreis !== undefined ? pos.rawPreis : (pos.einzelpreis === 0 ? '' : String(pos.einzelpreis))}
+                        onFocus={e => { positionAendern(idx, 'rawPreis', pos.einzelpreis === 0 ? '' : String(pos.einzelpreis)); setTimeout(() => e.target.select(), 10) }}
+                        onChange={e => positionAendern(idx, 'rawPreis', e.target.value)}
+                        onBlur={e => {
+                          const n = parseFloat(e.target.value.replace(',', '.')) || 0
+                          const neu = [...positionen]; neu[idx] = { ...neu[idx], einzelpreis: n, rawPreis: undefined }; setPositionen(neu)
+                        }} />
                       <button onClick={() => positionLoeschen(idx)}
                         style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
                     </div>
@@ -975,5 +983,6 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width:'100%', padding:'9px 12px', border:'1px solid #e5e0d8',
-  borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none'
+  borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none',
+  color:'#1a1a1a', background:'white'
 }
