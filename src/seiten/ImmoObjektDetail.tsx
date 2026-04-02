@@ -1795,11 +1795,24 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
     setGeaendert(true); setGespeichert(false)
   }
 
-  // Speichern → Draft → werte übernehmen, in DB speichern
+  // Speichern → alle Positionen mit aktuellen Werten sichern
   const speichern = async () => {
-    setWerte(draft)
+    // Alle Positionen einschließen — auch jene die nicht manuell geändert wurden
+    const vollstaendig: WertMap = {}
+    NK_DEFAULT.forEach(nk => {
+      const d = draft[nk.id]
+      if (d) {
+        vollstaendig[nk.id] = d
+      } else {
+        // Position nicht manuell geändert → aktuellen Berechnungswert fixieren
+        const betrag = kp > 0 ? String((kp * nk.pct / 100).toFixed(2)) : ''
+        vollstaendig[nk.id] = { pct: String(nk.pct), betrag, letzteEingabe: 'pct' }
+      }
+    })
+    setDraft(vollstaendig)
+    setWerte(vollstaendig)
     try {
-      await api.put(`/immo/kaufpreis-nk/${objektId}`, { daten: draft })
+      await api.put(`/immo/kaufpreis-nk/${objektId}`, { daten: vollstaendig })
     } catch { }
     setGeaendert(false); setGespeichert(true)
     setTimeout(() => setGespeichert(false), 2000)
@@ -1813,9 +1826,10 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
     const pct = isNaN(pctNum) ? nk.pct : pctNum
     let betragNum = parseFloat(w ? w.betrag : '')
     if (isNaN(betragNum)) betragNum = kp * pct / 100
-    // Für Eingabefelder: draft-Werte
-    const draftPct = d ? d.pct : String(nk.pct)
-    const draftBetrag = d ? d.betrag : (kp > 0 ? (kp * nk.pct / 100).toFixed(2) : '')
+    // Für Eingabefelder: draft-Werte (fallback auf gespeicherte, dann berechnete)
+    const fallback = d || w
+    const draftPct = fallback ? fallback.pct : String(nk.pct)
+    const draftBetrag = fallback ? fallback.betrag : (kp > 0 ? (kp * nk.pct / 100).toFixed(2) : '')
     return { ...nk, pct, betragNum, draftPct, draftBetrag }
   })
 
