@@ -1804,7 +1804,9 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
       const d = r.data.daten || {}
       setWerte(d)
       setDraft(d)
-    }).catch(() => {}).finally(() => setDbLaden(false))
+    }).catch((e: any) => {
+      console.error('Kaufpreis-NK laden fehlgeschlagen:', e?.response?.data || e?.message)
+    }).finally(() => setDbLaden(false))
     api.get(`/immo/kaufpreis-belege/${objektId}`).then(r => {
       const map: Record<string, any> = {}
       r.data.forEach((b: any) => { map[b.positionId] = b })
@@ -1863,13 +1865,15 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
         vollstaendig[nk.id] = { pct: String(nk.pct), betrag, letzteEingabe: 'pct' }
       }
     })
-    setDraft(vollstaendig)
-    setWerte(vollstaendig)
     try {
       await api.put(`/immo/kaufpreis-nk/${objektId}`, { daten: vollstaendig })
-    } catch { }
-    setGeaendert(false); setGespeichert(true)
-    setTimeout(() => setGespeichert(false), 2000)
+      setDraft(vollstaendig)
+      setWerte(vollstaendig)
+      setGeaendert(false); setGespeichert(true)
+      setTimeout(() => setGespeichert(false), 2000)
+    } catch (e: any) {
+      alert('Fehler beim Speichern: ' + (e?.response?.data?.fehler || e?.message || 'Unbekannter Fehler'))
+    }
   }
 
   // Summen aus GESPEICHERTEN Werten
