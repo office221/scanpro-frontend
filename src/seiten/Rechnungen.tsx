@@ -986,5 +986,5 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width:'100%', padding:'9px 12px', border:'1px solid #e5e0d8',
   borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none',
-  color:'#1a1a1a', background:'white'
+  color:'#1a1a1a', background:'white', boxSizing:'border-box'
 }
