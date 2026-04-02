@@ -49,6 +49,21 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const [formOffen, setFormOffen] = useState(false)
   const [angebotWaehlenOffen, setAngebotWaehlenOffen] = useState(false)
   const [vollbild, setVollbild] = useState(false)
+  const [modalSize, setModalSize] = useState({ w: Math.min(900, window.innerWidth * 0.96), h: 600 })
+  const laden_drag = React.useRef(false)
+  const drag_start = React.useRef({ x: 0, y: 0, w: 0, h: 0 })
+  const onResizeDrag = (e: React.MouseEvent) => {
+    laden_drag.current = true
+    drag_start.current = { x: e.clientX, y: e.clientY, w: modalSize.w, h: modalSize.h }
+    const onMove = (ev: MouseEvent) => {
+      if (!laden_drag.current) return
+      setModalSize({ w: Math.max(560, drag_start.current.w + ev.clientX - drag_start.current.x), h: Math.max(400, drag_start.current.h + ev.clientY - drag_start.current.y) })
+    }
+    const onUp = () => { laden_drag.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    e.preventDefault()
+  }
   const [laden, setLaden] = useState(false)
   const [selectedKunde, setSelectedKunde] = useState<number | null>(null)
   const [projektName, setProjektName] = useState('')
@@ -581,7 +596,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {/* FORMULAR MODAL */}
       {formOffen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-start', justifyContent:'center', zIndex:100, overflowY:'auto', padding:'20px 0'}}>
-          <div style={{background:'white', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : 'min(900px, 96vw)', height: vollbild ? '100vh' : undefined, minWidth: vollbild ? undefined : 560, maxWidth:'100vw', margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)', resize: vollbild ? 'none' : 'both', overflow:'hidden', minHeight: vollbild ? undefined : 400, display:'flex', flexDirection:'column'}}>
+          <div style={{background:'white', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : modalSize.w, height: vollbild ? '100vh' : modalSize.h, minWidth: vollbild ? undefined : 560, maxWidth:'100vw', margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)', overflow:'hidden', display:'flex', flexDirection:'column', position:'relative'}}>
             <div style={{flex:1, overflowY:'auto', overflowX:'hidden', display:'flex', flexDirection:'column'}}>
             <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
               <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1}}>{bearbeitenId ? '✏️ Rechnung bearbeiten' : '📋 Neue Rechnung'}</div>
@@ -936,6 +951,12 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               </div>
             </div>
             </div>
+            {!vollbild && (
+              <div onMouseDown={onResizeDrag}
+                style={{position:'absolute', bottom:0, right:0, width:20, height:20, cursor:'nwse-resize', display:'flex', alignItems:'center', justifyContent:'center', color:'#ccc', fontSize:14, userSelect:'none'}}>
+                ⋰
+              </div>
+            )}
           </div>
         </div>
       )}
