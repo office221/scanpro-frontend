@@ -765,7 +765,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                         ))}
                       </select>
                       <div style={{display:'flex', alignItems:'center', gap:6, minWidth:140}}>
-                        <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a', flex:1, minWidth:90}} type="text" inputMode="decimal"
+                        <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a', flex:1, minWidth:90, width:'auto'}} type="text" inputMode="decimal"
                           value={pos.rawPreis !== undefined ? pos.rawPreis : (pos.einzelpreis === 0 ? '' : String(pos.einzelpreis))}
                           onFocus={e => { positionAendern(idx, 'rawPreis', pos.einzelpreis === 0 ? '' : String(pos.einzelpreis)); setTimeout(() => e.target.select(), 10) }}
                           onChange={e => positionAendern(idx, 'rawPreis', e.target.value)}
