@@ -17,6 +17,8 @@ const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2,
 const TABS = [
   { id: 'uebersicht',      label: 'Übersicht' },
   { id: 'kaufpreis',       label: 'Kaufpreis & Nebenkosten' },
+  { id: 'planungskosten',  label: 'Planungskosten' },
+  { id: 'baukosten',       label: 'Baukosten' },
   { id: 'kostenrechner',   label: 'Kostenrechner' },
   { id: 'bonitaet',        label: 'Bonität' },
   { id: 'betriebskosten',  label: 'Betriebskosten' },
@@ -413,6 +415,12 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
 
       {/* KAUFPREIS & NEBENKOSTEN */}
       {aktTab === 'kaufpreis' && <KaufpreisTab kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} objektId={objektId} />}
+
+      {/* PLANUNGSKOSTEN */}
+      {aktTab === 'planungskosten' && <PlanungskostenTab objektId={objektId} />}
+
+      {/* BAUKOSTEN */}
+      {aktTab === 'baukosten' && <BaukostenTab objektId={objektId} />}
 
       {/* KOSTENRECHNER */}
       {aktTab === 'kostenrechner' && <KostenrechnerTab objektId={objektId} kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} vertraege={vertraege} darlehen={darlehen} bkBelege={bkBelege} bkJahr={bkJahr} />}
@@ -2585,4 +2593,190 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
       )}
     </div>
   )
+}
+
+// ─────────────────────────────────────────────────────────────
+// PLANUNGSKOSTEN TAB
+// ─────────────────────────────────────────────────────────────
+type KostenZeile = { budget: string; tatsaechlich: string; status: string; notiz: string }
+type KostenMap = Record<string, KostenZeile>
+
+const PLANUNGS_POSITIONEN = [
+  { id: 'architekt',      label: 'Architekt / Planer',           hint: 'Honorar nach HOAI / freie Vereinbarung' },
+  { id: 'statiker',       label: 'Statiker / Tragwerksplanung',  hint: 'Statische Berechnungen & Pläne' },
+  { id: 'haustechnik',    label: 'Haustechnikplanung (MEP)',      hint: 'Elektro, Sanitär, Heizung, Lüftung' },
+  { id: 'energieberater', label: 'Energieberater',               hint: 'Energieausweis, KfW-Nachweise, Beratung' },
+  { id: 'vermessung',     label: 'Vermessung / Kataster',        hint: 'Lageplan, Grenzfeststellung' },
+  { id: 'genehmigungen',  label: 'Behördliche Genehmigungen',    hint: 'Baugenehmigung, Gebühren, Auflagen' },
+  { id: 'gutachten',      label: 'Gutachten / Sachverständige',  hint: 'Bodengutachten, Schadstoffmessung u. ä.' },
+  { id: 'sonstiges_pl',   label: 'Sonstiges',                    hint: 'Weitere Planungs- und Beratungskosten' },
+]
+
+const BAU_STATUS = ['Geplant', 'Beauftragt', 'In Arbeit', 'Abgeschlossen']
+const STATUS_FARBE: Record<string, { bg: string; text: string }> = {
+  Geplant:       { bg: '#f0ede8', text: '#888' },
+  Beauftragt:    { bg: '#dbeafe', text: '#1e40af' },
+  'In Arbeit':   { bg: '#fef3c7', text: '#92400e' },
+  Abgeschlossen: { bg: '#d1f5e0', text: '#2d6a4f' },
+}
+
+function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, onSpeichern, laden }: {
+  positionen: { id: string; label: string; hint: string }[]
+  daten: KostenMap
+  setDaten: React.Dispatch<React.SetStateAction<KostenMap>>
+  gespeichert: boolean
+  geaendert: boolean
+  onSpeichern: () => void
+  laden: boolean
+}) {
+  const fmtE = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const num = (v: string) => parseFloat(v) || 0
+  const upd = (id: string, field: keyof KostenZeile, val: string) =>
+    setDaten((p: KostenMap) => {
+      const prev: KostenZeile = p[id] || { budget: '', tatsaechlich: '', status: 'Geplant', notiz: '' }
+      return { ...p, [id]: { ...prev, [field]: val } }
+    })
+
+  const budgetGes = positionen.reduce((s, p) => s + num(daten[p.id]?.budget || ''), 0)
+  const tatsGes   = positionen.reduce((s, p) => s + num(daten[p.id]?.tatsaechlich || ''), 0)
+  const differenz = budgetGes - tatsGes
+
+  const card: React.CSSProperties = { background: 'white', borderRadius: 14, border: '1px solid #e8e4dd', padding: '18px 20px', marginBottom: 14 }
+  const iSt: React.CSSProperties = { padding: '5px 8px', borderRadius: 6, border: '1.5px solid #e8e4dd', fontSize: 12, width: '100%', color: '#1a2a3a', fontWeight: 600, boxSizing: 'border-box' as const }
+
+  if (laden) return <div style={{ padding: 32, textAlign: 'center', color: '#888', fontSize: 13 }}>⏳ Lade gespeicherte Werte…</div>
+
+  return (
+    <div style={{ padding: '0 2px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+        <button onClick={onSpeichern} style={{ padding: '6px 18px', borderRadius: 8, border: 'none', background: gespeichert ? '#10b981' : geaendert ? '#1a2a3a' : '#e0ddd8', color: gespeichert ? 'white' : geaendert ? 'white' : '#aaa', fontSize: 12, fontWeight: 700, cursor: geaendert ? 'pointer' : 'default', transition: 'all 0.2s' }}>
+          {gespeichert ? '✓ Gespeichert' : '💾 Speichern'}
+        </button>
+      </div>
+      {positionen.map(pos => {
+        const z = daten[pos.id] || { budget: '', tatsaechlich: '', status: 'Geplant', notiz: '' }
+        const diff = num(z.budget) - num(z.tatsaechlich)
+        const sf = STATUS_FARBE[z.status] || STATUS_FARBE['Geplant']
+        return (
+          <div key={pos.id} style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{pos.label}</div>
+                <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{pos.hint}</div>
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: sf.bg, color: sf.text, whiteSpace: 'nowrap' }}>{z.status || 'Geplant'}</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
+              <div>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 3, fontWeight: 600 }}>Budget (€)</div>
+                <input type="number" style={iSt} value={z.budget} placeholder="0,00" onChange={e => upd(pos.id, 'budget', e.target.value)} />
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 3, fontWeight: 600 }}>Tatsächlich (€)</div>
+                <input type="number" style={iSt} value={z.tatsaechlich} placeholder="0,00" onChange={e => upd(pos.id, 'tatsaechlich', e.target.value)} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+              {BAU_STATUS.map(s => (
+                <button key={s} onClick={() => upd(pos.id, 'status', s)} style={{ padding: '3px 10px', borderRadius: 10, border: `1.5px solid ${z.status === s ? '#1a2a3a' : '#e8e4dd'}`, background: z.status === s ? '#1a2a3a' : 'white', color: z.status === s ? 'white' : '#555', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{s}</button>
+              ))}
+              {num(z.budget) > 0 && (
+                <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: diff >= 0 ? '#2d6a4f' : '#dc2626' }}>
+                  {diff >= 0 ? '▲' : '▼'} € {fmtE(Math.abs(diff))}
+                </span>
+              )}
+            </div>
+            <input style={{ ...iSt, fontSize: 11, fontWeight: 400, color: '#555' }} placeholder="Notiz (optional)" value={z.notiz || ''} onChange={e => upd(pos.id, 'notiz', e.target.value)} />
+          </div>
+        )
+      })}
+      <div style={{ background: '#1a2a3a', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.6, marginBottom: 10 }}>Zusammenfassung</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div><div style={{ fontSize: 10, opacity: 0.6, marginBottom: 3 }}>Budget gesamt</div><div style={{ fontSize: 16, fontWeight: 800 }}>€ {fmtE(budgetGes)}</div></div>
+          <div><div style={{ fontSize: 10, opacity: 0.6, marginBottom: 3 }}>Tatsächlich</div><div style={{ fontSize: 16, fontWeight: 800 }}>€ {fmtE(tatsGes)}</div></div>
+          <div><div style={{ fontSize: 10, opacity: 0.6, marginBottom: 3 }}>Differenz</div><div style={{ fontSize: 16, fontWeight: 800, color: differenz >= 0 ? '#6ee7b7' : '#fca5a5' }}>{differenz >= 0 ? '+' : ''}€ {fmtE(differenz)}</div></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PlanungskostenTab({ objektId }: { objektId: number }) {
+  const [daten, setDaten] = useState<KostenMap>({})
+  const [laden, setLaden] = useState(true)
+  const [geaendert, setGeaendert] = useState(false)
+  const [gespeichert, setGespeichert] = useState(false)
+
+  useEffect(() => {
+    setLaden(true)
+    api.get(`/immo/planungskosten/${objektId}`).then(r => {
+      setDaten(r.data.daten || {})
+    }).catch(() => {}).finally(() => setLaden(false))
+  }, [objektId])
+
+  const onChange = (updater: React.SetStateAction<KostenMap>) => {
+    setDaten(updater)
+    setGeaendert(true); setGespeichert(false)
+  }
+
+  const speichern = async () => {
+    try {
+      await api.put(`/immo/planungskosten/${objektId}`, { daten })
+      setGeaendert(false); setGespeichert(true)
+      setTimeout(() => setGespeichert(false), 2000)
+    } catch {}
+  }
+
+  return <KostenTabInner positionen={PLANUNGS_POSITIONEN} daten={daten} setDaten={onChange} gespeichert={gespeichert} geaendert={geaendert} onSpeichern={speichern} laden={laden} />
+}
+
+// ─────────────────────────────────────────────────────────────
+// BAUKOSTEN TAB
+// ─────────────────────────────────────────────────────────────
+const BAU_POSITIONEN = [
+  { id: 'abbruch',        label: 'Abbruch / Demontage',          hint: 'Abrissarbeiten, Entsorgung, Altlastensanierung' },
+  { id: 'rohbau',         label: 'Rohbau / Maurer',              hint: 'Fundamentarbeiten, Mauerwerk, Betonarbeiten' },
+  { id: 'dachstuhl',      label: 'Zimmerer / Dachstuhl',         hint: 'Holzkonstruktion, Dachstuhl, Balkone' },
+  { id: 'dach',           label: 'Dachdeckung / Dachabdichtung', hint: 'Eindeckung, Flachdachabdichtung, Kamine' },
+  { id: 'fassade',        label: 'Fassade / Außendämmung',       hint: 'WDVS, Verputz, Klinker, Dämmung' },
+  { id: 'fenster',        label: 'Fenster & Außentüren',         hint: 'Fenster, Haustüre, Rolläden, Sonnenschutz' },
+  { id: 'elektro',        label: 'Elektroinstallation',          hint: 'Leitungen, Verteiler, Steckdosen, Smart Home' },
+  { id: 'sanitaer',       label: 'Sanitär & Heizung',            hint: 'Rohre, Heizkörper, Bäder, Heizanlage' },
+  { id: 'boden',          label: 'Böden & Fliesen',              hint: 'Estrich, Fliesen, Parkett, Teppich' },
+  { id: 'innenputz',      label: 'Innenputz / Trockenbau',       hint: 'Putz, Gipskarton, abgehängte Decken' },
+  { id: 'maler',          label: 'Maler & Tapete',               hint: 'Innenanstrich, Tapeten, Lacke' },
+  { id: 'innentüren',     label: 'Innentüren & Tischler',        hint: 'Zimmertüren, Einbauschränke, Küche' },
+  { id: 'aussenanlagen',  label: 'Außenanlagen',                 hint: 'Garten, Zufahrt, Zäune, Beleuchtung' },
+  { id: 'aufzug',         label: 'Aufzug / Barrierefreiheit',    hint: 'Fahrstuhl, Rampen, behindertengerechter Ausbau' },
+  { id: 'sonstiges_bau',  label: 'Sonstiges / Reserve',          hint: 'Puffer ca. 10–15 % der Bausumme empfohlen' },
+]
+
+function BaukostenTab({ objektId }: { objektId: number }) {
+  const [daten, setDaten] = useState<KostenMap>({})
+  const [laden, setLaden] = useState(true)
+  const [geaendert, setGeaendert] = useState(false)
+  const [gespeichert, setGespeichert] = useState(false)
+
+  useEffect(() => {
+    setLaden(true)
+    api.get(`/immo/baukosten/${objektId}`).then(r => {
+      setDaten(r.data.daten || {})
+    }).catch(() => {}).finally(() => setLaden(false))
+  }, [objektId])
+
+  const onChange = (updater: React.SetStateAction<KostenMap>) => {
+    setDaten(updater)
+    setGeaendert(true); setGespeichert(false)
+  }
+
+  const speichern = async () => {
+    try {
+      await api.put(`/immo/baukosten/${objektId}`, { daten })
+      setGeaendert(false); setGespeichert(true)
+      setTimeout(() => setGespeichert(false), 2000)
+    } catch {}
+  }
+
+  return <KostenTabInner positionen={BAU_POSITIONEN} daten={daten} setDaten={onChange} gespeichert={gespeichert} geaendert={geaendert} onSpeichern={speichern} laden={laden} />
 }
