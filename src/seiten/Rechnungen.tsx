@@ -332,7 +332,8 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
 
   const vorlageEinfuegen = (idx: number, v: any) => {
     const neu = [...positionen]
-    neu[idx] = { ...neu[idx], beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }
+    // Neue uid → Inputs remounten mit korrekten defaultValues aus der Vorlage
+    neu[idx] = { uid: newUid(), ...neu[idx], beschreibung: v.beschreibung || v.name, menge: parseFloat(v.menge) || 1, einheit: v.einheit || 'PA', einzelpreis: parseFloat(v.einzelpreis) || 0 }
     setPositionen(neu)
     setAutocomplete(null)
   }
@@ -669,7 +670,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               {/* POSITIONEN */}
               <div style={{marginBottom:16}}>
                 <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:10}}>Positionen</div>
-                <div style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, marginBottom:4}}>
+                <div style={{display:'grid', gridTemplateColumns:'22px 1fr 70px 90px 110px 32px', gap:8, marginBottom:4}}>
                   {['', 'Beschreibung', 'Menge', 'Einheit', '€ Preis', ''].map((h, i) => (
                     <div key={i} style={{fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#aaa', fontWeight:700}}>{h}</div>
                   ))}
@@ -696,7 +697,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                     </div>
                   ) : (
                     /* ── Normale Position ── */
-                    <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, marginBottom:8, alignItems:'center'}}>
+                    <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 70px 90px 110px 32px', gap:8, marginBottom:8, alignItems:'center'}}>
                       <div style={{display:'flex', flexDirection:'column', gap:2}}>
                         <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
                           style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
