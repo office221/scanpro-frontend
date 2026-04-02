@@ -48,6 +48,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const [angebote, setAngebote] = useState<any[]>([])
   const [formOffen, setFormOffen] = useState(false)
   const [angebotWaehlenOffen, setAngebotWaehlenOffen] = useState(false)
+  const [vollbild, setVollbild] = useState(false)
   const [laden, setLaden] = useState(false)
   const [selectedKunde, setSelectedKunde] = useState<number | null>(null)
   const [projektName, setProjektName] = useState('')
@@ -583,7 +584,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {/* FORMULAR MODAL */}
       {formOffen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-start', justifyContent:'center', zIndex:100, overflowY:'auto', padding:'20px 0'}}>
-          <div style={{background:'white', borderRadius:14, width:'min(900px, 96vw)', minWidth:560, maxWidth:'98vw', margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)', resize:'both', overflow:'hidden', minHeight:400, display:'flex', flexDirection:'column'}}>
+          <div style={{background:'white', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : 'min(900px, 96vw)', height: vollbild ? '100vh' : undefined, minWidth: vollbild ? undefined : 560, maxWidth:'100vw', margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)', resize: vollbild ? 'none' : 'both', overflow:'hidden', minHeight: vollbild ? undefined : 400, display:'flex', flexDirection:'column'}}>
             <div style={{flex:1, overflowY:'auto', overflowX:'hidden', display:'flex', flexDirection:'column'}}>
             <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
               <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1}}>{bearbeitenId ? '✏️ Rechnung bearbeiten' : '📋 Neue Rechnung'}</div>
@@ -592,7 +593,12 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                 onClick={() => setAngebotWaehlenOffen(true)}>
                 📄 Aus Angebot übernehmen
               </button>
-              <button onClick={() => setFormOffen(false)}
+              <button onClick={() => setVollbild(v => !v)}
+                title={vollbild ? 'Verkleinern' : 'Vollbild'}
+                style={{background:'transparent', border:'none', fontSize:16, cursor:'pointer', color:'#888'}}>
+                {vollbild ? '⊡' : '⛶'}
+              </button>
+              <button onClick={() => { setFormOffen(false); setVollbild(false) }}
                 style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
             </div>
 
