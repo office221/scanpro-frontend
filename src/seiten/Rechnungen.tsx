@@ -673,8 +673,8 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               {/* POSITIONEN */}
               <div style={{marginBottom:16}}>
                 <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:10}}>Positionen</div>
-                <div style={{display:'grid', gridTemplateColumns:'22px 2fr 65px 80px 1fr 36px', gap:8, marginBottom:4}}>
-                  {['', 'Beschreibung', 'Menge', 'Einheit', '€ Preis', ''].map((h, i) => (
+                <div style={{display:'grid', gridTemplateColumns:'22px 2fr 65px 80px auto', gap:8, marginBottom:4}}>
+                  {['', 'Beschreibung', 'Menge', 'Einheit', '€ Preis'].map((h, i) => (
                     <div key={i} style={{fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#aaa', fontWeight:700}}>{h}</div>
                   ))}
                 </div>
@@ -700,7 +700,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                     </div>
                   ) : (
                     /* ── Normale Position ── */
-                    <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 2fr 65px 80px 1fr 36px', gap:8, marginBottom:8, alignItems:'center'}}>
+                    <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 2fr 65px 80px auto', gap:8, marginBottom:8, alignItems:'center'}}>
                       <div style={{display:'flex', flexDirection:'column', gap:2}}>
                         <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
                           style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
@@ -758,16 +758,18 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           <option key={e} value={e}>{e}</option>
                         ))}
                       </select>
-                      <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a'}} type="text" inputMode="decimal"
-                        value={pos.rawPreis !== undefined ? pos.rawPreis : (pos.einzelpreis === 0 ? '' : String(pos.einzelpreis))}
-                        onFocus={e => { positionAendern(idx, 'rawPreis', pos.einzelpreis === 0 ? '' : String(pos.einzelpreis)); setTimeout(() => e.target.select(), 10) }}
-                        onChange={e => positionAendern(idx, 'rawPreis', e.target.value)}
-                        onBlur={e => {
-                          const n = parseFloat(e.target.value.replace(',', '.')) || 0
-                          const neu = [...positionen]; neu[idx] = { ...neu[idx], einzelpreis: n, rawPreis: undefined }; setPositionen(neu)
-                        }} />
-                      <button onClick={() => positionLoeschen(idx)}
-                        style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
+                      <div style={{display:'flex', alignItems:'center', gap:6, minWidth:140}}>
+                        <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a', flex:1, minWidth:90}} type="text" inputMode="decimal"
+                          value={pos.rawPreis !== undefined ? pos.rawPreis : (pos.einzelpreis === 0 ? '' : String(pos.einzelpreis))}
+                          onFocus={e => { positionAendern(idx, 'rawPreis', pos.einzelpreis === 0 ? '' : String(pos.einzelpreis)); setTimeout(() => e.target.select(), 10) }}
+                          onChange={e => positionAendern(idx, 'rawPreis', e.target.value)}
+                          onBlur={e => {
+                            const n = parseFloat(e.target.value.replace(',', '.')) || 0
+                            const neu = [...positionen]; neu[idx] = { ...neu[idx], einzelpreis: n, rawPreis: undefined }; setPositionen(neu)
+                          }} />
+                        <button onClick={() => positionLoeschen(idx)}
+                          style={{background:'#fde8e6', border:'none', borderRadius:6, width:34, height:36, flexShrink:0, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
+                      </div>
                     </div>
                   )
                 ))}
