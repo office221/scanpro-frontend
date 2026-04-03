@@ -225,8 +225,11 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
     if (w) { w.document.write(html); w.document.close() }
   }
 
+  const [pdfLaden, setPdfLaden] = useState(false)
+
   const pdfSpeichern = async () => {
-    if (!aktivProjekt) return
+    if (!aktivProjekt || pdfLaden) return
+    setPdfLaden(true)
     try {
       const token = localStorage.getItem('token')
       const baseURL = (process.env.REACT_APP_API_URL || 'https://scanpro-backend-production.up.railway.app/api').replace(/\/$/, '')
@@ -240,13 +243,19 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
       const contentType = res.headers.get('content-type') || ''
       if (!contentType.includes('application/pdf')) {
         const text = await res.text()
-        throw new Error('Kein PDF erhalten: ' + text.slice(0, 100))
+        throw new Error('Kein PDF: ' + text.slice(0, 80))
       }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      window.open(url, '_blank')
-      setTimeout(() => URL.revokeObjectURL(url), 10000)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Stundenliste-${aktivProjekt.name.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
     } catch (e: any) { alert('PDF-Fehler: ' + e.message) }
+    finally { setPdfLaden(false) }
   }
 
   const gesamtStunden = eintraege.reduce((s, e) => s + Number(e.stunden), 0)
@@ -329,9 +338,9 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
                     style={{ padding: '8px 16px', background: '#f0ede8', color: '#555', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                     🖨 Drucken
                   </button>
-                  <button onClick={pdfSpeichern}
-                    style={{ padding: '8px 16px', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                    💾 PDF
+                  <button onClick={pdfSpeichern} disabled={pdfLaden}
+                    style={{ padding: '8px 16px', background: pdfLaden ? '#f0f0f0' : '#e8f5e9', color: pdfLaden ? '#aaa' : '#2e7d32', border: '1px solid #c8e6c9', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: pdfLaden ? 'default' : 'pointer' }}>
+                    {pdfLaden ? '⏳ PDF...' : '💾 PDF'}
                   </button>
                   {onNavigate && (
                     <button onClick={() => { sessionStorage.setItem('stundenProjektId', String(aktivProjekt!.id)); onNavigate('Rechnungen') }}
