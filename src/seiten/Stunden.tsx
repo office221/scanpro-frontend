@@ -149,7 +149,7 @@ export default function Stunden({ onNavigate }: { onNavigate?: (seite: string) =
     const gesamtBet = p.stundensatz > 0 ? gesamtStd * p.stundensatz : null
     const fmt = (n: number) => n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
     const logoHtml = logoBase64
-      ? `<img src="${logoBase64}" alt="Logo" style="max-width:180px;max-height:70px;object-fit:contain;" />`
+      ? `<img src="${logoBase64}" alt="Logo" style="max-width:280px;max-height:110px;object-fit:contain;object-position:left center;" />`
       : `<div style="font-size:22px;font-weight:900;letter-spacing:-0.5px;">${firmaName || 'Stundenliste'}</div>`
 
     return `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
