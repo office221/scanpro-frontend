@@ -233,14 +233,19 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
       const res = await fetch(`${apiUrl}/api/stunden/pdf/${aktivProjekt.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      if (!res.ok) throw new Error('Fehler beim Erstellen')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ fehler: `HTTP ${res.status}` }))
+        throw new Error(err.fehler || `HTTP ${res.status}`)
+      }
+      const contentType = res.headers.get('content-type') || ''
+      if (!contentType.includes('application/pdf')) {
+        const text = await res.text()
+        throw new Error('Kein PDF erhalten: ' + text.slice(0, 100))
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `Stundenliste-${aktivProjekt.name}-${new Date().toISOString().split('T')[0]}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
+      window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 10000)
     } catch (e: any) { alert('PDF-Fehler: ' + e.message) }
   }
 
