@@ -229,8 +229,8 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
     if (!aktivProjekt) return
     try {
       const token = localStorage.getItem('token')
-      const apiUrl = (process.env.REACT_APP_API_URL || '').replace(/\/$/, '')
-      const res = await fetch(`${apiUrl}/api/stunden/pdf/${aktivProjekt.id}`, {
+      const baseURL = (process.env.REACT_APP_API_URL || 'https://scanpro-backend-production.up.railway.app/api').replace(/\/$/, '')
+      const res = await fetch(`${baseURL}/stunden/pdf/${aktivProjekt.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) {
