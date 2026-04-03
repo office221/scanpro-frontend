@@ -164,7 +164,7 @@ export default function Stunden({ onNavigate }: { onNavigate?: (seite: string) =
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 12px; margin-top: 24px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
   th { background: #f8f6f2; padding: 9px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #888; font-weight: 700; border-bottom: 1px solid #e5e0d8; }
-  th.right, td.right { text-align: right; }
+  th.right, td.right { text-align: right; white-space: nowrap; }
   td { padding: 9px 12px; border-bottom: 1px solid #f0ede8; font-size: 13px; vertical-align: top; }
   tr:last-child td { border-bottom: none; }
   .totals { border-top: 2px solid #1a1a1a; padding-top: 16px; display: flex; justify-content: flex-end; gap: 40px; }
