@@ -1345,6 +1345,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                 { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
                                 { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
                                 { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
+                                { name: '🏗️ Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
                                 { name: '🔵 idealo', url: `https://www.idealo.at/preisvergleich/MainSearchProductCategory.html?q=${sq}` },
                               ]; })().map(s => (
                                 <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
