@@ -105,6 +105,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   // Materialien
   const [materialien, setMaterialien] = useState<any[]>([])
   const [materialExpanded, setMaterialExpanded] = useState<Record<number, boolean>>({})
+  const [angebote, setAngebote] = useState<Record<number, any[]>>({})
+  const [angeboteGeladen, setAngeboteGeladen] = useState<Record<number, boolean>>({})
 
   const ladeLVListe = useCallback(async () => {
     setLadenLV(true)
@@ -143,6 +145,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   useEffect(() => {
     if (aktivLV) {
       setMaterialien([])
+      setAngebote({})
+      setAngeboteGeladen({})
       ladeDetails(aktivLV)
     }
   }, [aktivLV, ladeDetails])
@@ -304,8 +308,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
     if (r.ok) { const neu = await r.json(); setMaterialien(prev => [...prev, neu]) }
   }
 
-  const aktualisiereM = (id: number, feld: string, wert: string) => {
-    setMaterialien(prev => prev.map(m => m.id === id ? { ...m, [feld]: wert, gesamtpreis: feld === 'menge' || feld === 'einheitspreis' ? (parseFloat(feld === 'menge' ? wert : m.menge)||0) * (parseFloat(feld === 'einheitspreis' ? wert : m.einheitspreis)||0) : m.gesamtpreis } : m))
+  const aktualisiereM = (id: number, feld: string, wert: string | number) => {
+    setMaterialien(prev => prev.map(m => m.id === id ? { ...m, [feld]: wert, gesamtpreis: feld === 'menge' || feld === 'einheitspreis' ? (parseFloat(String(feld === 'menge' ? wert : m.menge))||0) * (parseFloat(String(feld === 'einheitspreis' ? wert : m.einheitspreis))||0) : m.gesamtpreis } : m))
   }
 
   const speicherMaterial = async (m: any) => {
@@ -318,6 +322,62 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const loescheMaterial = async (id: number) => {
     await fetch(`${BASE_URL}/kalkulation/materialien/${id}`, { method: 'DELETE', headers: authHeaders() })
     setMaterialien(prev => prev.filter(m => m.id !== id))
+  }
+
+  const ladeAngebote = async (materialId: number) => {
+    if (angeboteGeladen[materialId]) return
+    const r = await fetch(`${BASE_URL}/kalkulation/angebote/${materialId}`, { headers: authHeaders() })
+    if (r.ok) {
+      const data = await r.json()
+      setAngebote(prev => ({ ...prev, [materialId]: data }))
+      setAngeboteGeladen(prev => ({ ...prev, [materialId]: true }))
+      if (data.length > 0) {
+        const best = Math.min(...data.map((a: any) => parseFloat(a.einheitspreis) || 0).filter((v: number) => v > 0))
+        if (best > 0) aktualisiereM(materialId, 'einheitspreis', best)
+      }
+    }
+  }
+
+  const fuegeAngebotHinzu = async (materialId: number) => {
+    const r = await fetch(`${BASE_URL}/kalkulation/angebote`, {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ materialId, lieferant: '', artikelnummer: '', einheitspreis: 0, url: '', notiz: '' })
+    })
+    if (r.ok) {
+      const neu = await r.json()
+      setAngebote(prev => ({ ...prev, [materialId]: [...(prev[materialId] || []), neu] }))
+    }
+  }
+
+  const aktualisiereAngebot = (materialId: number, angebotId: number, feld: string, wert: string | number) => {
+    setAngebote(prev => {
+      const liste = (prev[materialId] || []).map((a: any) => a.id === angebotId ? { ...a, [feld]: wert } : a)
+      const preise = liste.map((a: any) => parseFloat(a.einheitspreis) || 0).filter((v: number) => v > 0)
+      if (preise.length > 0) {
+        const best = Math.min(...preise)
+        aktualisiereM(materialId, 'einheitspreis', best)
+      }
+      return { ...prev, [materialId]: liste }
+    })
+  }
+
+  const speicherAngebot = async (angebot: any) => {
+    await fetch(`${BASE_URL}/kalkulation/angebote/${angebot.id}`, {
+      method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(angebot)
+    })
+    const liste = angebote[angebot.materialId] || []
+    const preise = liste.map((a: any) => parseFloat(a.einheitspreis) || 0).filter((v: number) => v > 0)
+    if (preise.length > 0) {
+      const best = Math.min(...preise)
+      const mat = materialien.find((m: any) => m.id === angebot.materialId)
+      if (mat) speicherMaterial({ ...mat, einheitspreis: best })
+    }
+  }
+
+  const loescheAngebot = async (materialId: number, angebotId: number) => {
+    await fetch(`${BASE_URL}/kalkulation/angebote/${angebotId}`, { method: 'DELETE', headers: authHeaders() })
+    setAngebote(prev => ({ ...prev, [materialId]: (prev[materialId] || []).filter((a: any) => a.id !== angebotId) }))
   }
 
   const fotoHochladen = (id: number) => {
@@ -784,93 +844,138 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                     ) : (
                       <>
                         {/* Header */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 80px 70px 90px 90px 36px 36px', gap: 6, padding: '6px 4px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
-                          {['Hersteller', 'Artikel / Bezeichnung', 'Art.-Nr.', 'Einheit', 'Menge', 'EP (€)', 'GP (€)', '', ''].map((h, i) => (
-                            <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 80px 110px 110px 80px 32px 32px', gap: 6, padding: '6px 4px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
+                          {['Artikel / Bezeichnung', 'Einheit', 'Menge', 'Günstigster EP', 'Günstigster GP', 'Lieferant', '', ''].map((h, i) => (
+                            <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
                           ))}
                         </div>
-                        {materialien.map(m => (
+                        {materialien.map(m => {
+                          const matAngebote = angebote[m.id] || []
+                          const matPreise = matAngebote.map((a: any) => parseFloat(a.einheitspreis) || 0).filter((v: number) => v > 0)
+                          const matBestPreis = matPreise.length > 0 ? Math.min(...matPreise) : null
+                          const matBestLieferant = matBestPreis !== null ? matAngebote.find((a: any) => parseFloat(a.einheitspreis) === matBestPreis)?.lieferant : null
+                          const menge = parseFloat(m.menge) || 0
+                          return (
                           <div key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
                             {/* Main row */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 80px 70px 90px 90px 36px 36px', gap: 6, padding: '6px 0', alignItems: 'center' }}>
-                              {/* Hersteller */}
-                              <div>
-                                <input
-                                  list={`hersteller-list-${m.id}`}
-                                  value={m.hersteller || ''}
-                                  onChange={e => aktualisiereM(m.id, 'hersteller', e.target.value)}
-                                  onBlur={() => speicherMaterial(m)}
-                                  placeholder="Hersteller..."
-                                  style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const }}
-                                />
-                                <datalist id={`hersteller-list-${m.id}`}>
-                                  {['Hornbach', 'OBI', 'Bauhaus', 'Hagebau', 'Würth', 'Knauf', 'Rigips', 'Mapei', 'Weber', 'Schüco', 'Velux', 'Isover', 'Rockwool', 'Sika', 'Baumit', 'Roto', 'Geberit', 'Viessmann', 'Buderus', 'Bosch', 'Siemens', 'Miele', 'Grohe', 'Hansgrohe'].map(h => <option key={h} value={h} />)}
-                                </datalist>
-                              </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 80px 110px 110px 80px 32px 32px', gap: 6, padding: '6px 0', alignItems: 'center' }}>
+                              {/* Artikel */}
                               <input value={m.artikel || ''} onChange={e => aktualisiereM(m.id, 'artikel', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Artikel / Bezeichnung..." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
-                              <input value={m.artikelnummer || ''} onChange={e => aktualisiereM(m.id, 'artikelnummer', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Art.-Nr." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
                               <select value={m.einheit || 'Stk'} onChange={e => { const v = e.target.value; aktualisiereM(m.id, 'einheit', v); setTimeout(() => speicherMaterial({ ...m, einheit: v }), 0) }} style={{ padding: '5px 6px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}>
                                 {['Stk', 'm²', 'm³', 'm', 'lfm', 'Psch', 'kg', 't', 'l', 'Pkg', 'Rll'].map(e => <option key={e} value={e}>{e}</option>)}
                               </select>
                               <input type="text" inputMode="decimal" value={m.menge ?? ''} onChange={e => aktualisiereM(m.id, 'menge', e.target.value)} onBlur={e => { const v = parseFloat(e.target.value.replace(',','.')) || 0; aktualisiereM(m.id, 'menge', v); setTimeout(() => speicherMaterial(m), 0) }} onFocus={e => e.target.select()} placeholder="0" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
-                              <input type="text" inputMode="decimal" value={m.einheitspreis ?? ''} onChange={e => aktualisiereM(m.id, 'einheitspreis', e.target.value)} onBlur={e => { const v = parseFloat(e.target.value.replace(',','.')) || 0; aktualisiereM(m.id, 'einheitspreis', v); setTimeout(() => speicherMaterial(m), 0) }} onFocus={e => e.target.select()} placeholder="0,00" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
-                              <div style={{ padding: '5px 8px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'right' as const }}>€ {fmt((parseFloat(m.menge)||0) * (parseFloat(m.einheitspreis)||0))}</div>
+                              {/* Best EP */}
+                              <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: 700, color: matBestPreis !== null ? '#2e7d32' : '#aaa', textAlign: 'right' as const }}>
+                                {matBestPreis !== null ? `€ ${fmt(matBestPreis)}` : '—'}
+                              </div>
+                              {/* Best GP */}
+                              <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: 700, color: matBestPreis !== null ? '#2e7d32' : '#aaa', textAlign: 'right' as const }}>
+                                {matBestPreis !== null ? `€ ${fmt(matBestPreis * menge)}` : '—'}
+                              </div>
+                              {/* Best Lieferant */}
+                              <div style={{ padding: '5px 4px', fontSize: 11, color: matBestLieferant ? '#2e7d32' : '#aaa', fontWeight: matBestLieferant ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                                {matBestLieferant || '—'}
+                              </div>
                               {/* Expand toggle */}
                               <button
-                                onClick={() => setMaterialExpanded(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
-                                title={materialExpanded[m.id] ? 'Details schließen' : 'Link & Foto'}
-                                style={{ background: materialExpanded[m.id] ? '#f0ede8' : 'none', border: '1px solid #e8e2d9', borderRadius: 6, cursor: 'pointer', fontSize: 14, padding: 0, width: 32, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {m.foto ? '🖼' : m.url ? '🔗' : '📎'}
+                                onClick={() => {
+                                  const newExpanded = !materialExpanded[m.id]
+                                  setMaterialExpanded(prev => ({ ...prev, [m.id]: newExpanded }))
+                                  if (newExpanded) ladeAngebote(m.id)
+                                }}
+                                title={materialExpanded[m.id] ? 'Preisvergleich schließen' : 'Preisvergleich öffnen'}
+                                style={{ background: materialExpanded[m.id] ? '#e8f5e9' : 'none', border: '1px solid #e8e2d9', borderRadius: 6, cursor: 'pointer', fontSize: 13, padding: 0, width: 32, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                📊
                               </button>
                               {/* Delete */}
                               <button onClick={() => loescheMaterial(m.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
                             </div>
 
-                            {/* Expanded details row */}
+                            {/* Expanded Preisvergleich panel */}
                             {materialExpanded[m.id] && (
-                              <div style={{ background: '#fdfcfb', borderRadius: 8, padding: '12px 16px', marginBottom: 6, border: '1px solid #ede8e0', display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' as const }}>
-                                {/* URL */}
-                                <div style={{ flex: 1, minWidth: 200 }}>
-                                  <div style={{ fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>🔗 Link / Internetseite</div>
-                                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                    <input
-                                      value={m.url || ''}
-                                      onChange={e => aktualisiereM(m.id, 'url', e.target.value)}
-                                      onBlur={() => speicherMaterial(m)}
-                                      placeholder="https://www.hornbach.at/produkt/..."
-                                      style={{ flex: 1, padding: '6px 10px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}
-                                    />
-                                    {m.url && (
-                                      <a href={m.url} target="_blank" rel="noopener noreferrer"
-                                        style={{ padding: '6px 10px', background: '#1a2a3a', color: 'white', borderRadius: 6, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
-                                        🔗 Öffnen
-                                      </a>
-                                    )}
-                                  </div>
+                              <div style={{ background: '#f9f8f6', borderRadius: 10, padding: '16px 20px', marginBottom: 8, border: '1px solid #ede8e0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>📊 Preisvergleich</div>
+                                  <button onClick={() => fuegeAngebotHinzu(m.id)} style={{ padding: '6px 12px', background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>+ Angebot hinzufügen</button>
                                 </div>
 
-                                {/* Photo */}
-                                <div style={{ minWidth: 160 }}>
-                                  <div style={{ fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>📷 Foto (Preisschild, Angebot)</div>
-                                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                    {m.foto ? (
-                                      <>
-                                        <img src={m.foto} alt="Produktfoto" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, border: '1px solid #e8e2d9', cursor: 'pointer' }} onClick={() => window.open(m.foto, '_blank')} />
-                                        <button onClick={() => { aktualisiereM(m.id, 'foto', ''); speicherMaterial({ ...m, foto: '' }) }}
-                                          style={{ fontSize: 11, color: '#e57373', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>✕ entfernen</button>
-                                      </>
-                                    ) : (
-                                      <button onClick={() => fotoHochladen(m.id)}
-                                        style={{ padding: '8px 14px', background: '#f0ede8', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, cursor: 'pointer', color: '#555' }}>
-                                        📷 Foto hochladen
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
+                                {(!angebote[m.id] || angebote[m.id].length === 0) ? (
+                                  <div style={{ color: '#aaa', fontSize: 12, textAlign: 'center', padding: '12px 0' }}>Noch keine Angebote. Klicke "+ Angebot hinzufügen"</div>
+                                ) : (() => {
+                                  const liste = angebote[m.id] || []
+                                  const preise = liste.map((a: any) => parseFloat(a.einheitspreis) || 0).filter((v: number) => v > 0)
+                                  const bestPreis = preise.length > 0 ? Math.min(...preise) : null
+
+                                  return (
+                                    <>
+                                      {/* Offer table header */}
+                                      <div style={{ display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
+                                        {['Lieferant', 'Art.-Nr.', 'EP (€)', 'GP (€)', 'Link', ''].map((h, i) => (
+                                          <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
+                                        ))}
+                                      </div>
+                                      {liste.map((a: any) => {
+                                        const ep = parseFloat(a.einheitspreis) || 0
+                                        const gp = ep * menge
+                                        const isBest = bestPreis !== null && ep === bestPreis && ep > 0
+                                        return (
+                                          <div key={a.id} style={{
+                                            display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 1fr 30px', gap: 8,
+                                            padding: '6px 8px', borderRadius: 8, marginBottom: 4, alignItems: 'center',
+                                            background: isBest ? '#f0faf4' : 'white',
+                                            border: isBest ? '1.5px solid #4caf50' : '1px solid #ede8e0',
+                                            transition: 'all 0.2s'
+                                          }}>
+                                            <div style={{ position: 'relative' }}>
+                                              <input
+                                                list={`lieferant-${a.id}`}
+                                                value={a.lieferant || ''}
+                                                onChange={e => aktualisiereAngebot(m.id, a.id, 'lieferant', e.target.value)}
+                                                onBlur={() => speicherAngebot(a)}
+                                                placeholder="Lieferant..."
+                                                style={{ width: '100%', padding: '5px 8px', border: isBest ? '1px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const, background: 'transparent', fontWeight: isBest ? 700 : 400 }}
+                                              />
+                                              <datalist id={`lieferant-${a.id}`}>
+                                                {['Hornbach', 'OBI', 'Bauhaus', 'Hagebau', 'Lagerhaus', 'Würth', 'Knauf', 'Rigips', 'Mapei', 'Weber', 'Schüco', 'Velux', 'Sika', 'Baumit', 'Geberit', 'Viessmann', 'Grohe', 'Hansgrohe', 'Bosch', 'Siemens'].map(h => <option key={h} value={h} />)}
+                                              </datalist>
+                                              {isBest && <span style={{ position: 'absolute', right: -22, top: '50%', transform: 'translateY(-50%)', fontSize: 14 }}>✅</span>}
+                                            </div>
+                                            <input value={a.artikelnummer || ''} onChange={e => aktualisiereAngebot(m.id, a.id, 'artikelnummer', e.target.value)} onBlur={() => speicherAngebot(a)} placeholder="Art.-Nr." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
+                                            <input
+                                              type="text" inputMode="decimal"
+                                              value={a.einheitspreis || ''}
+                                              onChange={e => aktualisiereAngebot(m.id, a.id, 'einheitspreis', e.target.value)}
+                                              onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; aktualisiereAngebot(m.id, a.id, 'einheitspreis', v); speicherAngebot({ ...a, einheitspreis: v }) }}
+                                              onFocus={e => e.target.select()}
+                                              placeholder="0,00"
+                                              style={{ padding: '5px 8px', border: isBest ? '1.5px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 13, textAlign: 'right' as const, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : '#1a2a3a', background: 'transparent' }}
+                                            />
+                                            <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: isBest ? 700 : 600, color: isBest ? '#2e7d32' : '#1a2a3a', textAlign: 'right' as const }}>
+                                              {isBest && '🏆 '}€ {fmt(gp)}
+                                            </div>
+                                            <div>
+                                              <input value={a.url || ''} onChange={e => aktualisiereAngebot(m.id, a.id, 'url', e.target.value)} onBlur={() => speicherAngebot(a)} placeholder="https://..." style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' as const }} />
+                                              {a.url && <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#1a2a3a', display: 'block', marginTop: 2 }}>🔗 öffnen</a>}
+                                            </div>
+                                            <button onClick={() => loescheAngebot(m.id, a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
+                                          </div>
+                                        )
+                                      })}
+                                      {bestPreis !== null && (
+                                        <div style={{ marginTop: 8, padding: '8px 12px', background: '#e8f5e9', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>🏆 Günstigster Preis: € {fmt(bestPreis)} / {m.einheit}</span>
+                                          <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>Gesamt: € {fmt(bestPreis * menge)}</span>
+                                        </div>
+                                      )}
+                                    </>
+                                  )
+                                })()}
                               </div>
                             )}
                           </div>
-                        ))}
+                          )
+                        })}
                         {/* Materialien Total */}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 12, paddingTop: 10, borderTop: '2px solid #e8e2d9' }}>
                           <span style={{ fontSize: 13, color: '#666' }}>Materialkosten gesamt:</span>
