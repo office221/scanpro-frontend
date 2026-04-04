@@ -638,7 +638,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                             inputMode="decimal"
                                             value={getPosWert(pos, 'menge') ?? ''}
                                             onChange={e => aktualisierePosEdit(pos.id, 'menge', e.target.value)}
-                                            onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; aktualisierePosEdit(pos.id, 'menge', v); setTimeout(() => speicherePosition(pos), 0) }}
+                                            onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; aktualisierePosEdit(pos.id, 'menge', v); speicherePosition({ ...pos, ...posEdit[pos.id], menge: v }) }}
                                             onFocus={e => e.target.select()}
                                             style={{ ...inputSm, width: 80, textAlign: 'right' }}
                                           />
@@ -649,7 +649,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                             inputMode="decimal"
                                             value={getPosWert(pos, 'einheitspreis') ?? ''}
                                             onChange={e => aktualisierePosEdit(pos.id, 'einheitspreis', e.target.value)}
-                                            onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; aktualisierePosEdit(pos.id, 'einheitspreis', v); setTimeout(() => speicherePosition(pos), 0) }}
+                                            onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; aktualisierePosEdit(pos.id, 'einheitspreis', v); speicherePosition({ ...pos, ...posEdit[pos.id], einheitspreis: v }) }}
                                             onFocus={e => e.target.select()}
                                             style={{ ...inputSm, width: 100, textAlign: 'right' }}
                                           />
