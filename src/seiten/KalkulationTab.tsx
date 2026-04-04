@@ -1156,6 +1156,15 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         {EINHEITEN.map(e => <option key={e}>{e}</option>)}
                       </select>
                       <input
+                        type="text" inputMode="decimal"
+                        value={p.menge || ''}
+                        onChange={e => aktualisierePreislisteMaterial(p.id, 'menge', e.target.value)}
+                        onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; speicherPreislisteMaterial({ ...p, menge: v }) }}
+                        onFocus={e => e.target.select()}
+                        placeholder="Menge"
+                        style={{ ...inputSm, width: 80, textAlign: 'right' as const }}
+                      />
+                      <input
                         value={p.notiz || ''}
                         onChange={e => aktualisierePreislisteMaterial(p.id, 'notiz', e.target.value)}
                         onBlur={() => speicherPreislisteMaterial(p)}
@@ -1176,18 +1185,20 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         {angeboteListe.length > 0 && (
                           <>
                             {/* Tabellen-Header */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '180px 110px 110px 70px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid #e8e2d9', marginBottom: 6 }}>
-                              {['Lieferant', 'Art.-Nr.', 'EP (€)', 'Diff.', 'Link', ''].map((h, i) => (
+                            <div style={{ display: 'grid', gridTemplateColumns: '180px 110px 110px 110px 70px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid #e8e2d9', marginBottom: 6 }}>
+                              {['Lieferant', 'Art.-Nr.', 'EP (€)', 'GP (€)', 'Diff.', 'Link', ''].map((h, i) => (
                                 <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
                               ))}
                             </div>
                             {angeboteListe.map((a: any) => {
                               const ep = parseFloat(a.einheitspreis) || 0
+                              const menge = parseFloat(p.menge) || 0
+                              const gp = ep * menge
                               const isBest = bestPreis !== null && ep === bestPreis && ep > 0
                               const diffProzent = (bestPreis && ep > 0 && !isBest) ? Math.round(((ep - bestPreis) / bestPreis) * 100) : null
                               return (
                                 <div key={a.id} style={{
-                                  display: 'grid', gridTemplateColumns: '180px 110px 110px 70px 1fr 30px', gap: 8,
+                                  display: 'grid', gridTemplateColumns: '180px 110px 110px 110px 70px 1fr 30px', gap: 8,
                                   padding: '6px 8px', borderRadius: 8, marginBottom: 4, alignItems: 'center',
                                   background: isBest ? '#f0faf4' : 'white',
                                   border: isBest ? '1.5px solid #4caf50' : '1px solid #ede8e0',
@@ -1221,6 +1232,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                     placeholder="0,00"
                                     style={{ padding: '5px 8px', border: isBest ? '1.5px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 13, textAlign: 'right' as const, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : '#1a2a3a', background: 'transparent' }}
                                   />
+                                  {/* GP = Menge × EP */}
+                                  <div style={{ textAlign: 'right' as const, fontSize: 13, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : '#555', padding: '5px 8px' }}>
+                                    {menge > 0 && ep > 0 ? `€ ${fmt(gp)}` : '—'}
+                                  </div>
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     {isBest && ep > 0 && (
                                       <span style={{ background: '#e8f5e9', color: '#2e7d32', borderRadius: 6, padding: '3px 7px', fontSize: 11, fontWeight: 700 }}>✓ Best</span>
