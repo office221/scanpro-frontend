@@ -85,6 +85,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const [preisliste, setPreisliste] = useState<any[]>([])
   const [preislisteLaden, setPreislisteLaden] = useState(false)
   const [preislisteExpanded, setPreislisteExpanded] = useState<Record<number, boolean>>({})
+  const [kiSuche, setKiSuche] = useState<Record<number, { laden: boolean, ergebnisse: any[] }>>({})
 
   // LV Form
   const [lvFormOffen, setLvFormOffen] = useState(false)
@@ -490,6 +491,28 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
     if (!window.confirm('Material und alle Angebote löschen?')) return
     await fetch(`${BASE_URL}/kalkulation/preisliste/${id}`, { method: 'DELETE', headers: authHeaders() })
     setPreisliste(prev => prev.filter(p => p.id !== id))
+  }
+
+  const kiPreissuche = async (p: any) => {
+    if (!p.bezeichnung) return alert('Bitte zuerst eine Materialbezeichnung eingeben.')
+    setKiSuche(prev => ({ ...prev, [p.id]: { laden: true, ergebnisse: [] } }))
+    setPreislisteExpanded(prev => ({ ...prev, [p.id]: true }))
+    try {
+      const r = await fetch(`${BASE_URL}/kalkulation/preissuche?q=${encodeURIComponent(p.bezeichnung)}`, { headers: authHeaders() })
+      const data = r.ok ? await r.json() : []
+      setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: data } }))
+    } catch { setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: [] } })) }
+  }
+
+  const kiErgebnisUebernehmen = async (p: any, ergebnis: any) => {
+    const r = await fetch(`${BASE_URL}/kalkulation/preisliste-angebot`, {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preislisteId: p.id, lieferant: ergebnis.shop || ergebnis.titel?.slice(0, 40) || '', artikelnummer: '', einheitspreis: ergebnis.preisNum || 0, url: ergebnis.link || '' })
+    })
+    if (r.ok) {
+      const neu = await r.json()
+      setPreisliste(prev => prev.map(m => m.id === p.id ? { ...m, angebote: [...(m.angebote || []), neu] } : m))
+    }
   }
 
   const fuegePreislisteAngebotHinzu = async (preislisteId: number) => {
@@ -1172,6 +1195,13 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         style={{ ...inputSm, flex: 3, minWidth: 120, fontSize: 12, color: '#888' }}
                       />
                       <button
+                        onClick={() => kiPreissuche(p)}
+                        disabled={kiSuche[p.id]?.laden}
+                        style={{ background: '#2563eb', border: 'none', cursor: 'pointer', color: 'white', fontSize: 12, padding: '5px 10px', borderRadius: 8, whiteSpace: 'nowrap' as const, fontWeight: 600 }}
+                        title="KI sucht Preise im Internet">
+                        {kiSuche[p.id]?.laden ? '⏳ Suche...' : '🔍 KI-Suche'}
+                      </button>
+                      <button
                         onClick={() => loeschePreislisteMaterial(p.id)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 16, padding: '2px 6px' }}
                         title="Material löschen">
@@ -1261,6 +1291,34 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                               )
                             })}
                           </>
+                        )}
+
+                        {/* KI-Suchergebnisse */}
+                        {kiSuche[p.id]?.ergebnisse?.length > 0 && (
+                          <div style={{ marginTop: 14, background: '#eff6ff', borderRadius: 10, padding: '10px 14px', border: '1px solid #bfdbfe' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              🤖 KI-Suchergebnisse — klick auf ➕ um als Angebot zu übernehmen
+                            </div>
+                            {kiSuche[p.id].ergebnisse.map((e: any, i: number) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < kiSuche[p.id].ergebnisse.length - 1 ? '1px solid #dbeafe' : 'none', flexWrap: 'wrap' as const }}>
+                                <span style={{ flex: 2, minWidth: 120, fontSize: 12, fontWeight: 500, color: '#1e3a5f' }}>{e.titel?.slice(0, 50) || '—'}</span>
+                                <span style={{ fontSize: 11, color: '#64748b', minWidth: 80 }}>{e.shop || '—'}</span>
+                                <span style={{ fontWeight: 700, color: i === 0 ? '#16a34a' : '#374151', fontSize: 13, minWidth: 70 }}>{e.preisNum?.toFixed(2).replace('.', ',')} €</span>
+                                {e.link && <a href={e.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563eb' }}>🔗</a>}
+                                <button
+                                  onClick={() => kiErgebnisUebernehmen(p, e)}
+                                  style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                                  ➕ übernehmen
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {kiSuche[p.id]?.laden && (
+                          <div style={{ marginTop: 10, textAlign: 'center' as const, color: '#2563eb', fontSize: 13 }}>⏳ KI sucht Preise im Internet...</div>
+                        )}
+                        {kiSuche[p.id] && !kiSuche[p.id].laden && kiSuche[p.id].ergebnisse.length === 0 && (
+                          <div style={{ marginTop: 10, color: '#dc2626', fontSize: 12 }}>Keine Ergebnisse gefunden. Versuche einen anderen Suchbegriff.</div>
                         )}
 
                         {/* Footer: + Angebot + Best-Preis */}
