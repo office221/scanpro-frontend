@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import ReactDOM from 'react-dom'
 import api from '../services/api'
 
 let _uidSeq = 0
@@ -48,8 +49,11 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const [angebote, setAngebote] = useState<any[]>([])
   const [formOffen, setFormOffen] = useState(false)
   const [angebotWaehlenOffen, setAngebotWaehlenOffen] = useState(false)
+  const [stundenPickerOffen, setStundenPickerOffen] = useState(false)
+  const [stundenProjekte, setStundenProjekte] = useState<any[]>([])
   const [vollbild, setVollbild] = useState(false)
-  const [modalSize, setModalSize] = useState({ w: Math.min(900, window.innerWidth * 0.96), h: 600 })
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [modalSize, setModalSize] = useState({ w: Math.min(900, window.innerWidth * 0.96), h: Math.min(600, window.innerHeight * 0.9) })
   const laden_drag = React.useRef(false)
   const drag_start = React.useRef({ x: 0, y: 0, w: 0, h: 0 })
   const onResizeDrag = (e: React.MouseEvent) => {
@@ -60,6 +64,27 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setModalSize({ w: Math.max(560, drag_start.current.w + ev.clientX - drag_start.current.x), h: Math.max(400, drag_start.current.h + ev.clientY - drag_start.current.y) })
     }
     const onUp = () => { laden_drag.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    e.preventDefault()
+  }
+  const [modalPos, setModalPos] = useState<{x:number,y:number}|null>(null)
+  const move_drag_active = React.useRef(false)
+  const move_drag_start = React.useRef({ mx: 0, my: 0, px: 0, py: 0 })
+  const onMoveDrag = (e: React.MouseEvent) => {
+    if (vollbild) return
+    move_drag_active.current = true
+    const cx = modalPos ? modalPos.x : (window.innerWidth - modalSize.w) / 2
+    const cy = modalPos ? modalPos.y : Math.max(20, (window.innerHeight - modalSize.h) / 2)
+    move_drag_start.current = { mx: e.clientX, my: e.clientY, px: cx, py: cy }
+    const onMove = (ev: MouseEvent) => {
+      if (!move_drag_active.current) return
+      setModalPos({
+        x: Math.max(0, Math.min(window.innerWidth - modalSize.w, move_drag_start.current.px + ev.clientX - move_drag_start.current.mx)),
+        y: Math.max(0, Math.min(window.innerHeight - modalSize.h, move_drag_start.current.py + ev.clientY - move_drag_start.current.my))
+      })
+    }
+    const onUp = () => { move_drag_active.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
     e.preventDefault()
@@ -96,12 +121,46 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const [kiTextLaden, setKiTextLaden] = useState(false)
 
   useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+
+  useEffect(() => {
     if (formOffen) {
       api.get('/vorlagen').then(r => setVorlagen(r.data)).catch(() => {})
       setVorlagenPickerOffen(false)
       setAutocomplete(null)
     }
   }, [formOffen])
+
+  // Auto-load stunden wenn von Stundenliste navigiert
+  useEffect(() => {
+    const pid = sessionStorage.getItem('stundenProjektId')
+    if (!pid) return
+    sessionStorage.removeItem('stundenProjektId')
+    ;(async () => {
+      try {
+        const [projRes, eintrRes] = await Promise.all([
+          api.get('/stunden/projekte'),
+          api.get(`/stunden/eintraege?projektId=${pid}`)
+        ])
+        const p = projRes.data.find((x: any) => x.id === parseInt(pid))
+        if (!p || eintrRes.data.length === 0) return
+        if (p.kundeId) setSelectedKunde(p.kundeId)
+        setProjektName(p.name)
+        setPositionen(eintrRes.data.map((e: any) => ({
+          uid: newUid(), typ: 'Normal',
+          beschreibung: e.beschreibung || p.name,
+          menge: Number(e.stunden), rawMenge: String(e.stunden),
+          einheit: 'h',
+          einzelpreis: Number(p.stundensatz) || 0, rawPreis: String(p.stundensatz || 0)
+        })))
+        setFormOffen(true)
+        if (window.innerWidth < 768) setVollbild(true)
+      } catch {}
+    })()
+  }, []) // eslint-disable-line
 
   useEffect(() => {
     api.get('/kunden').then(r => setKunden(r.data))
@@ -167,6 +226,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
         ? posRes.data.map((p: any) => ({ uid: newUid(), ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
       setFormOffen(true)
+      if (isMobile) setVollbild(true)
     } catch (e) {
       alert('Fehler beim Laden der Rechnung!')
     }
@@ -190,6 +250,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
         ? posRes.data.map((p: any) => ({ uid: newUid(), ...p, menge: parseFloat(p.menge) || 0, einzelpreis: parseFloat(p.einzelpreis) || 0 }))
         : [{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
       setFormOffen(true)
+      if (isMobile) setVollbild(true)
     } catch (e) {
       alert('Fehler beim Duplizieren!')
     }
@@ -209,6 +270,38 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     } catch (e) {
       alert('Fehler beim Laden der Positionen!')
     }
+  }
+
+  const stundenPickerOeffnen = async () => {
+    try {
+      const r = await api.get('/stunden/projekte')
+      setStundenProjekte(r.data)
+      setStundenPickerOffen(true)
+    } catch { alert('Stundenliste konnte nicht geladen werden') }
+  }
+
+  const stundenUebernehmen = async (projekt: any) => {
+    try {
+      const r = await api.get(`/stunden/eintraege?projektId=${projekt.id}`)
+      const eintraege = r.data
+      if (eintraege.length === 0) { alert('Keine Einträge in diesem Projekt'); return }
+      // Kunde setzen falls vorhanden
+      if (projekt.kundeId) setSelectedKunde(projekt.kundeId)
+      setProjektName(projekt.name)
+      // Jeder Eintrag wird eine Position
+      const neuePositionen = eintraege.map((e: any) => ({
+        uid: newUid(),
+        typ: 'Normal',
+        beschreibung: e.beschreibung || projekt.name,
+        menge: Number(e.stunden),
+        rawMenge: String(e.stunden),
+        einheit: 'h',
+        einzelpreis: Number(projekt.stundensatz) || 0,
+        rawPreis: String(projekt.stundensatz || 0)
+      }))
+      setPositionen(neuePositionen)
+      setStundenPickerOffen(false)
+    } catch { alert('Fehler beim Laden der Stunden-Einträge') }
   }
 
   const rechnungLoeschen = async (id: number) => {
@@ -426,7 +519,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
         <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'#888'}}>Alle Rechnungen</div>
         <button
           style={{background:'#1a1a1a', color:'white', border:'none', borderRadius:8, padding:'9px 18px', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}
-          onClick={() => { formLeeren(); setFormOffen(true) }}>
+          onClick={() => { formLeeren(); setFormOffen(true); if (isMobile) setVollbild(true) }}>
           + Neue Rechnung
         </button>
       </div>
@@ -444,7 +537,47 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               </button>
             </div>
           </div>
+        ) : isMobile ? (
+          <div>
+            {rechnungen.map((r: any) => {
+              const ueberfaellig = r.faelligBis && new Date(r.faelligBis) < heute && r.status !== 'Bezahlt' && r.status !== 'Storniert'
+              const farbe = statusFarbe(r.status, ueberfaellig)
+              const kunde = kunden.find(k => k.id === r.kundeId)
+              const kundenName = kunde ? `${kunde.vorname} ${kunde.nachname}` : '—'
+              const datumStr = r.datum ? new Date(r.datum).toLocaleDateString('de-AT') : '—'
+              const faelligBisStr = r.faelligBis ? new Date(r.faelligBis).toLocaleDateString('de-AT') : '—'
+              const gesamt = r.gesamt ? parseFloat(r.gesamt).toFixed(2) : '—'
+              return (
+                <div key={r.id} style={{padding:'12px 16px', borderBottom:'1px solid #f0ede8', background: r.id%2===0 ? '#fafaf9' : 'white'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6}}>
+                    <div style={{fontFamily:'Syne, sans-serif', fontWeight:700, fontSize:13}}>{r.nummer}</div>
+                    <span style={{fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:4, background: farbe.bg, color: farbe.text}}>{r.status}{ueberfaellig && ' ⚠️'}</span>
+                  </div>
+                  <div style={{fontSize:13, color:'#1a1a1a', marginBottom:4}}>{kundenName}</div>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <div style={{fontSize:11, color:'#888'}}>{datumStr} · {faelligBisStr}</div>
+                    <div style={{fontSize:14, fontWeight:700, color:'#1a1a1a'}}>€ {gesamt}</div>
+                  </div>
+                  <div style={{marginTop:8, display:'flex', gap:8}}>
+                    <button title="PDF öffnen" onClick={() => pdfOeffnen(r.id)}
+                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #d1f5e0', background:'#f0fdf4', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#2d6a4f', fontSize:12}}>
+                      PDF
+                    </button>
+                    <button title="Bearbeiten" onClick={() => rechnungBearbeiten(r)}
+                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #e5e0d8', background:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#555', fontSize:12}}>
+                      ✏️
+                    </button>
+                    <button title="Löschen" onClick={() => rechnungLoeschen(r.id)}
+                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #fde8e6', background:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#c0392b', fontSize:12}}>
+                      🗑
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         ) : (
+          <div style={{overflowX:'auto'}}>
           <table style={{width:'100%', borderCollapse:'collapse'}}>
             <thead>
               <tr style={{background:'#faf8f5'}}>
@@ -536,6 +669,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -594,23 +728,29 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       )}
 
       {/* FORMULAR MODAL */}
-      {formOffen && (
-        <div style={{position:'fixed', inset:0, background: vollbild ? 'white' : 'rgba(0,0,0,0.6)', display:'flex', alignItems: vollbild ? 'stretch' : 'flex-start', justifyContent:'center', zIndex:9999, overflowY: vollbild ? 'hidden' : 'auto', padding: vollbild ? 0 : '20px 0'}}>
-          <div style={{background:'white', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100%' : modalSize.w, height: vollbild ? '100%' : modalSize.h, minWidth: vollbild ? undefined : 560, maxWidth:'100%', margin: vollbild ? 0 : 'auto', boxShadow: vollbild ? 'none' : '0 24px 60px rgba(0,0,0,0.3)', overflow:'hidden', display:'flex', flexDirection:'column', position:'relative'}}>
+      {formOffen && ReactDOM.createPortal((
+        <>
+          {!vollbild && <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:9999}} onClick={() => { setFormOffen(false); setModalPos(null) }} />}
+          <div style={{position:'fixed', zIndex:10000, background:'white', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : modalSize.w, height: vollbild ? '100vh' : modalSize.h, minWidth: vollbild ? undefined : 560, left: vollbild ? 0 : (modalPos ? modalPos.x : Math.max(0, (window.innerWidth - modalSize.w) / 2)), top: vollbild ? 0 : (modalPos ? modalPos.y : Math.max(20, (window.innerHeight - modalSize.h) / 2)), boxShadow: vollbild ? 'none' : '0 24px 60px rgba(0,0,0,0.3)', overflow:'hidden', display:'flex', flexDirection:'column'}}>
             <div style={{flex:1, overflowY:'auto', overflowX:'hidden', display:'flex', flexDirection:'column'}}>
             <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1}}>{bearbeitenId ? '✏️ Rechnung bearbeiten' : '📋 Neue Rechnung'}</div>
-              <button
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1, cursor: vollbild ? 'default' : 'move', userSelect:'none'}} onMouseDown={onMoveDrag}>{bearbeitenId ? '✏️ Rechnung bearbeiten' : '📋 Neue Rechnung'}</div>
+              <button onMouseDown={e => e.stopPropagation()}
                 style={{padding:'6px 14px', borderRadius:7, border:'1px solid #c8a96e', background:'#fdf8f0', color:'#c8a96e', fontFamily:'DM Sans, sans-serif', fontSize:12, fontWeight:600, cursor:'pointer'}}
                 onClick={() => setAngebotWaehlenOffen(true)}>
-                📄 Aus Angebot übernehmen
+                📄 Aus Angebot
               </button>
-              <button onClick={() => setVollbild(v => !v)}
+              <button onMouseDown={e => e.stopPropagation()}
+                style={{padding:'6px 14px', borderRadius:7, border:'1px solid #6366f1', background:'#eef2ff', color:'#6366f1', fontFamily:'DM Sans, sans-serif', fontSize:12, fontWeight:600, cursor:'pointer'}}
+                onClick={stundenPickerOeffnen}>
+                ⏱ Aus Stundenliste
+              </button>
+              <button onMouseDown={e => e.stopPropagation()} onClick={() => { setVollbild(v => !v); setModalPos(null) }}
                 title={vollbild ? 'Verkleinern' : 'Vollbild'}
                 style={{background:'transparent', border:'none', fontSize:16, cursor:'pointer', color:'#888'}}>
                 {vollbild ? '⊡' : '⛶'}
               </button>
-              <button onClick={() => { setFormOffen(false); setVollbild(false) }}
+              <button onMouseDown={e => e.stopPropagation()} onClick={() => { setFormOffen(false); setVollbild(false); setModalPos(null) }}
                 style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
             </div>
 
@@ -947,25 +1087,64 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                 </button>
                 <button
                   style={{padding:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:9, cursor:'pointer'}}
-                  onClick={() => setFormOffen(false)}>Abbrechen</button>
+                  onClick={() => { setFormOffen(false); setModalPos(null) }}>Abbrechen</button>
               </div>
             </div>
             </div>
             {!vollbild && (
               <div onMouseDown={onResizeDrag}
-                style={{position:'absolute', bottom:0, right:0, width:28, height:28, cursor:'nwse-resize', userSelect:'none', overflow:'hidden'}}>
-                <svg width="28" height="28" viewBox="0 0 28 28" style={{display:'block'}}>
-                  <line x1="8" y1="26" x2="26" y2="8" stroke="#d0cbc3" strokeWidth="1.5" strokeLinecap="round"/>
-                  <line x1="14" y1="26" x2="26" y2="14" stroke="#d0cbc3" strokeWidth="1.5" strokeLinecap="round"/>
-                  <line x1="20" y1="26" x2="26" y2="20" stroke="#d0cbc3" strokeWidth="1.5" strokeLinecap="round"/>
+                style={{position:'absolute', bottom:6, right:6, width:22, height:22, cursor:'nwse-resize', userSelect:'none', borderRadius:5, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <svg width="14" height="14" viewBox="0 0 14 14">
+                  <circle cx="12" cy="12" r="1.6" fill="#b8b0a6"/>
+                  <circle cx="7"  cy="12" r="1.6" fill="#b8b0a6"/>
+                  <circle cx="12" cy="7"  r="1.6" fill="#b8b0a6"/>
+                  <circle cx="2"  cy="12" r="1.6" fill="#b8b0a6"/>
+                  <circle cx="7"  cy="7"  r="1.6" fill="#b8b0a6"/>
+                  <circle cx="12" cy="2"  r="1.6" fill="#b8b0a6"/>
                 </svg>
               </div>
             )}
           </div>
+        </>
+      ), document.body)}
+
+      {/* ANGEBOT WÄHLEN MODAL */}
+      {/* STUNDEN PICKER MODAL */}
+      {stundenPickerOffen && (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10100}}>
+          <div style={{background:'white', borderRadius:14, width:500, maxHeight:'80vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
+            <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center'}}>
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:800, flex:1}}>⏱ Stunden-Projekt auswählen</div>
+              <button onClick={() => setStundenPickerOffen(false)} style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
+            </div>
+            <div style={{overflowY:'auto', flex:1}}>
+              {stundenProjekte.length === 0 ? (
+                <div style={{padding:40, textAlign:'center', color:'#888'}}>
+                  <div style={{fontSize:32, marginBottom:12}}>⏱</div>
+                  <div>Keine Projekte in der Stundenliste</div>
+                </div>
+              ) : stundenProjekte.map((p: any) => (
+                <div key={p.id}
+                  style={{padding:'14px 20px', borderBottom:'1px solid #f0ede8', cursor:'pointer', display:'flex', alignItems:'center', gap:12}}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  onClick={() => stundenUebernehmen(p)}>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, color:'#1a1a1a'}}>{p.name}</div>
+                    <div style={{fontSize:11, color:'#888', marginTop:2}}>
+                      {p.firma || (p.vorname ? `${p.vorname} ${p.nachname}` : 'Kein Kunde')}
+                      {' · '}{Number(p.gesamt_stunden).toFixed(2).replace('.', ',')} h
+                      {p.stundensatz > 0 && ` · € ${(Number(p.gesamt_stunden) * p.stundensatz).toFixed(2).replace('.', ',')}`}
+                    </div>
+                  </div>
+                  <div style={{fontSize:11, color:'#6366f1', fontWeight:600}}>Übernehmen →</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* ANGEBOT WÄHLEN MODAL */}
       {angebotWaehlenOffen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200}}>
           <div style={{background:'white', borderRadius:14, width:560, maxHeight:'80vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>

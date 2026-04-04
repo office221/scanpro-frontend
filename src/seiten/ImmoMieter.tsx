@@ -11,6 +11,13 @@ export default function ImmoMieter() {
   const [form, setForm] = useState({ ...leer })
   const [speichernLaden, setSpeichernLaden] = useState(false)
   const [suche, setSuche] = useState('')
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
 
   const laden_ = () => {
     api.get('/immo/mieter').then(r => setMieter(r.data)).catch(() => {}).finally(() => setLaden(false))
@@ -101,7 +108,7 @@ export default function ImmoMieter() {
                   🏠 {m.aktuelles_objekt}
                 </span>
               )}
-              <button onClick={e => { e.stopPropagation(); loeschen(m.id) }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}
+              <button onClick={e => { e.stopPropagation(); loeschen(m.id) }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: '0 4px', minHeight: 40, minWidth: 40 }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}>
                 🗑
               </button>
@@ -112,8 +119,8 @@ export default function ImmoMieter() {
 
       {/* Modal */}
       {formOffen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 0 : 20 }}>
+          <div style={{ background: 'white', borderRadius: isMobile ? 0 : 16, padding: 28, width: '100%', maxWidth: isMobile ? '100%' : 480, height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '90vh', overflowY: 'auto' }}>
             <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20 }}>
               {bearbeitenId ? '✏️ Mieter bearbeiten' : '👤 Neuer Mieter'}
             </div>

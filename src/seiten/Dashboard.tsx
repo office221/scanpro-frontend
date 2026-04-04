@@ -16,6 +16,7 @@ import ImmoMieter from './ImmoMieter'
 import ImmoVertraege from './ImmoVertraege'
 import ImmoBetriebskosten from './ImmoBetriebskosten'
 import ImmoObjektDetail from './ImmoObjektDetail'
+import Stunden from './Stunden'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
@@ -41,6 +42,7 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   Mieter:           <Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
   'Mietverträge':   <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" />,
   Betriebskosten:   <Icon d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20" />,
+  Stunden:          <Icon d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 6v6l4 2" />,
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -55,6 +57,7 @@ const NAV_GRUPPEN = [
   { gruppe: 'Dokumente', items: [
     { name: 'Angebote',   badge: null, rot: false, ki: false, children: [] },
     { name: 'Rechnungen', badge: null, rot: false, ki: false, children: [] },
+    { name: 'Stunden',    badge: null, rot: false, ki: false, children: [] },
   ]},
   { gruppe: 'Stammdaten', items: [
     { name: 'Kunden',   badge: null, rot: false, ki: false, children: [] },
@@ -802,6 +805,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           {aktivNav === 'Kunden'           && <div style={{ flex: 1, overflow: 'auto' }}><Kunden /></div>}
           {aktivNav === 'Rechnungen'        && <div style={{ flex: 1, overflow: 'auto' }}><Rechnungen onTransferBeleg={(datei, vorschlag) => { setBelegTransfer({ datei, vorschlag }); setAktivNav('Belegscanner') }} /></div>}
           {aktivNav === 'Angebote'          && <div style={{ flex: 1, overflow: 'auto' }}><Angebote /></div>}
+          {aktivNav === 'Stunden'           && <div style={{ flex: 1, overflow: 'auto' }}><Stunden onNavigate={seite => setAktivNav(seite)} /></div>}
           {aktivNav === 'Positionsvorlagen' && <div style={{ flex: 1, overflow: 'auto' }}><Vorlagen /></div>}
           {aktivNav === 'Belegscanner'     && <div style={{ flex: 1, overflow: 'auto' }}><Belegscanner initialDatei={sharedFile || belegTransfer?.datei || null} belegVorschlag={belegTransfer?.vorschlag || null} onSharedFileUsed={() => { setSharedFile(null); setBelegTransfer(null) }} /></div>}
           {aktivNav === 'BuchDashboard'       && <div style={{ flex: 1, overflow: 'auto' }}><KMGuvDashboard /></div>}

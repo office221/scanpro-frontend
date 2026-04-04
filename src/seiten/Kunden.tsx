@@ -33,6 +33,13 @@ export default function Kunden() {
   const [laden, setLaden] = useState(true)
   const [suche, setSuche] = useState('')
   const [formDaten, setFormDaten] = useState(leerForm)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
 
   useEffect(() => { kundenLaden() }, [])
 
@@ -123,6 +130,36 @@ export default function Kunden() {
 
       {/* Tabelle */}
       <div style={{background:'white', borderRadius:10, border:'1px solid #e5e0d8', overflow:'hidden', flex:1, display:'flex', flexDirection:'column'}}>
+        {isMobile ? (
+          <div>
+            {laden ? (
+              <div style={{padding:40, textAlign:'center', color:'#888'}}>⏳ Lädt...</div>
+            ) : gefilterteKunden.length === 0 ? (
+              <div style={{padding:40, textAlign:'center', color:'#888'}}>
+                {kunden.length === 0 ? '👥 Noch keine Kunden — erstelle deinen ersten!' : '🔍 Keine Ergebnisse'}
+              </div>
+            ) : (
+              gefilterteKunden.map(k => (
+                <div key={k.id}
+                  style={{padding:'12px 16px', borderBottom:'1px solid #f0ede8', cursor:'pointer', background: ausgewaehlt?.id === k.id ? '#fdf8f0' : k.id%2===0 ? '#fafaf9' : 'white'}}
+                  onClick={() => setAusgewaehlt(ausgewaehlt?.id === k.id ? null : k)}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4}}>
+                    <div style={{fontWeight:500, fontSize:13, color:'#1a1a1a'}}>{k.vorname} {k.nachname}</div>
+                    <span style={{fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:4, background: k.typ === 'Privat' ? '#dbeafe' : '#f0f0ff', color: k.typ === 'Privat' ? '#1e40af' : '#4040cc'}}>
+                      {k.typ === 'Privat' ? '👤' : '🏢'} {k.typ}
+                    </span>
+                  </div>
+                  {k.firma && <div style={{fontSize:11, color:'#888', marginBottom:2}}>{k.firma}</div>}
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <div style={{fontSize:11, color:'#888'}}>{k.kundennummer}{k.ort ? ` · ${k.ort}` : ''}</div>
+                    <div style={{fontSize:11, color:'#888'}}>{k.email || '—'}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+        <div style={{overflowX:'auto'}}>
         <table style={{width:'100%', borderCollapse:'collapse'}}>
           <thead>
             <tr style={{background:'#faf8f5'}}>
@@ -167,6 +204,8 @@ export default function Kunden() {
             )}
           </tbody>
         </table>
+        </div>
+        )}
 
         {/* Aktionsleiste */}
         {ausgewaehlt && (

@@ -20,6 +20,13 @@ export default function ImmoBetriebskosten() {
   const [speichernLaden, setSpeichernLaden] = useState(false)
   const [filterObjekt, setFilterObjekt] = useState('')
   const [filterJahr, setFilterJahr] = useState(new Date().getFullYear().toString())
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
 
   const laden_ = () => {
     Promise.all([
@@ -129,6 +136,7 @@ export default function ImmoBetriebskosten() {
         </div>
       ) : (
         <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f5f3ef' }}>
@@ -147,20 +155,21 @@ export default function ImmoBetriebskosten() {
                   <td style={{ padding: '12px 14px', fontSize: 13, fontFamily: 'Syne, sans-serif', fontWeight: 700 }}>€ {eur(e.betrag)}</td>
                   <td style={{ padding: '12px 14px', fontSize: 12, color: '#aaa' }}>{e.notizen || '—'}</td>
                   <td style={{ padding: '12px 14px' }}>
-                    <button onClick={ev => { ev.stopPropagation(); loeschen(e.id) }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16 }}
+                    <button onClick={ev => { ev.stopPropagation(); loeschen(e.id) }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, minHeight: 40, minWidth: 40 }}
                       onMouseEnter={el => (el.currentTarget.style.color = '#ef4444')} onMouseLeave={el => (el.currentTarget.style.color = '#ccc')}>🗑</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       {/* Modal */}
       {formOffen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 0 : 20 }}>
+          <div style={{ background: 'white', borderRadius: isMobile ? 0 : 16, padding: 28, width: '100%', maxWidth: isMobile ? '100%' : 480, height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '90vh', overflowY: 'auto' }}>
             <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20 }}>
               {bearbeitenId ? '✏️ Eintrag bearbeiten' : '📊 Neuer BK-Eintrag'}
             </div>

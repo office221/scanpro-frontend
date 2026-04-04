@@ -104,6 +104,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
 
   // Materialien
   const [materialien, setMaterialien] = useState<any[]>([])
+  const [materialExpanded, setMaterialExpanded] = useState<Record<number, boolean>>({})
 
   const ladeLVListe = useCallback(async () => {
     setLadenLV(true)
@@ -317,6 +318,33 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const loescheMaterial = async (id: number) => {
     await fetch(`${BASE_URL}/kalkulation/materialien/${id}`, { method: 'DELETE', headers: authHeaders() })
     setMaterialien(prev => prev.filter(m => m.id !== id))
+  }
+
+  const fotoHochladen = (id: number) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = async (e: any) => {
+      const file = e.target.files[0]
+      if (!file) return
+      // Resize/compress: max 800px, quality 0.7
+      const canvas = document.createElement('canvas')
+      const img = new Image()
+      img.onload = async () => {
+        const maxW = 800
+        const scale = img.width > maxW ? maxW / img.width : 1
+        canvas.width = img.width * scale
+        canvas.height = img.height * scale
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const base64 = canvas.toDataURL('image/jpeg', 0.7)
+        aktualisiereM(id, 'foto', base64)
+        // immediately save
+        const mat = materialien.find(m => m.id === id)
+        if (mat) await speicherMaterial({ ...mat, foto: base64 })
+      }
+      img.src = URL.createObjectURL(file)
+    }
+    input.click()
   }
 
   const downloadPDF = async () => {
@@ -756,36 +784,91 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                     ) : (
                       <>
                         {/* Header */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 80px 70px 90px 90px 32px', gap: 6, padding: '6px 4px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
-                          {['Hersteller', 'Artikel / Bezeichnung', 'Art.-Nr.', 'Einheit', 'Menge', 'EP (€)', 'GP (€)', ''].map((h, i) => (
+                        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 80px 70px 90px 90px 36px 36px', gap: 6, padding: '6px 4px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
+                          {['Hersteller', 'Artikel / Bezeichnung', 'Art.-Nr.', 'Einheit', 'Menge', 'EP (€)', 'GP (€)', '', ''].map((h, i) => (
                             <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</div>
                           ))}
                         </div>
                         {materialien.map(m => (
-                          <div key={m.id} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 80px 70px 90px 90px 32px', gap: 6, padding: '4px 0', borderBottom: '1px solid #f0ede8', alignItems: 'center' }}>
-                            {/* Hersteller with dropdown suggestions */}
-                            <div style={{ position: 'relative' }}>
-                              <input
-                                list={`hersteller-list-${m.id}`}
-                                value={m.hersteller || ''}
-                                onChange={e => aktualisiereM(m.id, 'hersteller', e.target.value)}
-                                onBlur={() => speicherMaterial(m)}
-                                placeholder="Hersteller..."
-                                style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const }}
-                              />
-                              <datalist id={`hersteller-list-${m.id}`}>
-                                {['Hornbach', 'OBI', 'Bauhaus', 'Hagebau', 'Würth', 'Knauf', 'Rigips', 'Mapei', 'Weber', 'Schüco', 'Velux', 'Isover', 'Rockwool', 'Sika', 'Baumit', 'Roto', 'Geberit', 'Viessmann', 'Buderus', 'Bosch', 'Siemens', 'Miele', 'Grohe', 'Hansgrohe', 'Sonstiger'].map(h => <option key={h} value={h} />)}
-                              </datalist>
+                          <div key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
+                            {/* Main row */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 80px 70px 90px 90px 36px 36px', gap: 6, padding: '6px 0', alignItems: 'center' }}>
+                              {/* Hersteller */}
+                              <div>
+                                <input
+                                  list={`hersteller-list-${m.id}`}
+                                  value={m.hersteller || ''}
+                                  onChange={e => aktualisiereM(m.id, 'hersteller', e.target.value)}
+                                  onBlur={() => speicherMaterial(m)}
+                                  placeholder="Hersteller..."
+                                  style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const }}
+                                />
+                                <datalist id={`hersteller-list-${m.id}`}>
+                                  {['Hornbach', 'OBI', 'Bauhaus', 'Hagebau', 'Würth', 'Knauf', 'Rigips', 'Mapei', 'Weber', 'Schüco', 'Velux', 'Isover', 'Rockwool', 'Sika', 'Baumit', 'Roto', 'Geberit', 'Viessmann', 'Buderus', 'Bosch', 'Siemens', 'Miele', 'Grohe', 'Hansgrohe'].map(h => <option key={h} value={h} />)}
+                                </datalist>
+                              </div>
+                              <input value={m.artikel || ''} onChange={e => aktualisiereM(m.id, 'artikel', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Artikel / Bezeichnung..." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
+                              <input value={m.artikelnummer || ''} onChange={e => aktualisiereM(m.id, 'artikelnummer', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Art.-Nr." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
+                              <select value={m.einheit || 'Stk'} onChange={e => { const v = e.target.value; aktualisiereM(m.id, 'einheit', v); setTimeout(() => speicherMaterial({ ...m, einheit: v }), 0) }} style={{ padding: '5px 6px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}>
+                                {['Stk', 'm²', 'm³', 'm', 'lfm', 'Psch', 'kg', 't', 'l', 'Pkg', 'Rll'].map(e => <option key={e} value={e}>{e}</option>)}
+                              </select>
+                              <input type="number" value={m.menge || ''} onChange={e => aktualisiereM(m.id, 'menge', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="0" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
+                              <input type="number" value={m.einheitspreis || ''} onChange={e => aktualisiereM(m.id, 'einheitspreis', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="0,00" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
+                              <div style={{ padding: '5px 8px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'right' as const }}>€ {fmt((parseFloat(m.menge)||0) * (parseFloat(m.einheitspreis)||0))}</div>
+                              {/* Expand toggle */}
+                              <button
+                                onClick={() => setMaterialExpanded(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+                                title={materialExpanded[m.id] ? 'Details schließen' : 'Link & Foto'}
+                                style={{ background: materialExpanded[m.id] ? '#f0ede8' : 'none', border: '1px solid #e8e2d9', borderRadius: 6, cursor: 'pointer', fontSize: 14, padding: 0, width: 32, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {m.foto ? '🖼' : m.url ? '🔗' : '📎'}
+                              </button>
+                              {/* Delete */}
+                              <button onClick={() => loescheMaterial(m.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
                             </div>
-                            <input value={m.artikel || ''} onChange={e => aktualisiereM(m.id, 'artikel', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Artikel / Bezeichnung..." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
-                            <input value={m.artikelnummer || ''} onChange={e => aktualisiereM(m.id, 'artikelnummer', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Art.-Nr." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
-                            <select value={m.einheit || 'Stk'} onChange={e => { aktualisiereM(m.id, 'einheit', e.target.value); setTimeout(() => speicherMaterial({ ...m, einheit: e.target.value }), 0) }} style={{ padding: '5px 6px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}>
-                              {['Stk', 'm²', 'm³', 'm', 'lfm', 'Psch', 'kg', 't', 'l', 'Pkg', 'Rll'].map(e => <option key={e} value={e}>{e}</option>)}
-                            </select>
-                            <input type="number" value={m.menge || ''} onChange={e => aktualisiereM(m.id, 'menge', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="0" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
-                            <input type="number" value={m.einheitspreis || ''} onChange={e => aktualisiereM(m.id, 'einheitspreis', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="0,00" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
-                            <div style={{ padding: '5px 8px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'right' as const }}>€ {fmt((parseFloat(m.menge)||0) * (parseFloat(m.einheitspreis)||0))}</div>
-                            <button onClick={() => loescheMaterial(m.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
+
+                            {/* Expanded details row */}
+                            {materialExpanded[m.id] && (
+                              <div style={{ background: '#fdfcfb', borderRadius: 8, padding: '12px 16px', marginBottom: 6, border: '1px solid #ede8e0', display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' as const }}>
+                                {/* URL */}
+                                <div style={{ flex: 1, minWidth: 200 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>🔗 Link / Internetseite</div>
+                                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                    <input
+                                      value={m.url || ''}
+                                      onChange={e => aktualisiereM(m.id, 'url', e.target.value)}
+                                      onBlur={() => speicherMaterial(m)}
+                                      placeholder="https://www.hornbach.at/produkt/..."
+                                      style={{ flex: 1, padding: '6px 10px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}
+                                    />
+                                    {m.url && (
+                                      <a href={m.url} target="_blank" rel="noopener noreferrer"
+                                        style={{ padding: '6px 10px', background: '#1a2a3a', color: 'white', borderRadius: 6, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
+                                        🔗 Öffnen
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Photo */}
+                                <div style={{ minWidth: 160 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>📷 Foto (Preisschild, Angebot)</div>
+                                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    {m.foto ? (
+                                      <>
+                                        <img src={m.foto} alt="Produktfoto" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, border: '1px solid #e8e2d9', cursor: 'pointer' }} onClick={() => window.open(m.foto, '_blank')} />
+                                        <button onClick={() => { aktualisiereM(m.id, 'foto', ''); speicherMaterial({ ...m, foto: '' }) }}
+                                          style={{ fontSize: 11, color: '#e57373', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>✕ entfernen</button>
+                                      </>
+                                    ) : (
+                                      <button onClick={() => fotoHochladen(m.id)}
+                                        style={{ padding: '8px 14px', background: '#f0ede8', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, cursor: 'pointer', color: '#555' }}>
+                                        📷 Foto hochladen
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                         {/* Materialien Total */}

@@ -21,6 +21,13 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
   const [bearbeitenId, setBearbeitenId] = useState<number | null>(null)
   const [form, setForm] = useState({ ...leer })
   const [speichernLaden, setSpeichernLaden] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
 
   const laden_ = () => {
     api.get('/immo/objekte').then(r => setObjekte(r.data)).catch(() => {}).finally(() => setLaden(false))
@@ -116,7 +123,7 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
                   <span style={{ fontSize: 11, background: parseInt(o.aktive_vertraege) > 0 ? '#d1f5e0' : '#f0ede8', color: parseInt(o.aktive_vertraege) > 0 ? '#2d6a4f' : '#888', padding: '2px 8px', borderRadius: 20 }}>
                     {o.aktive_vertraege} aktiver Vertrag
                   </span>
-                  <button onClick={e => { e.stopPropagation(); loeschen(o.id) }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0 }}
+                  <button onClick={e => { e.stopPropagation(); loeschen(o.id) }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0, minHeight: 40, minWidth: 40 }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}>
                     🗑
                   </button>
@@ -129,8 +136,8 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
 
       {/* Modal */}
       {formOffen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 0 : 20 }}>
+          <div style={{ background: 'white', borderRadius: isMobile ? 0 : 16, padding: 28, width: '100%', maxWidth: isMobile ? '100%' : 520, height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '90vh', overflowY: 'auto' }}>
             <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20 }}>
               {bearbeitenId ? '✏️ Objekt bearbeiten' : '🏠 Neues Objekt'}
             </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import ReactDOM from 'react-dom'
 import api from '../services/api'
 
 interface Position {
@@ -23,6 +24,44 @@ export default function Angebote() {
   const [kunden, setKunden] = useState<Kunde[]>([])
   const [angebote, setAngebote] = useState<any[]>([])
   const [formOffen, setFormOffen] = useState(false)
+  const [vollbild, setVollbild] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [modalSize, setModalSize] = useState({ w: Math.min(900, window.innerWidth * 0.96), h: Math.min(600, window.innerHeight * 0.9) })
+  const [modalPos, setModalPos] = useState<{x:number,y:number}|null>(null)
+  const resize_drag = React.useRef(false)
+  const resize_start = React.useRef({ x: 0, y: 0, w: 0, h: 0 })
+  const onResizeDrag = (e: React.MouseEvent) => {
+    resize_drag.current = true
+    resize_start.current = { x: e.clientX, y: e.clientY, w: modalSize.w, h: modalSize.h }
+    const onMove = (ev: MouseEvent) => {
+      if (!resize_drag.current) return
+      setModalSize({ w: Math.max(560, resize_start.current.w + ev.clientX - resize_start.current.x), h: Math.max(400, resize_start.current.h + ev.clientY - resize_start.current.y) })
+    }
+    const onUp = () => { resize_drag.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    e.preventDefault()
+  }
+  const move_drag_active = React.useRef(false)
+  const move_drag_start = React.useRef({ mx: 0, my: 0, px: 0, py: 0 })
+  const onMoveDrag = (e: React.MouseEvent) => {
+    if (vollbild) return
+    move_drag_active.current = true
+    const cx = modalPos ? modalPos.x : (window.innerWidth - modalSize.w) / 2
+    const cy = modalPos ? modalPos.y : Math.max(20, (window.innerHeight - modalSize.h) / 2)
+    move_drag_start.current = { mx: e.clientX, my: e.clientY, px: cx, py: cy }
+    const onMove = (ev: MouseEvent) => {
+      if (!move_drag_active.current) return
+      setModalPos({
+        x: Math.max(0, Math.min(window.innerWidth - modalSize.w, move_drag_start.current.px + ev.clientX - move_drag_start.current.mx)),
+        y: Math.max(0, Math.min(window.innerHeight - modalSize.h, move_drag_start.current.py + ev.clientY - move_drag_start.current.my))
+      })
+    }
+    const onUp = () => { move_drag_active.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    e.preventDefault()
+  }
   const [laden, setLaden] = useState(false)
   const [selectedKunde, setSelectedKunde] = useState<number | null>(null)
   const [projektName, setProjektName] = useState('')
@@ -59,6 +98,12 @@ export default function Angebote() {
   const [kiAbschlussVorlageLaden, setKiAbschlussVorlageLaden] = useState(false)
   const [vorlagenNameOffen, setVorlagenNameOffen] = useState(false)
   const [vorlagenNameText, setVorlagenNameText]   = useState('')
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
 
   useEffect(() => {
     if (formOffen) {
@@ -342,6 +387,7 @@ export default function Angebote() {
       setAbschlusstext(a.abschlusstext || '')
       setFormKey(k => k + 1)
       setFormOffen(true)
+      if (isMobile) setVollbild(true)
     } catch (e) {
       alert('Fehler beim Laden des Angebots!')
     }
@@ -389,7 +435,7 @@ export default function Angebote() {
         <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'#888'}}>Alle Angebote</div>
         <button
           style={{background:'#1a1a1a', color:'white', border:'none', borderRadius:8, padding:'9px 18px', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}
-          onClick={() => { formLeeren(); setFormOffen(true) }}>
+          onClick={() => { formLeeren(); setFormOffen(true); if (isMobile) setVollbild(true) }}>
           + Neues Angebot
         </button>
       </div>
@@ -407,7 +453,45 @@ export default function Angebote() {
               </button>
             </div>
           </div>
+        ) : isMobile ? (
+          <div>
+            {angebote.map((a: any) => {
+              const farben = statusFarbe(a.status)
+              const kunde = kunden.find(k => k.id === a.kundeId)
+              const kundenName = kunde ? `${kunde.vorname} ${kunde.nachname}` : '—'
+              const datumStr = a.datum ? new Date(a.datum).toLocaleDateString('de-AT') : '—'
+              const gueltigBisStr = a.gueltigBis ? new Date(a.gueltigBis).toLocaleDateString('de-AT') : '—'
+              return (
+                <div key={a.id} style={{padding:'12px 16px', borderBottom:'1px solid #f0ede8', background: a.id%2===0 ? '#fafaf9' : 'white'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6}}>
+                    <div style={{fontFamily:'Syne, sans-serif', fontWeight:700, fontSize:13}}>{a.nummer}</div>
+                    <span style={{fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:4, background: farben.bg, color: farben.text}}>{a.status}</span>
+                  </div>
+                  <div style={{fontSize:13, color:'#1a1a1a', marginBottom:4}}>{kundenName}</div>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <div style={{fontSize:11, color:'#888'}}>{datumStr} · bis {gueltigBisStr}</div>
+                    <div style={{fontSize:12, color:'#888'}}>{a.projektName || '—'}</div>
+                  </div>
+                  <div style={{marginTop:8, display:'flex', gap:8}}>
+                    <button title="PDF öffnen" onClick={() => pdfOeffnen(a.id)}
+                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #d1f5e0', background:'#f0fdf4', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#2d6a4f', fontSize:12}}>
+                      PDF
+                    </button>
+                    <button title="Bearbeiten" onClick={() => angebotBearbeiten(a)}
+                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #e5e0d8', background:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#555', fontSize:12}}>
+                      ✏️
+                    </button>
+                    <button title="Löschen" onClick={() => angebotLoeschen(a.id)}
+                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #fde8e6', background:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#c0392b', fontSize:12}}>
+                      🗑
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         ) : (
+          <div style={{overflowX:'auto'}}>
           <table style={{width:'100%', borderCollapse:'collapse'}}>
             <thead>
               <tr style={{background:'#faf8f5'}}>
@@ -471,21 +555,29 @@ export default function Angebote() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
-      {formOffen && (
-        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-start', justifyContent:'center', zIndex:100, overflowY:'auto', padding:'20px 0'}}>
-          <div style={{background:'white', borderRadius:14, width:680, margin:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
+      {formOffen && ReactDOM.createPortal((
+        <>
+          {!vollbild && <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:9999}} onClick={() => { setFormOffen(false); setModalPos(null); formLeeren() }} />}
+          <div style={{position:'fixed', zIndex:10000, background:'white', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : modalSize.w, height: vollbild ? '100vh' : modalSize.h, minWidth: vollbild ? undefined : 560, left: vollbild ? 0 : (modalPos ? modalPos.x : Math.max(0, (window.innerWidth - modalSize.w) / 2)), top: vollbild ? 0 : (modalPos ? modalPos.y : Math.max(20, (window.innerHeight - modalSize.h) / 2)), boxShadow: vollbild ? 'none' : '0 24px 60px rgba(0,0,0,0.3)', overflow:'hidden', display:'flex', flexDirection:'column'}}>
 
             <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1}}>
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1, cursor: vollbild ? 'default' : 'move', userSelect:'none'}} onMouseDown={onMoveDrag}>
                 {bearbeitenId ? '✏️ Angebot bearbeiten' : '📄 Neues Angebot'}
               </div>
-              <button onClick={() => { setFormOffen(false); formLeeren() }}
+              <button onMouseDown={e => e.stopPropagation()} onClick={() => { setVollbild(v => !v); setModalPos(null) }}
+                title={vollbild ? 'Verkleinern' : 'Vollbild'}
+                style={{background:'transparent', border:'none', fontSize:16, cursor:'pointer', color:'#888'}}>
+                {vollbild ? '⊡' : '⛶'}
+              </button>
+              <button onMouseDown={e => e.stopPropagation()} onClick={() => { setFormOffen(false); setModalPos(null); formLeeren() }}
                 style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
             </div>
 
+            <div style={{flex:1, overflowY:'auto', overflowX:'hidden'}}>
             <div style={{padding:24}}>
               <div style={{marginBottom:16}}>
                 <label style={labelStyle}>Kunde *</label>
@@ -960,14 +1052,28 @@ export default function Angebote() {
                 </button>
                 <button
                   style={{padding:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:9, cursor:'pointer'}}
-                  onClick={() => { setFormOffen(false); formLeeren() }}>
+                  onClick={() => { setFormOffen(false); setModalPos(null); formLeeren() }}>
                   Abbrechen
                 </button>
               </div>
             </div>
+            </div>
+            {!vollbild && (
+              <div onMouseDown={onResizeDrag}
+                style={{position:'absolute', bottom:6, right:6, width:22, height:22, cursor:'nwse-resize', userSelect:'none', borderRadius:5, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <svg width="14" height="14" viewBox="0 0 14 14">
+                  <circle cx="12" cy="12" r="1.6" fill="#b8b0a6"/>
+                  <circle cx="7"  cy="12" r="1.6" fill="#b8b0a6"/>
+                  <circle cx="12" cy="7"  r="1.6" fill="#b8b0a6"/>
+                  <circle cx="2"  cy="12" r="1.6" fill="#b8b0a6"/>
+                  <circle cx="7"  cy="7"  r="1.6" fill="#b8b0a6"/>
+                  <circle cx="12" cy="2"  r="1.6" fill="#b8b0a6"/>
+                </svg>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </>
+      ), document.body)}
     </div>
   )
 }
