@@ -638,6 +638,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                             value={Number(getPosWert(pos, 'menge'))}
                                             onChange={e => aktualisierePosEdit(pos.id, 'menge', parseFloat(e.target.value) || 0)}
                                             onBlur={() => speicherePosition(pos)}
+                                            onFocus={e => e.target.select()}
                                             style={{ ...inputSm, width: 80, textAlign: 'right' }}
                                             min={0}
                                             step="0.001"
@@ -649,6 +650,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                             value={Number(getPosWert(pos, 'einheitspreis'))}
                                             onChange={e => aktualisierePosEdit(pos.id, 'einheitspreis', parseFloat(e.target.value) || 0)}
                                             onBlur={() => speicherePosition(pos)}
+                                            onFocus={e => e.target.select()}
                                             style={{ ...inputSm, width: 100, textAlign: 'right' }}
                                             min={0}
                                             step="0.01"
@@ -812,8 +814,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                               <select value={m.einheit || 'Stk'} onChange={e => { const v = e.target.value; aktualisiereM(m.id, 'einheit', v); setTimeout(() => speicherMaterial({ ...m, einheit: v }), 0) }} style={{ padding: '5px 6px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}>
                                 {['Stk', 'm²', 'm³', 'm', 'lfm', 'Psch', 'kg', 't', 'l', 'Pkg', 'Rll'].map(e => <option key={e} value={e}>{e}</option>)}
                               </select>
-                              <input type="number" value={m.menge || ''} onChange={e => aktualisiereM(m.id, 'menge', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="0" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
-                              <input type="number" value={m.einheitspreis || ''} onChange={e => aktualisiereM(m.id, 'einheitspreis', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="0,00" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
+                              <input type="number" value={m.menge || ''} onChange={e => aktualisiereM(m.id, 'menge', e.target.value)} onBlur={() => speicherMaterial(m)} onFocus={e => e.target.select()} placeholder="0" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
+                              <input type="number" value={m.einheitspreis || ''} onChange={e => aktualisiereM(m.id, 'einheitspreis', e.target.value)} onBlur={() => speicherMaterial(m)} onFocus={e => e.target.select()} placeholder="0,00" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
                               <div style={{ padding: '5px 8px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'right' as const }}>€ {fmt((parseFloat(m.menge)||0) * (parseFloat(m.einheitspreis)||0))}</div>
                               {/* Expand toggle */}
                               <button
