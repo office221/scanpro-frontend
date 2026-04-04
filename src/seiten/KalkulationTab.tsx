@@ -910,8 +910,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                   return (
                                     <>
                                       {/* Offer table header */}
-                                      <div style={{ display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
-                                        {['Lieferant', 'Art.-Nr.', 'EP (€)', 'GP (€)', 'Link', ''].map((h, i) => (
+                                      <div style={{ display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 60px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
+                                        {['Lieferant', 'Art.-Nr.', 'EP (€)', 'GP (€)', 'Diff.', 'Link', ''].map((h, i) => (
                                           <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
                                         ))}
                                       </div>
@@ -919,9 +919,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                         const ep = parseFloat(a.einheitspreis) || 0
                                         const gp = ep * menge
                                         const isBest = bestPreis !== null && ep === bestPreis && ep > 0
+                                        const diffProzent = (bestPreis && ep > 0 && !isBest) ? Math.round(((ep - bestPreis) / bestPreis) * 100) : null
                                         return (
                                           <div key={a.id} style={{
-                                            display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 1fr 30px', gap: 8,
+                                            display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 60px 1fr 30px', gap: 8,
                                             padding: '6px 8px', borderRadius: 8, marginBottom: 4, alignItems: 'center',
                                             background: isBest ? '#f0faf4' : 'white',
                                             border: isBest ? '1.5px solid #4caf50' : '1px solid #ede8e0',
@@ -953,6 +954,16 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                             />
                                             <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: isBest ? 700 : 600, color: isBest ? '#2e7d32' : '#1a2a3a', textAlign: 'right' as const }}>
                                               {isBest && '🏆 '}€ {fmt(gp)}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                              {isBest && ep > 0 && (
+                                                <span style={{ background: '#e8f5e9', color: '#2e7d32', borderRadius: 6, padding: '3px 7px', fontSize: 11, fontWeight: 700 }}>✓ Best</span>
+                                              )}
+                                              {diffProzent !== null && (
+                                                <span style={{ background: diffProzent > 30 ? '#ffebee' : '#fff3e0', color: diffProzent > 30 ? '#c62828' : '#e65100', borderRadius: 6, padding: '3px 7px', fontSize: 11, fontWeight: 700 }}>
+                                                  +{diffProzent}%
+                                                </span>
+                                              )}
                                             </div>
                                             <div>
                                               <input value={a.url || ''} onChange={e => aktualisiereAngebot(m.id, a.id, 'url', e.target.value)} onBlur={() => speicherAngebot(a)} placeholder="https://..." style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' as const }} />
