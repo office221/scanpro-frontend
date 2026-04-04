@@ -1,0 +1,681 @@
+import React, { useState, useEffect, useCallback } from 'react'
+
+const BASE_URL = 'https://scanpro-backend-production.up.railway.app/api'
+
+const STANDARD_GEWERKE = [
+  '01 Baustelleneinrichtung',
+  '02 Erdarbeiten',
+  '03 Beton- und Stahlbetonarbeiten',
+  '04 Maurerarbeiten',
+  '05 Zimmerarbeiten',
+  '06 Dachdeckerarbeiten',
+  '07 Klempnerarbeiten',
+  '08 Putz- und Stuckarbeiten',
+  '09 Estricharbeiten',
+  '10 Fliesenarbeiten',
+  '11 Tischlerarbeiten',
+  '12 Bodenbelagsarbeiten',
+  '13 Malerarbeiten',
+  '14 Elektroinstallation',
+  '15 Heizungsanlage',
+  '16 Sanitärinstallation',
+  '17 Lüftung / Klima',
+  '18 Außenanlagen',
+  'Sonstiges',
+]
+
+const EINHEITEN = ['m²', 'm³', 'm', 'lfm', 'Stk', 'Psch', 'h', 'kg', 't']
+
+const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  Entwurf:    { bg: '#fef3c7', color: '#92400e' },
+  Freigegeben:{ bg: '#d1f5e0', color: '#2d6a4f' },
+  Abgeschlossen: { bg: '#dbeafe', color: '#1e40af' },
+  Storniert:  { bg: '#fee2e2', color: '#991b1b' },
+}
+
+interface LV {
+  id: number
+  name: string
+  beschreibung: string
+  datum: string | null
+  status: string
+  objektId: number
+}
+
+interface Gewerk {
+  id: number
+  lvId: number
+  position: number
+  name: string
+}
+
+interface Position {
+  id: number
+  gewerkeId: number
+  lvId: number
+  posNr: string
+  bezeichnung: string
+  einheit: string
+  menge: number
+  einheitspreis: number
+  gesamtpreis: number
+}
+
+const fmt = (n: number) =>
+  Number(n || 0).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+const authHeaders = () => ({
+  'Content-Type': 'application/json',
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
+})
+
+export default function KalkulationTab({ objektId }: { objektId: number }) {
+  const [lvListe, setLvListe] = useState<LV[]>([])
+  const [aktivLV, setAktivLV] = useState<LV | null>(null)
+  const [gewerke, setGewerke] = useState<Gewerk[]>([])
+  const [positionen, setPositionen] = useState<Position[]>([])
+  const [ladenLV, setLadenLV] = useState(false)
+  const [ladenDetails, setLadenDetails] = useState(false)
+  const [pdfLaden, setPdfLaden] = useState(false)
+  const [fehler, setFehler] = useState('')
+
+  // LV Form
+  const [lvFormOffen, setLvFormOffen] = useState(false)
+  const [lvEditId, setLvEditId] = useState<number | null>(null)
+  const [lvName, setLvName] = useState('')
+  const [lvBeschreibung, setLvBeschreibung] = useState('')
+  const [lvDatum, setLvDatum] = useState('')
+  const [lvStatus, setLvStatus] = useState('Entwurf')
+
+  // Gewerk Dropdown
+  const [gewerkDropdownOffen, setGewerkDropdownOffen] = useState(false)
+
+  // Gewerk-Collapse
+  const [gewerkeCollapsed, setGewerkeCollapsed] = useState<Record<number, boolean>>({})
+
+  // Inline-Bearbeitung Gewerk-Name
+  const [gewerkEditId, setGewerkEditId] = useState<number | null>(null)
+  const [gewerkEditName, setGewerkEditName] = useState('')
+
+  // Positionen-Edit-Puffer: id -> Felder
+  const [posEdit, setPosEdit] = useState<Record<number, Partial<Position>>>({})
+
+  const ladeLVListe = useCallback(async () => {
+    setLadenLV(true)
+    try {
+      const r = await fetch(`${BASE_URL}/kalkulation/lv/${objektId}`, { headers: authHeaders() })
+      if (r.ok) setLvListe(await r.json())
+    } catch {}
+    setLadenLV(false)
+  }, [objektId])
+
+  const ladeDetails = useCallback(async (lv: LV) => {
+    setLadenDetails(true)
+    try {
+      const [gR, pR] = await Promise.all([
+        fetch(`${BASE_URL}/kalkulation/gewerke/${lv.id}`, { headers: authHeaders() }),
+        fetch(`${BASE_URL}/kalkulation/lv-vollstaendig/${lv.id}`, { headers: authHeaders() }),
+      ])
+      const gewerkeData: Gewerk[] = gR.ok ? await gR.json() : []
+      const vollData = pR.ok ? await pR.json() : { gewerke: [] }
+      setGewerke(gewerkeData)
+      const allePos: Position[] = vollData.gewerke
+        ? vollData.gewerke.flatMap((g: any) => g.positionen || [])
+        : []
+      setPositionen(allePos)
+    } catch {}
+    setLadenDetails(false)
+  }, [])
+
+  useEffect(() => {
+    ladeLVListe()
+  }, [ladeLVListe])
+
+  useEffect(() => {
+    if (aktivLV) ladeDetails(aktivLV)
+  }, [aktivLV, ladeDetails])
+
+  const oeffneLVForm = (lv?: LV) => {
+    if (lv) {
+      setLvEditId(lv.id)
+      setLvName(lv.name)
+      setLvBeschreibung(lv.beschreibung || '')
+      setLvDatum(lv.datum ? lv.datum.substring(0, 10) : '')
+      setLvStatus(lv.status || 'Entwurf')
+    } else {
+      setLvEditId(null)
+      setLvName('')
+      setLvBeschreibung('')
+      setLvDatum(new Date().toISOString().substring(0, 10))
+      setLvStatus('Entwurf')
+    }
+    setLvFormOffen(true)
+  }
+
+  const speicherLV = async () => {
+    if (!lvName.trim()) { setFehler('Name ist Pflichtfeld'); return }
+    setFehler('')
+    try {
+      if (lvEditId) {
+        await fetch(`${BASE_URL}/kalkulation/lv/${lvEditId}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ name: lvName, beschreibung: lvBeschreibung, datum: lvDatum || null, status: lvStatus }),
+        })
+        setAktivLV(prev => prev ? { ...prev, name: lvName, beschreibung: lvBeschreibung, datum: lvDatum || null, status: lvStatus } : prev)
+      } else {
+        const r = await fetch(`${BASE_URL}/kalkulation/lv`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ objektId, name: lvName, beschreibung: lvBeschreibung, datum: lvDatum || null }),
+        })
+        if (r.ok) {
+          const neu = await r.json()
+          setAktivLV(neu)
+        }
+      }
+      await ladeLVListe()
+      setLvFormOffen(false)
+    } catch (e: any) { setFehler(e.message) }
+  }
+
+  const loescheLV = async (id: number) => {
+    if (!window.confirm('Leistungsverzeichnis wirklich löschen? Alle Gewerke und Positionen werden entfernt.')) return
+    await fetch(`${BASE_URL}/kalkulation/lv/${id}`, { method: 'DELETE', headers: authHeaders() })
+    if (aktivLV?.id === id) { setAktivLV(null); setGewerke([]); setPositionen([]) }
+    await ladeLVListe()
+  }
+
+  const fuegeGewerkHinzu = async (name: string) => {
+    if (!aktivLV) return
+    setGewerkDropdownOffen(false)
+    const pos = gewerke.length + 1
+    const r = await fetch(`${BASE_URL}/kalkulation/gewerke`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ lvId: aktivLV.id, name, position: pos }),
+    })
+    if (r.ok) {
+      const neu: Gewerk = await r.json()
+      setGewerke(prev => [...prev, neu])
+    }
+  }
+
+  const speicherGewerkName = async (id: number) => {
+    await fetch(`${BASE_URL}/kalkulation/gewerke/${id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ name: gewerkEditName }),
+    })
+    setGewerke(prev => prev.map(g => g.id === id ? { ...g, name: gewerkEditName } : g))
+    setGewerkEditId(null)
+  }
+
+  const loescheGewerk = async (id: number) => {
+    if (!window.confirm('Gewerk und alle Positionen löschen?')) return
+    await fetch(`${BASE_URL}/kalkulation/gewerke/${id}`, { method: 'DELETE', headers: authHeaders() })
+    setGewerke(prev => prev.filter(g => g.id !== id))
+    setPositionen(prev => prev.filter(p => p.gewerkeId !== id))
+  }
+
+  const fuegePositionHinzu = async (gewerkeId: number) => {
+    if (!aktivLV) return
+    const existingPos = positionen.filter(p => p.gewerkeId === gewerkeId)
+    const naechsteNr = String(existingPos.length + 1).padStart(2, '0')
+    const r = await fetch(`${BASE_URL}/kalkulation/positionen`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        gewerkeId,
+        lvId: aktivLV.id,
+        posNr: naechsteNr,
+        bezeichnung: '',
+        einheit: 'm²',
+        menge: 0,
+        einheitspreis: 0,
+      }),
+    })
+    if (r.ok) {
+      const neu: Position = await r.json()
+      setPositionen(prev => [...prev, neu])
+    }
+  }
+
+  const aktualisierePosEdit = (posId: number, feld: keyof Position, wert: string | number) => {
+    setPosEdit(prev => {
+      const alt = prev[posId] || {}
+      const neu = { ...alt, [feld]: wert }
+      // GP berechnen
+      const menge = Number(feld === 'menge' ? wert : (neu.menge ?? positionen.find(p => p.id === posId)?.menge ?? 0))
+      const ep = Number(feld === 'einheitspreis' ? wert : (neu.einheitspreis ?? positionen.find(p => p.id === posId)?.einheitspreis ?? 0))
+      neu.gesamtpreis = menge * ep
+      return { ...prev, [posId]: neu }
+    })
+  }
+
+  const getPosWert = <K extends keyof Position>(pos: Position, feld: K): Position[K] => {
+    const edit = posEdit[pos.id]
+    if (edit && feld in edit) return edit[feld] as Position[K]
+    return pos[feld]
+  }
+
+  const speicherePosition = async (pos: Position) => {
+    const edit = posEdit[pos.id] || {}
+    const updated = { ...pos, ...edit }
+    const gp = Number(updated.menge || 0) * Number(updated.einheitspreis || 0)
+    await fetch(`${BASE_URL}/kalkulation/positionen/${pos.id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        posNr: updated.posNr,
+        bezeichnung: updated.bezeichnung,
+        einheit: updated.einheit,
+        menge: updated.menge,
+        einheitspreis: updated.einheitspreis,
+      }),
+    })
+    setPositionen(prev => prev.map(p => p.id === pos.id ? { ...p, ...edit, gesamtpreis: gp } : p))
+    setPosEdit(prev => { const n = { ...prev }; delete n[pos.id]; return n })
+  }
+
+  const loeschePosition = async (id: number) => {
+    await fetch(`${BASE_URL}/kalkulation/positionen/${id}`, { method: 'DELETE', headers: authHeaders() })
+    setPositionen(prev => prev.filter(p => p.id !== id))
+  }
+
+  const downloadPDF = async () => {
+    if (!aktivLV) return
+    setPdfLaden(true)
+    setFehler('')
+    try {
+      const r = await fetch(`${BASE_URL}/kalkulation/pdf/${aktivLV.id}`, { headers: authHeaders() })
+      if (!r.ok) {
+        const text = await r.text()
+        throw new Error('PDF-Fehler: ' + text.substring(0, 100))
+      }
+      const blob = await r.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `LV-${aktivLV.name}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e: any) { setFehler(e.message) }
+    setPdfLaden(false)
+  }
+
+  const drucken = async () => {
+    if (!aktivLV) return
+    setPdfLaden(true)
+    setFehler('')
+    try {
+      const r = await fetch(`${BASE_URL}/kalkulation/pdf/${aktivLV.id}`, { headers: authHeaders() })
+      if (!r.ok) throw new Error('PDF konnte nicht geladen werden')
+      const blob = await r.blob()
+      const url = URL.createObjectURL(blob)
+      const win = window.open(url, '_blank')
+      if (win) { setTimeout(() => { win.print(); URL.revokeObjectURL(url) }, 1000) }
+    } catch (e: any) { setFehler(e.message) }
+    setPdfLaden(false)
+  }
+
+  const grandTotal = positionen.reduce((sum, p) => {
+    const edit = posEdit[p.id]
+    const gp = edit && 'gesamtpreis' in edit ? Number(edit.gesamtpreis) : Number(p.gesamtpreis || 0)
+    return sum + gp
+  }, 0)
+  const mwst = grandTotal * 0.19
+  const brutto = grandTotal + mwst
+
+  // Styles
+  const cardStyle: React.CSSProperties = {
+    background: 'white', borderRadius: 12, border: '1px solid #e8e2d9', overflow: 'hidden', marginBottom: 12,
+  }
+  const inputSm: React.CSSProperties = {
+    border: '1px solid #e5e0d8', borderRadius: 6, padding: '5px 8px', fontSize: 12,
+    fontFamily: 'inherit', outline: 'none', background: 'white',
+  }
+  const btnPrimary: React.CSSProperties = {
+    background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 8,
+    padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+  }
+  const btnSecondary: React.CSSProperties = {
+    background: 'white', color: '#1a2a3a', border: '1px solid #e5e0d8', borderRadius: 8,
+    padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+  }
+  const btnDanger: React.CSSProperties = {
+    background: 'none', color: '#dc2626', border: 'none', cursor: 'pointer', fontSize: 16, padding: '2px 6px',
+  }
+
+  return (
+    <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#1a2a3a' }}>
+            Kalkulation / Leistungsverzeichnis
+          </div>
+          <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>LBH22-orientierte Baukostenplanung</div>
+        </div>
+        <button style={btnPrimary} onClick={() => oeffneLVForm()}>+ Neues LV</button>
+      </div>
+
+      {fehler && (
+        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '10px 14px', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
+          {fehler}
+        </div>
+      )}
+
+      {/* LV Modal */}
+      {lvFormOffen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setLvFormOffen(false)}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 28, width: '90%', maxWidth: 520, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 20, color: '#1a2a3a' }}>
+              {lvEditId ? 'LV bearbeiten' : 'Neues Leistungsverzeichnis'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Name *</label>
+                <input value={lvName} onChange={e => setLvName(e.target.value)}
+                  style={{ ...inputSm, width: '100%', padding: '9px 12px', fontSize: 13 }}
+                  placeholder="z.B. Sanierung Wohnung EG" />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Beschreibung</label>
+                <textarea value={lvBeschreibung} onChange={e => setLvBeschreibung(e.target.value)} rows={3}
+                  style={{ ...inputSm, width: '100%', padding: '9px 12px', fontSize: 13, resize: 'vertical' }}
+                  placeholder="Kurze Beschreibung des Projekts..." />
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Datum</label>
+                  <input type="date" value={lvDatum} onChange={e => setLvDatum(e.target.value)}
+                    style={{ ...inputSm, width: '100%', padding: '9px 12px', fontSize: 13 }} />
+                </div>
+                {lvEditId && (
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Status</label>
+                    <select value={lvStatus} onChange={e => setLvStatus(e.target.value)}
+                      style={{ ...inputSm, width: '100%', padding: '9px 12px', fontSize: 13 }}>
+                      {Object.keys(STATUS_COLORS).map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+              <button style={btnSecondary} onClick={() => setLvFormOffen(false)}>Abbrechen</button>
+              <button style={btnPrimary} onClick={speicherLV}>{lvEditId ? 'Speichern' : 'LV erstellen'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LV Liste */}
+      {ladenLV ? (
+        <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>Lade...</div>
+      ) : lvListe.length === 0 ? (
+        <div style={{ ...cardStyle, padding: 40, textAlign: 'center', color: '#aaa' }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
+          <div style={{ fontWeight: 600, marginBottom: 6, color: '#888' }}>Noch kein Leistungsverzeichnis</div>
+          <div style={{ fontSize: 12 }}>Erstellen Sie das erste LV für dieses Objekt</div>
+          <button style={{ ...btnPrimary, marginTop: 16 }} onClick={() => oeffneLVForm()}>+ Neues LV erstellen</button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {/* LV Auswahl-Tabs */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+            {lvListe.map(lv => {
+              const sc = STATUS_COLORS[lv.status] || STATUS_COLORS.Entwurf
+              const isActive = aktivLV?.id === lv.id
+              return (
+                <div key={lv.id} onClick={() => setAktivLV(lv)}
+                  style={{
+                    border: isActive ? '2px solid #1a2a3a' : '1px solid #e8e2d9',
+                    borderRadius: 10,
+                    padding: '10px 14px',
+                    cursor: 'pointer',
+                    background: isActive ? '#1a2a3a' : 'white',
+                    color: isActive ? 'white' : '#333',
+                    minWidth: 160,
+                    maxWidth: 240,
+                    flex: '0 0 auto',
+                    transition: 'all 0.15s',
+                  }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lv.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: sc.bg, color: sc.color }}>{lv.status}</span>
+                    {lv.datum && <span style={{ fontSize: 10, opacity: 0.7 }}>{new Date(lv.datum).toLocaleDateString('de-AT')}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Aktives LV */}
+          {aktivLV && (
+            <div>
+              {/* LV Header */}
+              <div style={{ ...cardStyle, padding: '16px 20px', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+                      <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: '#1a2a3a' }}>{aktivLV.name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: (STATUS_COLORS[aktivLV.status] || STATUS_COLORS.Entwurf).bg, color: (STATUS_COLORS[aktivLV.status] || STATUS_COLORS.Entwurf).color }}>
+                        {aktivLV.status}
+                      </span>
+                    </div>
+                    {aktivLV.beschreibung && <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{aktivLV.beschreibung}</div>}
+                    {aktivLV.datum && <div style={{ fontSize: 11, color: '#aaa' }}>{new Date(aktivLV.datum).toLocaleDateString('de-AT')}</div>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button style={{ ...btnSecondary, fontSize: 12 }} onClick={() => oeffneLVForm(aktivLV)}>Bearbeiten</button>
+                    <button style={{ ...btnSecondary, fontSize: 12, color: '#dc2626', borderColor: '#fca5a5' }} onClick={() => loescheLV(aktivLV.id)}>Löschen</button>
+                    <button style={{ ...btnSecondary, fontSize: 12 }} onClick={drucken} disabled={pdfLaden}>🖨 Drucken</button>
+                    <button style={{ ...btnPrimary, fontSize: 12 }} onClick={downloadPDF} disabled={pdfLaden}>
+                      {pdfLaden ? 'Laden...' : '⬇ PDF'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {ladenDetails ? (
+                <div style={{ textAlign: 'center', padding: 30, color: '#999' }}>Lade Positionen...</div>
+              ) : (
+                <>
+                  {/* Gewerke */}
+                  {gewerke.map(g => {
+                    const posListe = positionen.filter(p => p.gewerkeId === g.id)
+                    const gewerkSum = posListe.reduce((s, p) => {
+                      const edit = posEdit[p.id]
+                      return s + (edit && 'gesamtpreis' in edit ? Number(edit.gesamtpreis) : Number(p.gesamtpreis || 0))
+                    }, 0)
+                    const isCollapsed = gewerkeCollapsed[g.id]
+                    return (
+                      <div key={g.id} style={{ ...cardStyle, marginBottom: 12 }}>
+                        {/* Gewerk-Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#f8f6f2', borderBottom: '1px solid #e8e2d9', cursor: 'pointer', userSelect: 'none' }}
+                          onClick={() => setGewerkeCollapsed(prev => ({ ...prev, [g.id]: !prev[g.id] }))}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+                            <span style={{ fontSize: 14, color: '#999' }}>{isCollapsed ? '▶' : '▼'}</span>
+                            {gewerkEditId === g.id ? (
+                              <input
+                                value={gewerkEditName}
+                                onChange={e => setGewerkEditName(e.target.value)}
+                                onClick={e => e.stopPropagation()}
+                                onBlur={() => speicherGewerkName(g.id)}
+                                onKeyDown={e => { if (e.key === 'Enter') speicherGewerkName(g.id) }}
+                                style={{ ...inputSm, fontSize: 14, fontWeight: 700, flex: 1 }}
+                                autoFocus
+                              />
+                            ) : (
+                              <span style={{ fontWeight: 700, fontSize: 14, color: '#1a2a3a' }}
+                                onDoubleClick={e => { e.stopPropagation(); setGewerkEditId(g.id); setGewerkEditName(g.name) }}>
+                                {g.name}
+                              </span>
+                            )}
+                            <span style={{ fontSize: 11, color: '#888' }}>({posListe.length} Pos.)</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: '#1a2a3a' }}>€ {fmt(gewerkSum)}</span>
+                            <button style={btnDanger} onClick={e => { e.stopPropagation(); loescheGewerk(g.id) }} title="Gewerk löschen">✕</button>
+                          </div>
+                        </div>
+
+                        {/* Positionen */}
+                        {!isCollapsed && (
+                          <div>
+                            {posListe.length > 0 && (
+                              <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+                                  <thead>
+                                    <tr style={{ background: '#2c3e50' }}>
+                                      {['Pos-Nr', 'Bezeichnung', 'Einheit', 'Menge', 'EP €/Einheit', 'GP €', ''].map(h => (
+                                        <th key={h} style={{ padding: '8px 10px', textAlign: h === 'GP €' || h === 'EP €/Einheit' || h === 'Menge' ? 'right' : 'left', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.7, color: 'white', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {posListe.map((pos, idx) => (
+                                      <tr key={pos.id} style={{ background: idx % 2 === 0 ? 'white' : '#fdfcfb' }}>
+                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 70 }}>
+                                          <input
+                                            value={String(getPosWert(pos, 'posNr'))}
+                                            onChange={e => aktualisierePosEdit(pos.id, 'posNr', e.target.value)}
+                                            onBlur={() => speicherePosition(pos)}
+                                            style={{ ...inputSm, width: 55, textAlign: 'center' }}
+                                          />
+                                        </td>
+                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle' }}>
+                                          <textarea
+                                            value={String(getPosWert(pos, 'bezeichnung'))}
+                                            onChange={e => aktualisierePosEdit(pos.id, 'bezeichnung', e.target.value)}
+                                            onBlur={() => speicherePosition(pos)}
+                                            rows={2}
+                                            style={{ ...inputSm, width: '100%', minWidth: 180, resize: 'vertical', fontSize: 12 }}
+                                            placeholder="Beschreibung der Leistung..."
+                                          />
+                                        </td>
+                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 80 }}>
+                                          <select
+                                            value={String(getPosWert(pos, 'einheit'))}
+                                            onChange={e => { aktualisierePosEdit(pos.id, 'einheit', e.target.value); setTimeout(() => speicherePosition({ ...pos, einheit: e.target.value }), 50) }}
+                                            style={{ ...inputSm, width: 70 }}>
+                                            {EINHEITEN.map(e => <option key={e}>{e}</option>)}
+                                          </select>
+                                        </td>
+                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 90 }}>
+                                          <input
+                                            type="number"
+                                            value={Number(getPosWert(pos, 'menge'))}
+                                            onChange={e => aktualisierePosEdit(pos.id, 'menge', parseFloat(e.target.value) || 0)}
+                                            onBlur={() => speicherePosition(pos)}
+                                            style={{ ...inputSm, width: 80, textAlign: 'right' }}
+                                            min={0}
+                                            step="0.001"
+                                          />
+                                        </td>
+                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 110 }}>
+                                          <input
+                                            type="number"
+                                            value={Number(getPosWert(pos, 'einheitspreis'))}
+                                            onChange={e => aktualisierePosEdit(pos.id, 'einheitspreis', parseFloat(e.target.value) || 0)}
+                                            onBlur={() => speicherePosition(pos)}
+                                            style={{ ...inputSm, width: 100, textAlign: 'right' }}
+                                            min={0}
+                                            step="0.01"
+                                          />
+                                        </td>
+                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 100, textAlign: 'right', fontWeight: 700, fontSize: 13, color: '#1a2a3a', whiteSpace: 'nowrap' }}>
+                                          € {fmt(Number(getPosWert(pos, 'gesamtpreis')))}
+                                        </td>
+                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 40, textAlign: 'center' }}>
+                                          <button style={btnDanger} onClick={() => loeschePosition(pos.id)} title="Position löschen">✕</button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {/* Gewerk-Footer */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#faf9f7', borderTop: posListe.length > 0 ? '1px solid #e8e2d9' : 'none' }}>
+                              <button style={{ ...btnSecondary, fontSize: 12, padding: '6px 12px' }}
+                                onClick={() => fuegePositionHinzu(g.id)}>
+                                + Position hinzufügen
+                              </button>
+                              <div style={{ fontWeight: 700, fontSize: 13, color: '#1a2a3a' }}>
+                                Summe: <span style={{ color: '#c8a96e' }}>€ {fmt(gewerkSum)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  {/* Gewerk hinzufügen */}
+                  <div style={{ position: 'relative', marginBottom: 16 }}>
+                    <button style={{ ...btnSecondary, width: '100%', textAlign: 'center' }}
+                      onClick={() => setGewerkDropdownOffen(v => !v)}>
+                      + Gewerk hinzufügen
+                    </button>
+                    {gewerkDropdownOffen && (
+                      <div style={{
+                        position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                        background: 'white', border: '1px solid #e8e2d9', borderRadius: 10,
+                        boxShadow: '0 8px 30px rgba(0,0,0,0.12)', padding: '8px 0', maxHeight: 320, overflowY: 'auto',
+                        marginTop: 4,
+                      }}>
+                        {STANDARD_GEWERKE.map(name => (
+                          <div key={name}
+                            style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: '#333', transition: 'background 0.1s' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f8f6f2')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            onClick={() => fuegeGewerkHinzu(name)}>
+                            {name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gesamtkalkulation */}
+                  {gewerke.length > 0 && (
+                    <div style={{ ...cardStyle, padding: '16px 20px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#1a2a3a', marginBottom: 12, fontFamily: 'Syne, sans-serif' }}>Gesamtkalkulation</div>
+                      <div style={{ maxWidth: 320, marginLeft: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee', fontSize: 13 }}>
+                          <span style={{ color: '#666' }}>Nettobetrag:</span>
+                          <span style={{ fontWeight: 600 }}>€ {fmt(grandTotal)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee', fontSize: 13, color: '#888' }}>
+                          <span>MwSt 19%:</span>
+                          <span>€ {fmt(mwst)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#1a2a3a', borderRadius: 8, marginTop: 8, fontSize: 15 }}>
+                          <span style={{ color: 'white', fontWeight: 700 }}>Gesamtbetrag brutto:</span>
+                          <span style={{ color: '#c8a96e', fontWeight: 800 }}>€ {fmt(brutto)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Click-outside für Dropdown */}
+      {gewerkDropdownOffen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setGewerkDropdownOffen(false)} />
+      )}
+    </div>
+  )
+}

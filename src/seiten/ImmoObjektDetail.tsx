@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
+import KalkulationTab from './KalkulationTab'
 
 const TYP_FARBEN: Record<string, { bg: string; text: string }> = {
   Wohnung:      { bg: '#dbeafe', text: '#1e40af' },
@@ -19,6 +20,7 @@ const TABS = [
   { id: 'kaufpreis',       label: 'Kaufpreis & Nebenkosten' },
   { id: 'planungskosten',  label: 'Planungskosten' },
   { id: 'baukosten',       label: 'Baukosten' },
+  { id: 'kalkulation',     label: 'Kalkulation / LV' },
   { id: 'kostenrechner',   label: 'Kostenrechner' },
   { id: 'bonitaet',        label: 'Bonität' },
   { id: 'betriebskosten',  label: 'Betriebskosten' },
@@ -467,6 +469,9 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
 
       {/* BAUKOSTEN */}
       {aktTab === 'baukosten' && <BaukostenTab objektId={objektId} objektName={objekt?.name || `Objekt #${objektId}`} />}
+
+      {/* KALKULATION / LV */}
+      {aktTab === 'kalkulation' && <KalkulationTab objektId={objektId} />}
 
       {/* KOSTENRECHNER */}
       {aktTab === 'kostenrechner' && <KostenrechnerTab objektId={objektId} kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} vertraege={vertraege} darlehen={darlehen} bkBelege={bkBelege} bkJahr={bkJahr} />}
