@@ -1318,7 +1318,23 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                           <div style={{ marginTop: 10, textAlign: 'center' as const, color: '#2563eb', fontSize: 13 }}>⏳ KI sucht Preise im Internet...</div>
                         )}
                         {kiSuche[p.id] && !kiSuche[p.id].laden && kiSuche[p.id].ergebnisse.length === 0 && (
-                          <div style={{ marginTop: 10, color: '#dc2626', fontSize: 12 }}>Keine Ergebnisse gefunden. Versuche einen anderen Suchbegriff.</div>
+                          <div style={{ marginTop: 10 }}>
+                            <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 8 }}>Automatische Suche ergab keine Ergebnisse. Direkt suchen bei:</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
+                              {[
+                                { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${encodeURIComponent(p.bezeichnung || '')}` },
+                                { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${encodeURIComponent(p.bezeichnung || '')}` },
+                                { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${encodeURIComponent(p.bezeichnung || '')}` },
+                                { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${encodeURIComponent(p.bezeichnung || '')}` },
+                                { name: '🔵 idealo', url: `https://www.idealo.at/preisvergleich/MainSearchProductCategory.html?q=${encodeURIComponent(p.bezeichnung || '')}` },
+                              ].map(s => (
+                                <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
+                                  style={{ padding: '5px 10px', background: '#f0f4ff', border: '1px solid #c7d2fe', borderRadius: 6, fontSize: 11, color: '#3730a3', fontWeight: 600, textDecoration: 'none' }}>
+                                  {s.name}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
                         )}
 
                         {/* Footer: + Angebot + Best-Preis */}
