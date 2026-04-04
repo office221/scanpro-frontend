@@ -85,7 +85,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const [preisliste, setPreisliste] = useState<any[]>([])
   const [preislisteLaden, setPreislisteLaden] = useState(false)
   const [preislisteExpanded, setPreislisteExpanded] = useState<Record<number, boolean>>({})
-  const [kiSuche, setKiSuche] = useState<Record<number, { laden: boolean, ergebnisse: any[] }>>({})
+  const [kiSuche, setKiSuche] = useState<Record<number, { laden: boolean, ergebnisse: any[], fehler?: string }>>({})
   const [kiSuchBegriff, setKiSuchBegriff] = useState<Record<number, string>>({})
 
   // LV Form
@@ -501,9 +501,13 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
     setPreislisteExpanded(prev => ({ ...prev, [p.id]: true }))
     try {
       const r = await fetch(`${BASE_URL}/kalkulation/preissuche?q=${encodeURIComponent(suchQ)}`, { headers: authHeaders() })
-      const data = r.ok ? await r.json() : []
-      setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: data } }))
-    } catch { setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: [] } })) }
+      const data = await r.json()
+      if (!r.ok) {
+        setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: [], fehler: data.fehler || 'Server Fehler' } }))
+      } else {
+        setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: data, fehler: undefined } }))
+      }
+    } catch (e: any) { setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: [], fehler: e.message } })) }
   }
 
   const kiErgebnisUebernehmen = async (p: any, ergebnis: any) => {
@@ -1330,7 +1334,11 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         )}
                         {kiSuche[p.id] && !kiSuche[p.id].laden && kiSuche[p.id].ergebnisse.length === 0 && (
                           <div style={{ marginTop: 10 }}>
-                            <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 8 }}>Automatische Suche ergab keine Ergebnisse. Direkt suchen bei:</div>
+                            <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 8 }}>
+                              {kiSuche[p.id].fehler
+                                ? `⚠️ Fehler: ${kiSuche[p.id].fehler}`
+                                : 'Automatische Suche ergab keine Ergebnisse. Direkt suchen bei:'}
+                            </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
                               {(() => { const sq = encodeURIComponent((kiSuchBegriff[p.id] ?? p.bezeichnung ?? '').trim()); return [
                                 { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
