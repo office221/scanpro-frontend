@@ -70,6 +70,8 @@ const authHeaders = () => ({
 })
 
 export default function KalkulationTab({ objektId }: { objektId: number }) {
+  const [hauptTab, setHauptTab] = useState<'lv' | 'preisliste'>('lv')
+
   const [lvListe, setLvListe] = useState<LV[]>([])
   const [aktivLV, setAktivLV] = useState<LV | null>(null)
   const [gewerke, setGewerke] = useState<Gewerk[]>([])
@@ -78,6 +80,11 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const [ladenDetails, setLadenDetails] = useState(false)
   const [pdfLaden, setPdfLaden] = useState(false)
   const [fehler, setFehler] = useState('')
+
+  // Preisliste
+  const [preisliste, setPreisliste] = useState<any[]>([])
+  const [preislisteLaden, setPreislisteLaden] = useState(false)
+  const [preislisteExpanded, setPreislisteExpanded] = useState<Record<number, boolean>>({})
 
   // LV Form
   const [lvFormOffen, setLvFormOffen] = useState(false)
@@ -150,6 +157,11 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
       ladeDetails(aktivLV)
     }
   }, [aktivLV, ladeDetails])
+
+  useEffect(() => {
+    if (hauptTab === 'preisliste') ladePreisliste()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hauptTab])
 
   const oeffneLVForm = (lv?: LV) => {
     if (lv) {
@@ -445,6 +457,70 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
     setPdfLaden(false)
   }
 
+  // ── Preisliste Funktionen ──────────────────────────────────────
+  const ladePreisliste = async () => {
+    setPreislisteLaden(true)
+    try {
+      const r = await fetch(`${BASE_URL}/kalkulation/preisliste`, { headers: authHeaders() })
+      if (r.ok) setPreisliste(await r.json())
+    } finally { setPreislisteLaden(false) }
+  }
+
+  const fuegePreislisteMaterialHinzu = async () => {
+    const r = await fetch(`${BASE_URL}/kalkulation/preisliste`, {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bezeichnung: 'Neues Material', einheit: 'm²', notiz: '' })
+    })
+    if (r.ok) { const neu = await r.json(); neu.angebote = []; setPreisliste(prev => [neu, ...prev]) }
+  }
+
+  const aktualisierePreislisteMaterial = (id: number, feld: string, wert: string) => {
+    setPreisliste(prev => prev.map(p => p.id === id ? { ...p, [feld]: wert } : p))
+  }
+
+  const speicherPreislisteMaterial = async (p: any) => {
+    await fetch(`${BASE_URL}/kalkulation/preisliste/${p.id}`, {
+      method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(p)
+    })
+  }
+
+  const loeschePreislisteMaterial = async (id: number) => {
+    if (!window.confirm('Material und alle Angebote löschen?')) return
+    await fetch(`${BASE_URL}/kalkulation/preisliste/${id}`, { method: 'DELETE', headers: authHeaders() })
+    setPreisliste(prev => prev.filter(p => p.id !== id))
+  }
+
+  const fuegePreislisteAngebotHinzu = async (preislisteId: number) => {
+    const r = await fetch(`${BASE_URL}/kalkulation/preisliste-angebot`, {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preislisteId, lieferant: '', artikelnummer: '', einheitspreis: 0, url: '' })
+    })
+    if (r.ok) {
+      const neu = await r.json()
+      setPreisliste(prev => prev.map(p => p.id === preislisteId ? { ...p, angebote: [...(p.angebote || []), neu] } : p))
+    }
+  }
+
+  const aktualisierePreislisteAngebot = (preislisteId: number, angebotId: number, feld: string, wert: string | number) => {
+    setPreisliste(prev => prev.map(p => p.id === preislisteId ? {
+      ...p,
+      angebote: (p.angebote || []).map((a: any) => a.id === angebotId ? { ...a, [feld]: wert } : a)
+    } : p))
+  }
+
+  const speicherPreislisteAngebot = async (angebot: any) => {
+    await fetch(`${BASE_URL}/kalkulation/preisliste-angebot/${angebot.id}`, {
+      method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(angebot)
+    })
+  }
+
+  const loeschePreislisteAngebot = async (preislisteId: number, angebotId: number) => {
+    await fetch(`${BASE_URL}/kalkulation/preisliste-angebot/${angebotId}`, { method: 'DELETE', headers: authHeaders() })
+    setPreisliste(prev => prev.map(p => p.id === preislisteId ? { ...p, angebote: (p.angebote || []).filter((a: any) => a.id !== angebotId) } : p))
+  }
+
   const grandTotal = positionen.reduce((sum, p) => {
     const edit = posEdit[p.id]
     const gp = edit && 'gesamtpreis' in edit ? Number(edit.gesamtpreis) : Number(p.gesamtpreis || 0)
@@ -475,6 +551,23 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      {/* Haupt-Tab-Switcher */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#f0ede8', borderRadius: 10, padding: 4 }}>
+        {[
+          { id: 'lv', label: '📋 Leistungsverzeichnis' },
+          { id: 'preisliste', label: '💰 Preisliste' }
+        ].map(t => (
+          <button key={t.id} onClick={() => setHauptTab(t.id as any)}
+            style={{ flex: 1, padding: '10px 16px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              background: hauptTab === t.id ? 'white' : 'transparent',
+              color: hauptTab === t.id ? '#1a2a3a' : '#888',
+              boxShadow: hauptTab === t.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {hauptTab === 'lv' && (<>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <div>
@@ -1005,6 +1098,176 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
       {/* Click-outside für Dropdown */}
       {gewerkDropdownOffen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => { setGewerkDropdownOffen(false); setEigeneGewerkEingabe(false); setEigeneGewerkName('') }} />
+      )}
+      </>)}
+
+      {/* ── PREISLISTE TAB ── */}
+      {hauptTab === 'preisliste' && (
+        <div>
+          {/* Top bar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#1a2a3a' }}>
+                💰 Materialpreisliste
+              </div>
+              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Preisvergleich über alle Materialien und Lieferanten</div>
+            </div>
+            <button style={btnPrimary} onClick={fuegePreislisteMaterialHinzu}>+ Material hinzufügen</button>
+          </div>
+
+          {preislisteLaden ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>Lade...</div>
+          ) : preisliste.length === 0 ? (
+            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e8e2d9', padding: 40, textAlign: 'center', color: '#aaa' }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>💰</div>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: '#888' }}>Noch keine Materialien</div>
+              <div style={{ fontSize: 12 }}>Fügen Sie Materialien hinzu, um Preise zu vergleichen</div>
+              <button style={{ ...btnPrimary, marginTop: 16 }} onClick={fuegePreislisteMaterialHinzu}>+ Material hinzufügen</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {preisliste.map(p => {
+                const isExpanded = preislisteExpanded[p.id] !== false
+                const angeboteListe: any[] = p.angebote || []
+                const preise = angeboteListe.map((a: any) => parseFloat(a.einheitspreis) || 0).filter((v: number) => v > 0)
+                const bestPreis = preise.length > 0 ? Math.min(...preise) : null
+
+                return (
+                  <div key={p.id} style={{ background: 'white', borderRadius: 12, border: '1px solid #e8e2d9', overflow: 'hidden' }}>
+                    {/* Material-Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f8f6f2', borderBottom: isExpanded ? '1px solid #e8e2d9' : 'none', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => setPreislisteExpanded(prev => ({ ...prev, [p.id]: !isExpanded }))}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#999', padding: 0 }}>
+                        {isExpanded ? '▼' : '▶'}
+                      </button>
+                      <input
+                        value={p.bezeichnung || ''}
+                        onChange={e => aktualisierePreislisteMaterial(p.id, 'bezeichnung', e.target.value)}
+                        onBlur={() => speicherPreislisteMaterial(p)}
+                        placeholder="Materialbezeichnung..."
+                        style={{ ...inputSm, flex: 2, minWidth: 150, fontSize: 14, fontWeight: 600 }}
+                      />
+                      <select
+                        value={p.einheit || 'm²'}
+                        onChange={e => { aktualisierePreislisteMaterial(p.id, 'einheit', e.target.value); speicherPreislisteMaterial({ ...p, einheit: e.target.value }) }}
+                        style={{ ...inputSm, width: 80 }}>
+                        {EINHEITEN.map(e => <option key={e}>{e}</option>)}
+                      </select>
+                      <input
+                        value={p.notiz || ''}
+                        onChange={e => aktualisierePreislisteMaterial(p.id, 'notiz', e.target.value)}
+                        onBlur={() => speicherPreislisteMaterial(p)}
+                        placeholder="Notiz..."
+                        style={{ ...inputSm, flex: 3, minWidth: 120, fontSize: 12, color: '#888' }}
+                      />
+                      <button
+                        onClick={() => loeschePreislisteMaterial(p.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 16, padding: '2px 6px' }}
+                        title="Material löschen">
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Angebote */}
+                    {isExpanded && (
+                      <div style={{ padding: '12px 16px' }}>
+                        {angeboteListe.length > 0 && (
+                          <>
+                            {/* Tabellen-Header */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '180px 110px 110px 70px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid #e8e2d9', marginBottom: 6 }}>
+                              {['Lieferant', 'Art.-Nr.', 'EP (€)', 'Diff.', 'Link', ''].map((h, i) => (
+                                <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
+                              ))}
+                            </div>
+                            {angeboteListe.map((a: any) => {
+                              const ep = parseFloat(a.einheitspreis) || 0
+                              const isBest = bestPreis !== null && ep === bestPreis && ep > 0
+                              const diffProzent = (bestPreis && ep > 0 && !isBest) ? Math.round(((ep - bestPreis) / bestPreis) * 100) : null
+                              return (
+                                <div key={a.id} style={{
+                                  display: 'grid', gridTemplateColumns: '180px 110px 110px 70px 1fr 30px', gap: 8,
+                                  padding: '6px 8px', borderRadius: 8, marginBottom: 4, alignItems: 'center',
+                                  background: isBest ? '#f0faf4' : 'white',
+                                  border: isBest ? '1.5px solid #4caf50' : '1px solid #ede8e0',
+                                }}>
+                                  <div style={{ position: 'relative' }}>
+                                    <input
+                                      list={`pl-lieferant-${a.id}`}
+                                      value={a.lieferant || ''}
+                                      onChange={e => aktualisierePreislisteAngebot(p.id, a.id, 'lieferant', e.target.value)}
+                                      onBlur={() => speicherPreislisteAngebot(a)}
+                                      placeholder="Lieferant..."
+                                      style={{ width: '100%', padding: '5px 8px', border: isBest ? '1px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const, background: 'transparent', fontWeight: isBest ? 700 : 400 }}
+                                    />
+                                    <datalist id={`pl-lieferant-${a.id}`}>
+                                      {['Hornbach', 'OBI', 'Bauhaus', 'Hagebau', 'Lagerhaus', 'Würth', 'Knauf', 'Rigips', 'Mapei', 'Weber', 'Schüco', 'Velux', 'Sika', 'Baumit', 'Geberit', 'Viessmann', 'Grohe', 'Hansgrohe', 'Bosch', 'Siemens'].map(h => <option key={h} value={h} />)}
+                                    </datalist>
+                                  </div>
+                                  <input
+                                    value={a.artikelnummer || ''}
+                                    onChange={e => aktualisierePreislisteAngebot(p.id, a.id, 'artikelnummer', e.target.value)}
+                                    onBlur={() => speicherPreislisteAngebot(a)}
+                                    placeholder="Art.-Nr."
+                                    style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}
+                                  />
+                                  <input
+                                    type="text" inputMode="decimal"
+                                    value={a.einheitspreis || ''}
+                                    onChange={e => aktualisierePreislisteAngebot(p.id, a.id, 'einheitspreis', e.target.value)}
+                                    onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; aktualisierePreislisteAngebot(p.id, a.id, 'einheitspreis', v); speicherPreislisteAngebot({ ...a, einheitspreis: v }) }}
+                                    onFocus={e => e.target.select()}
+                                    placeholder="0,00"
+                                    style={{ padding: '5px 8px', border: isBest ? '1.5px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 13, textAlign: 'right' as const, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : '#1a2a3a', background: 'transparent' }}
+                                  />
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {isBest && ep > 0 && (
+                                      <span style={{ background: '#e8f5e9', color: '#2e7d32', borderRadius: 6, padding: '3px 7px', fontSize: 11, fontWeight: 700 }}>✓ Best</span>
+                                    )}
+                                    {diffProzent !== null && (
+                                      <span style={{ background: diffProzent > 30 ? '#ffebee' : '#fff3e0', color: diffProzent > 30 ? '#c62828' : '#e65100', borderRadius: 6, padding: '3px 7px', fontSize: 11, fontWeight: 700 }}>
+                                        +{diffProzent}%
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <input
+                                      value={a.url || ''}
+                                      onChange={e => aktualisierePreislisteAngebot(p.id, a.id, 'url', e.target.value)}
+                                      onBlur={() => speicherPreislisteAngebot(a)}
+                                      placeholder="https://..."
+                                      style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' as const }}
+                                    />
+                                    {a.url && <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#1a2a3a', display: 'block', marginTop: 2 }}>🔗 öffnen</a>}
+                                  </div>
+                                  <button onClick={() => loeschePreislisteAngebot(p.id, a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
+                                </div>
+                              )
+                            })}
+                          </>
+                        )}
+
+                        {/* Footer: + Angebot + Best-Preis */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, flexWrap: 'wrap', gap: 8 }}>
+                          <button
+                            onClick={() => fuegePreislisteAngebotHinzu(p.id)}
+                            style={{ padding: '6px 12px', background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                            + Angebot hinzufügen
+                          </button>
+                          {bestPreis !== null && (
+                            <span style={{ fontSize: 12, background: '#e8f5e9', color: '#2e7d32', fontWeight: 700, padding: '6px 12px', borderRadius: 8 }}>
+                              🏆 Bestes: {fmt(bestPreis)} €/{p.einheit || 'm²'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
