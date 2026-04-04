@@ -86,6 +86,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const [preislisteLaden, setPreislisteLaden] = useState(false)
   const [preislisteExpanded, setPreislisteExpanded] = useState<Record<number, boolean>>({})
   const [kiSuche, setKiSuche] = useState<Record<number, { laden: boolean, ergebnisse: any[] }>>({})
+  const [kiSuchBegriff, setKiSuchBegriff] = useState<Record<number, string>>({})
 
   // LV Form
   const [lvFormOffen, setLvFormOffen] = useState(false)
@@ -494,11 +495,12 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   }
 
   const kiPreissuche = async (p: any) => {
-    if (!p.bezeichnung) return alert('Bitte zuerst eine Materialbezeichnung eingeben.')
+    const suchQ = (kiSuchBegriff[p.id] ?? p.bezeichnung ?? '').trim()
+    if (!suchQ) return alert('Bitte einen Suchbegriff eingeben.')
     setKiSuche(prev => ({ ...prev, [p.id]: { laden: true, ergebnisse: [] } }))
     setPreislisteExpanded(prev => ({ ...prev, [p.id]: true }))
     try {
-      const r = await fetch(`${BASE_URL}/kalkulation/preissuche?q=${encodeURIComponent(p.bezeichnung)}`, { headers: authHeaders() })
+      const r = await fetch(`${BASE_URL}/kalkulation/preissuche?q=${encodeURIComponent(suchQ)}`, { headers: authHeaders() })
       const data = r.ok ? await r.json() : []
       setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: data } }))
     } catch { setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: [] } })) }
@@ -1194,13 +1196,22 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         placeholder="Notiz..."
                         style={{ ...inputSm, flex: 3, minWidth: 120, fontSize: 12, color: '#888' }}
                       />
-                      <button
-                        onClick={() => kiPreissuche(p)}
-                        disabled={kiSuche[p.id]?.laden}
-                        style={{ background: '#2563eb', border: 'none', cursor: 'pointer', color: 'white', fontSize: 12, padding: '5px 10px', borderRadius: 8, whiteSpace: 'nowrap' as const, fontWeight: 600 }}
-                        title="KI sucht Preise im Internet">
-                        {kiSuche[p.id]?.laden ? '⏳ Suche...' : '🔍 KI-Suche'}
-                      </button>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <input
+                          value={kiSuchBegriff[p.id] ?? p.bezeichnung ?? ''}
+                          onChange={e => setKiSuchBegriff(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          onKeyDown={e => e.key === 'Enter' && kiPreissuche(p)}
+                          placeholder="Suchbegriff..."
+                          style={{ ...inputSm, width: 150, fontSize: 11 }}
+                        />
+                        <button
+                          onClick={() => kiPreissuche(p)}
+                          disabled={kiSuche[p.id]?.laden}
+                          style={{ background: '#2563eb', border: 'none', cursor: 'pointer', color: 'white', fontSize: 12, padding: '5px 10px', borderRadius: 8, whiteSpace: 'nowrap' as const, fontWeight: 600 }}
+                          title="KI sucht Preise im Internet">
+                          {kiSuche[p.id]?.laden ? '⏳...' : '🔍'}
+                        </button>
+                      </div>
                       <button
                         onClick={() => loeschePreislisteMaterial(p.id)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 16, padding: '2px 6px' }}
@@ -1321,13 +1332,13 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                           <div style={{ marginTop: 10 }}>
                             <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 8 }}>Automatische Suche ergab keine Ergebnisse. Direkt suchen bei:</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
-                              {[
-                                { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${encodeURIComponent(p.bezeichnung || '')}` },
-                                { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${encodeURIComponent(p.bezeichnung || '')}` },
-                                { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${encodeURIComponent(p.bezeichnung || '')}` },
-                                { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${encodeURIComponent(p.bezeichnung || '')}` },
-                                { name: '🔵 idealo', url: `https://www.idealo.at/preisvergleich/MainSearchProductCategory.html?q=${encodeURIComponent(p.bezeichnung || '')}` },
-                              ].map(s => (
+                              {(() => { const sq = encodeURIComponent((kiSuchBegriff[p.id] ?? p.bezeichnung ?? '').trim()); return [
+                                { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
+                                { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
+                                { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
+                                { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
+                                { name: '🔵 idealo', url: `https://www.idealo.at/preisvergleich/MainSearchProductCategory.html?q=${sq}` },
+                              ]; })().map(s => (
                                 <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
                                   style={{ padding: '5px 10px', background: '#f0f4ff', border: '1px solid #c7d2fe', borderRadius: 6, fontSize: 11, color: '#3730a3', fontWeight: 600, textDecoration: 'none' }}>
                                   {s.name}
