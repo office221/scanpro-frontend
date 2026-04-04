@@ -392,6 +392,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
     setAngebote(prev => ({ ...prev, [materialId]: (prev[materialId] || []).filter((a: any) => a.id !== angebotId) }))
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fotoHochladen = (id: number) => {
     const input = document.createElement('input')
     input.type = 'file'
