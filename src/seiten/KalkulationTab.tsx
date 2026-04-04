@@ -89,6 +89,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
 
   // Gewerk Dropdown
   const [gewerkDropdownOffen, setGewerkDropdownOffen] = useState(false)
+  const [eigeneGewerkEingabe, setEigeneGewerkEingabe] = useState(false)
+  const [eigeneGewerkName, setEigeneGewerkName] = useState('')
 
   // Gewerk-Collapse
   const [gewerkeCollapsed, setGewerkeCollapsed] = useState<Record<number, boolean>>({})
@@ -641,6 +643,45 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                             {name}
                           </div>
                         ))}
+                        <div style={{ borderTop: '1px solid #e8e2d9', margin: '6px 0' }} />
+                        {eigeneGewerkEingabe ? (
+                          <div style={{ padding: '8px 12px', display: 'flex', gap: 6 }}>
+                            <input
+                              autoFocus
+                              value={eigeneGewerkName}
+                              onChange={e => setEigeneGewerkName(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && eigeneGewerkName.trim()) {
+                                  fuegeGewerkHinzu(eigeneGewerkName.trim())
+                                  setEigeneGewerkName('')
+                                  setEigeneGewerkEingabe(false)
+                                }
+                                if (e.key === 'Escape') { setEigeneGewerkEingabe(false); setEigeneGewerkName('') }
+                              }}
+                              placeholder="Eigene Bezeichnung..."
+                              style={{ flex: 1, padding: '6px 10px', border: '1px solid #c8a96e', borderRadius: 6, fontSize: 13, outline: 'none' }}
+                            />
+                            <button
+                              onClick={() => {
+                                if (eigeneGewerkName.trim()) {
+                                  fuegeGewerkHinzu(eigeneGewerkName.trim())
+                                  setEigeneGewerkName('')
+                                  setEigeneGewerkEingabe(false)
+                                }
+                              }}
+                              style={{ padding: '6px 12px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
+                              ✓
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: '#c8a96e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#fdf8f0')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            onClick={e => { e.stopPropagation(); setEigeneGewerkEingabe(true) }}>
+                            ✏️ Eigene Bezeichnung eingeben
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -674,7 +715,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
 
       {/* Click-outside für Dropdown */}
       {gewerkDropdownOffen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setGewerkDropdownOffen(false)} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => { setGewerkDropdownOffen(false); setEigeneGewerkEingabe(false); setEigeneGewerkName('') }} />
       )}
     </div>
   )
