@@ -102,6 +102,9 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   // Positionen-Edit-Puffer: id -> Felder
   const [posEdit, setPosEdit] = useState<Record<number, Partial<Position>>>({})
 
+  // Materialien
+  const [materialien, setMaterialien] = useState<any[]>([])
+
   const ladeLVListe = useCallback(async () => {
     setLadenLV(true)
     try {
@@ -114,17 +117,20 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const ladeDetails = useCallback(async (lv: LV) => {
     setLadenDetails(true)
     try {
-      const [gR, pR] = await Promise.all([
+      const [gR, pR, mR] = await Promise.all([
         fetch(`${BASE_URL}/kalkulation/gewerke/${lv.id}`, { headers: authHeaders() }),
         fetch(`${BASE_URL}/kalkulation/lv-vollstaendig/${lv.id}`, { headers: authHeaders() }),
+        fetch(`${BASE_URL}/kalkulation/materialien/${lv.id}`, { headers: authHeaders() }),
       ])
       const gewerkeData: Gewerk[] = gR.ok ? await gR.json() : []
       const vollData = pR.ok ? await pR.json() : { gewerke: [] }
+      const mData = mR.ok ? await mR.json() : []
       setGewerke(gewerkeData)
       const allePos: Position[] = vollData.gewerke
         ? vollData.gewerke.flatMap((g: any) => g.positionen || [])
         : []
       setPositionen(allePos)
+      setMaterialien(mData)
     } catch {}
     setLadenDetails(false)
   }, [])
@@ -134,7 +140,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   }, [ladeLVListe])
 
   useEffect(() => {
-    if (aktivLV) ladeDetails(aktivLV)
+    if (aktivLV) {
+      setMaterialien([])
+      ladeDetails(aktivLV)
+    }
   }, [aktivLV, ladeDetails])
 
   const oeffneLVForm = (lv?: LV) => {
@@ -184,7 +193,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const loescheLV = async (id: number) => {
     if (!window.confirm('Leistungsverzeichnis wirklich löschen? Alle Gewerke und Positionen werden entfernt.')) return
     await fetch(`${BASE_URL}/kalkulation/lv/${id}`, { method: 'DELETE', headers: authHeaders() })
-    if (aktivLV?.id === id) { setAktivLV(null); setGewerke([]); setPositionen([]) }
+    if (aktivLV?.id === id) { setAktivLV(null); setGewerke([]); setPositionen([]); setMaterialien([]) }
     await ladeLVListe()
   }
 
@@ -283,6 +292,31 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   const loeschePosition = async (id: number) => {
     await fetch(`${BASE_URL}/kalkulation/positionen/${id}`, { method: 'DELETE', headers: authHeaders() })
     setPositionen(prev => prev.filter(p => p.id !== id))
+  }
+
+  const fuegeMaterialHinzu = async () => {
+    if (!aktivLV) return
+    const r = await fetch(`${BASE_URL}/kalkulation/materialien`, {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lvId: aktivLV.id, hersteller: '', artikel: '', artikelnummer: '', einheit: 'Stk', menge: 1, einheitspreis: 0 })
+    })
+    if (r.ok) { const neu = await r.json(); setMaterialien(prev => [...prev, neu]) }
+  }
+
+  const aktualisiereM = (id: number, feld: string, wert: string) => {
+    setMaterialien(prev => prev.map(m => m.id === id ? { ...m, [feld]: wert, gesamtpreis: feld === 'menge' || feld === 'einheitspreis' ? (parseFloat(feld === 'menge' ? wert : m.menge)||0) * (parseFloat(feld === 'einheitspreis' ? wert : m.einheitspreis)||0) : m.gesamtpreis } : m))
+  }
+
+  const speicherMaterial = async (m: any) => {
+    await fetch(`${BASE_URL}/kalkulation/materialien/${m.id}`, {
+      method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(m)
+    })
+  }
+
+  const loescheMaterial = async (id: number) => {
+    await fetch(`${BASE_URL}/kalkulation/materialien/${id}`, { method: 'DELETE', headers: authHeaders() })
+    setMaterialien(prev => prev.filter(m => m.id !== id))
   }
 
   const downloadPDF = async () => {
@@ -706,6 +740,62 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                       </div>
                     </div>
                   )}
+
+                  {/* Materialien */}
+                  <div style={{ ...cardStyle, padding: '20px 24px', marginTop: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a2a3a', fontFamily: 'Syne, sans-serif' }}>🔩 Materialien & Produkte</div>
+                        <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Hersteller, Artikel, Mengen und Preise</div>
+                      </div>
+                      <button onClick={fuegeMaterialHinzu} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12 }}>+ Material hinzufügen</button>
+                    </div>
+
+                    {materialien.length === 0 ? (
+                      <div style={{ color: '#aaa', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>Noch keine Materialien erfasst</div>
+                    ) : (
+                      <>
+                        {/* Header */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 80px 70px 90px 90px 32px', gap: 6, padding: '6px 4px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
+                          {['Hersteller', 'Artikel / Bezeichnung', 'Art.-Nr.', 'Einheit', 'Menge', 'EP (€)', 'GP (€)', ''].map((h, i) => (
+                            <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</div>
+                          ))}
+                        </div>
+                        {materialien.map(m => (
+                          <div key={m.id} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 80px 70px 90px 90px 32px', gap: 6, padding: '4px 0', borderBottom: '1px solid #f0ede8', alignItems: 'center' }}>
+                            {/* Hersteller with dropdown suggestions */}
+                            <div style={{ position: 'relative' }}>
+                              <input
+                                list={`hersteller-list-${m.id}`}
+                                value={m.hersteller || ''}
+                                onChange={e => aktualisiereM(m.id, 'hersteller', e.target.value)}
+                                onBlur={() => speicherMaterial(m)}
+                                placeholder="Hersteller..."
+                                style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const }}
+                              />
+                              <datalist id={`hersteller-list-${m.id}`}>
+                                {['Hornbach', 'OBI', 'Bauhaus', 'Hagebau', 'Würth', 'Knauf', 'Rigips', 'Mapei', 'Weber', 'Schüco', 'Velux', 'Isover', 'Rockwool', 'Sika', 'Baumit', 'Roto', 'Geberit', 'Viessmann', 'Buderus', 'Bosch', 'Siemens', 'Miele', 'Grohe', 'Hansgrohe', 'Sonstiger'].map(h => <option key={h} value={h} />)}
+                              </datalist>
+                            </div>
+                            <input value={m.artikel || ''} onChange={e => aktualisiereM(m.id, 'artikel', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Artikel / Bezeichnung..." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
+                            <input value={m.artikelnummer || ''} onChange={e => aktualisiereM(m.id, 'artikelnummer', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Art.-Nr." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
+                            <select value={m.einheit || 'Stk'} onChange={e => { aktualisiereM(m.id, 'einheit', e.target.value); setTimeout(() => speicherMaterial({ ...m, einheit: e.target.value }), 0) }} style={{ padding: '5px 6px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}>
+                              {['Stk', 'm²', 'm³', 'm', 'lfm', 'Psch', 'kg', 't', 'l', 'Pkg', 'Rll'].map(e => <option key={e} value={e}>{e}</option>)}
+                            </select>
+                            <input type="number" value={m.menge || ''} onChange={e => aktualisiereM(m.id, 'menge', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="0" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
+                            <input type="number" value={m.einheitspreis || ''} onChange={e => aktualisiereM(m.id, 'einheitspreis', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="0,00" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
+                            <div style={{ padding: '5px 8px', fontSize: 12, fontWeight: 600, color: '#1a2a3a', textAlign: 'right' as const }}>€ {fmt((parseFloat(m.menge)||0) * (parseFloat(m.einheitspreis)||0))}</div>
+                            <button onClick={() => loescheMaterial(m.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
+                          </div>
+                        ))}
+                        {/* Materialien Total */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 12, paddingTop: 10, borderTop: '2px solid #e8e2d9' }}>
+                          <span style={{ fontSize: 13, color: '#666' }}>Materialkosten gesamt:</span>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>€ {fmt(materialien.reduce((s, m) => s + (parseFloat(m.menge)||0)*(parseFloat(m.einheitspreis)||0), 0))}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </>
               )}
             </div>
