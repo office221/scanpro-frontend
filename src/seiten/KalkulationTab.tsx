@@ -1048,6 +1048,41 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                   <button onClick={() => fuegeAngebotHinzu(m.id)} style={{ padding: '6px 12px', background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>+ Angebot hinzufügen</button>
                                 </div>
 
+                                {/* Shop-Buttons für Direktsuche */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 12, alignItems: 'center' }}>
+                                  {(() => { const sq = encodeURIComponent((m.artikel || '').trim()); return [
+                                    { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
+                                    { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
+                                    { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
+                                    { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
+                                    { name: '🏗️ Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
+                                    { name: '🔵 Geizhals', url: `https://geizhals.at/?fs=${sq}&hloc=at` },
+                                    { name: '📦 Amazon', url: `https://www.amazon.de/s?k=${sq}` },
+                                    ...eigeneShops.map(s => ({ name: `⭐ ${s.name}`, url: s.urlMuster.replace('{suche}', sq), eigen: true, idx: eigeneShops.indexOf(s) })),
+                                  ]; })().map((s: any) => (
+                                    <span key={s.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                                      <a href={s.url} target="_blank" rel="noopener noreferrer"
+                                        style={{ padding: '3px 8px', background: s.eigen ? '#fef9c3' : '#f0f4ff', border: `1px solid ${s.eigen ? '#fde047' : '#c7d2fe'}`, borderRadius: 6, fontSize: 10, color: s.eigen ? '#854d0e' : '#3730a3', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
+                                        {s.name}
+                                      </a>
+                                      {s.eigen && <button onClick={() => shopEntfernen(s.idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 10, padding: 0, lineHeight: 1 }} title="Shop entfernen">✕</button>}
+                                    </span>
+                                  ))}
+                                  <button onClick={() => setShopFormOffen(!shopFormOffen)}
+                                    style={{ padding: '3px 8px', background: shopFormOffen ? '#fee2e2' : '#f0fdf4', border: `1px solid ${shopFormOffen ? '#fca5a5' : '#86efac'}`, borderRadius: 6, fontSize: 10, color: shopFormOffen ? '#dc2626' : '#166534', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                                    {shopFormOffen ? '✕ Abbrechen' : '+ Shop'}
+                                  </button>
+                                </div>
+                                {shopFormOffen && (
+                                  <div style={{ display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                                    <input value={neuerShopName} onChange={e => setNeuerShopName(e.target.value)} placeholder="Shop-Name" style={{ padding: '4px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, width: 100 }} />
+                                    <input value={neuerShopUrl} onChange={e => setNeuerShopUrl(e.target.value)} placeholder="Such-URL mit {suche}" style={{ padding: '4px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, flex: 1, minWidth: 200 }}
+                                      onKeyDown={e => e.key === 'Enter' && shopSpeichern()} />
+                                    <button onClick={shopSpeichern} style={{ padding: '4px 10px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>Speichern</button>
+                                    <span style={{ fontSize: 9, color: '#888' }}>Tipp: URL mit {'{suche}'} als Platzhalter</span>
+                                  </div>
+                                )}
+
                                 {(!angebote[m.id] || angebote[m.id].length === 0) ? (
                                   <div style={{ color: '#aaa', fontSize: 12, textAlign: 'center', padding: '12px 0' }}>Noch keine Angebote. Klicke "+ Angebot hinzufügen"</div>
                                 ) : (() => {
