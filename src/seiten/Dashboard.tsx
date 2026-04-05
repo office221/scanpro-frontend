@@ -491,7 +491,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                 : aktivNav}
             </div>
             <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 1 }}>
-              {aktivNav === 'Dashboard'   ? `${gruss}, ${benutzer.vorname || 'Chef'}!` :
+              {aktivNav === 'Dashboard'   ? `${gruss}, ${benutzer.vorname || 'Chef'}!  ·  ${new Date().toLocaleDateString('de-AT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}` :
                aktivNav === 'Rechnungen' ? `${stats.rechnungen} Rechnungen · ${stats.ueberfaellig} überfällig` :
                aktivNav === 'Angebote'   ? `${stats.angebote} Angebote` :
                aktivNav === 'Kunden'     ? `${stats.kunden} Kunden` : 'BelegFix'}
