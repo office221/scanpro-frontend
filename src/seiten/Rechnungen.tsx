@@ -364,6 +364,29 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     } catch { alert('Fehler beim Herunterladen!') }
   }
 
+  const eRechnungHerunterladen = async (id: number) => {
+    const token = localStorage.getItem('token')
+    const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
+    try {
+      const res = await fetch(`${baseUrl}/api/pdf/${id}?token=${token}&erechnung=1`)
+      const data = await res.json()
+      // PDF herunterladen
+      const pdfBytes = Uint8Array.from(atob(data.pdf), c => c.charCodeAt(0))
+      const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(pdfBlob)
+      a.download = data.dateiname
+      a.click()
+      URL.revokeObjectURL(a.href)
+      // XML herunterladen
+      const xmlBlob = new Blob([data.xml], { type: 'application/xml' })
+      const b = document.createElement('a')
+      b.href = URL.createObjectURL(xmlBlob)
+      b.download = data.xmlDateiname
+      setTimeout(() => { b.click(); URL.revokeObjectURL(b.href) }, 500)
+    } catch { alert('Fehler beim Erstellen der E-Rechnung!') }
+  }
+
   const mahnungPdfOeffnen = (id: number, stufe: number) => {
     const token = localStorage.getItem('token')
     const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
@@ -636,6 +659,12 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           style={{width:32,height:32,borderRadius:8,border:'1px solid #d1f5e0',background:'#f0fdf4',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#2d6a4f'}}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </button>
+                        {r.typ === 'Rechnung' && (
+                          <button title="E-Rechnung (ZUGFeRD)" onClick={() => eRechnungHerunterladen(r.id)}
+                            style={{width:32,height:32,borderRadius:8,border:'1px solid #c7d2fe',background:'#eef2ff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#4338ca',fontSize:11,fontWeight:700}}>
+                            eR
+                          </button>
+                        )}
                         <button title="Mahnung erstellen" onClick={() => setMahnungModal(r)}
                           style={{width:32,height:32,borderRadius:8,border:'1px solid #fef3c7',background:'#fffbeb',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#92400e'}}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
