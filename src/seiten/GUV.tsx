@@ -322,6 +322,212 @@ export default function GUV() {
     setTimeout(() => win.print(), 600)
   }
 
+  // ── Jahresabschluss PDF ─────────────────────────────────────────────────────
+  const jahresabschlussPDF = () => {
+    const win = window.open('', '_blank')
+    if (!win) return
+
+    // Kategorien-Zusammenfassung
+    const einnahmenNachKat = einnahmen.reduce((acc, e) => {
+      const k = e.kategorie || 'Sonstiges'
+      acc[k] = (acc[k] || 0) + Number(e.brutto)
+      return acc
+    }, {} as Record<string, number>)
+
+    const ausgabenNachKatDetail = ausgaben.reduce((acc, e) => {
+      const k = e.kategorie || 'Sonstiges'
+      acc[k] = (acc[k] || 0) + Number(e.brutto)
+      return acc
+    }, {} as Record<string, number>)
+
+    // Monatliche Übersicht
+    const monate = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
+    const monatsRows = Array.from({ length: 12 }, (_, i) => {
+      const m = i + 1
+      const mE = einnahmen.filter(e => new Date(e.datum).getMonth() + 1 === m)
+      const mA = ausgaben.filter(e => new Date(e.datum).getMonth() + 1 === m)
+      const sE = mE.reduce((s, e) => s + Number(e.brutto), 0)
+      const sA = mA.reduce((s, e) => s + Number(e.brutto), 0)
+      return { monat: monate[i], einnahmen: sE, ausgaben: sA, ergebnis: sE - sA }
+    })
+
+    const gewinn = gewinnBrutto
+
+    win.document.write(`
+      <html><head><title>Jahresabschluss ${jahr}</title>
+      <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; padding: 32px 40px; color: #1a2a3a; max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 22px; margin: 0 0 2px; border-bottom: 3px solid #1a2a3a; padding-bottom: 8px; }
+        h2 { font-size: 14px; margin: 28px 0 10px; padding: 6px 10px; background: #1a2a3a; color: white; border-radius: 4px; }
+        .meta { color: #888; font-size: 11px; margin-bottom: 24px; }
+        .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 8px; }
+        .box { padding: 14px; border-radius: 8px; }
+        .box-label { font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 4px; }
+        .box-val { font-size: 18px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        th { background: #f4f1eb; padding: 7px 10px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; border-bottom: 2px solid #e0dbd3; }
+        td { padding: 6px 10px; border-bottom: 1px solid #f0ece4; font-size: 11px; }
+        .r { text-align: right; }
+        .bold { font-weight: bold; }
+        .green { color: #059669; }
+        .red { color: #dc2626; }
+        .total-row td { font-weight: bold; background: #f4f1eb; border-top: 2px solid #1a2a3a; }
+        .kat-bar { display: inline-block; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+        .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e0dbd3; font-size: 9px; color: #aaa; display: flex; justify-content: space-between; }
+        @media print { body { padding: 12px; } }
+      </style></head><body>
+      <h1>Jahresabschluss ${jahr}</h1>
+      <div class="meta">Einnahmen-Ausgaben-Rechnung gem. § 4 Abs. 3 EStG &nbsp;·&nbsp; Erstellt: ${new Date().toLocaleDateString('de-AT')} &nbsp;·&nbsp; ${eintraege.length} Buchungen</div>
+
+      <div class="grid4">
+        <div class="box" style="background:#f0fdf4;border:1px solid #bbf7d0">
+          <div class="box-label">Einnahmen Brutto</div>
+          <div class="box-val green">\u20AC ${fmt(sumEBrutto)}</div>
+          <div style="font-size:10px;color:#888;margin-top:4px">Netto: \u20AC ${fmt(sumENetto)}</div>
+        </div>
+        <div class="box" style="background:#fff5f5;border:1px solid #fecaca">
+          <div class="box-label">Ausgaben Brutto</div>
+          <div class="box-val red">\u20AC ${fmt(sumABrutto)}</div>
+          <div style="font-size:10px;color:#888;margin-top:4px">Netto: \u20AC ${fmt(sumANetto)}</div>
+        </div>
+        <div class="box" style="background:${gewinn >= 0 ? '#fdf8f0' : '#fff5f5'};border:1px solid ${gewinn >= 0 ? '#e8c98e' : '#fecaca'}">
+          <div class="box-label">${gewinn >= 0 ? 'Gewinn' : 'Verlust'} Brutto</div>
+          <div class="box-val" style="color:${gewinn >= 0 ? '#854d0e' : '#dc2626'}">\u20AC ${fmt(Math.abs(gewinn))}</div>
+          <div style="font-size:10px;color:#888;margin-top:4px">Netto: \u20AC ${fmt(Math.abs(gewinnNetto))}</div>
+        </div>
+        <div class="box" style="background:#f0f0fe;border:1px solid #c7d2fe">
+          <div class="box-label">USt-Zahllast</div>
+          <div class="box-val" style="color:#4338ca">\u20AC ${fmt(mwstSaldo)}</div>
+          <div style="font-size:10px;color:#888;margin-top:4px">Eingangs-USt: \u20AC ${fmt(sumAMwst)}</div>
+        </div>
+      </div>
+
+      <h2>Monatliche \u00DCbersicht</h2>
+      <table>
+        <tr><th>Monat</th><th class="r">Einnahmen</th><th class="r">Ausgaben</th><th class="r">Ergebnis</th></tr>
+        ${monatsRows.map(m => `
+          <tr>
+            <td>${m.monat}</td>
+            <td class="r green">\u20AC ${fmt(m.einnahmen)}</td>
+            <td class="r red">\u20AC ${fmt(m.ausgaben)}</td>
+            <td class="r bold" style="color:${m.ergebnis >= 0 ? '#059669' : '#dc2626'}">\u20AC ${fmt(m.ergebnis)}</td>
+          </tr>`).join('')}
+        <tr class="total-row">
+          <td>GESAMT</td>
+          <td class="r green">\u20AC ${fmt(sumEBrutto)}</td>
+          <td class="r red">\u20AC ${fmt(sumABrutto)}</td>
+          <td class="r" style="color:${gewinn >= 0 ? '#059669' : '#dc2626'}">\u20AC ${fmt(gewinn)}</td>
+        </tr>
+      </table>
+
+      <h2>Einnahmen nach Kategorie</h2>
+      <table>
+        <tr><th>Kategorie</th><th class="r">Betrag Brutto</th><th class="r">Anteil</th></tr>
+        ${Object.entries(einnahmenNachKat).sort((a, b) => b[1] - a[1]).map(([k, v]) => `
+          <tr>
+            <td><span class="kat-bar" style="width:${Math.round(v / sumEBrutto * 200)}px;background:#10b981"></span>${k}</td>
+            <td class="r green">\u20AC ${fmt(v)}</td>
+            <td class="r">${sumEBrutto > 0 ? Math.round(v / sumEBrutto * 100) : 0}%</td>
+          </tr>`).join('')}
+        <tr class="total-row"><td>Summe</td><td class="r">\u20AC ${fmt(sumEBrutto)}</td><td class="r">100%</td></tr>
+      </table>
+
+      <h2>Ausgaben nach Kategorie</h2>
+      <table>
+        <tr><th>Kategorie</th><th class="r">Betrag Brutto</th><th class="r">Anteil</th></tr>
+        ${Object.entries(ausgabenNachKatDetail).sort((a, b) => b[1] - a[1]).map(([k, v]) => `
+          <tr>
+            <td><span class="kat-bar" style="width:${Math.round(v / sumABrutto * 200)}px;background:#ef4444"></span>${k}</td>
+            <td class="r red">\u20AC ${fmt(v)}</td>
+            <td class="r">${sumABrutto > 0 ? Math.round(v / sumABrutto * 100) : 0}%</td>
+          </tr>`).join('')}
+        <tr class="total-row"><td>Summe</td><td class="r">\u20AC ${fmt(sumABrutto)}</td><td class="r">100%</td></tr>
+      </table>
+
+      <h2>Alle Buchungen</h2>
+      <table>
+        <tr><th>Datum</th><th>Bezeichnung</th><th>Kategorie</th><th>Typ</th><th class="r">Netto</th><th class="r">MwSt</th><th class="r">Brutto</th></tr>
+        ${gefiltert.map(e => `
+          <tr>
+            <td>${e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : '\u2014'}</td>
+            <td>${e.bezeichnung}</td>
+            <td>${e.kategorie}</td>
+            <td class="${e.typ === 'einnahme' ? 'green' : 'red'}">${e.typ === 'einnahme' ? 'Einnahme' : 'Ausgabe'}</td>
+            <td class="r">\u20AC ${fmt(Number(e.netto))}</td>
+            <td class="r">\u20AC ${fmt(Number(e.mwst_betrag))}</td>
+            <td class="r bold">\u20AC ${fmt(Number(e.brutto))}</td>
+          </tr>`).join('')}
+        <tr class="total-row">
+          <td colspan="4">GESAMT</td>
+          <td class="r">\u20AC ${fmt(gewinnNetto)}</td>
+          <td class="r">\u20AC ${fmt(mwstSaldo)}</td>
+          <td class="r">\u20AC ${fmt(gewinn)}</td>
+        </tr>
+      </table>
+
+      <div class="footer">
+        <span>Erstellt mit BelegFix \u00B7 Einnahmen-Ausgaben-Rechnung gem. \u00A7 4 Abs. 3 EStG</span>
+        <span>Seite 1</span>
+      </div>
+      </body></html>`)
+    win.document.close()
+    setTimeout(() => win.print(), 600)
+  }
+
+  // ── BMD Export ──────────────────────────────────────────────────────────────
+  const exportBMD = () => {
+    // BMD-kompatibles Format: Satzart;Datum;Belegnummer;Buchungstext;Konto;Gegenkonto;Betrag;USt-Code;USt-Betrag
+    // Konto-Mapping für EA-Rechnung (vereinfacht)
+    const kontoMapping: Record<string, string> = {
+      'Honorare': '4000', 'Dienstleistungen': '4000', 'Verkauf': '4000',
+      'Provisionen': '4010', 'Vermietung': '4800',
+      'Material': '5000', 'Werkzeug': '5100', 'Büromaterial': '7600',
+      'Miete': '7200', 'Strom': '7210', 'Telefon': '7300', 'Internet': '7300',
+      'Versicherung': '7500', 'KFZ': '7100', 'Reisekosten': '7400',
+      'Werbung': '7700', 'Fortbildung': '7800', 'Beratung': '7750',
+      'Sonstiges': '7900',
+    }
+
+    const ustCode = (mwst: number, brutto: number) => {
+      if (mwst === 0 || brutto === 0) return '0'
+      const satz = Math.round((mwst / (brutto - mwst)) * 100)
+      if (satz === 20) return '1'
+      if (satz === 10) return '2'
+      if (satz === 13) return '3'
+      return '0'
+    }
+
+    const headers = ['Satzart','Datum','Belegnummer','Buchungstext','Konto','Gegenkonto','Betrag','USt-Code','USt-Betrag','Währung']
+    const rows = gefiltert.map((e, i) => {
+      const konto = kontoMapping[e.kategorie] || (e.typ === 'einnahme' ? '4000' : '7900')
+      const gegenkonto = e.typ === 'einnahme' ? '2700' : '2700' // Kassa/Bank
+      const betrag = e.typ === 'einnahme'
+        ? fmt(Number(e.brutto))
+        : fmt(Number(e.brutto))
+      return [
+        '0', // Satzart 0 = Buchung
+        e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : '',
+        `${e.typ === 'einnahme' ? 'ER' : 'AR'}${String(i + 1).padStart(4, '0')}`,
+        e.bezeichnung.substring(0, 60),
+        konto,
+        gegenkonto,
+        betrag,
+        ustCode(Number(e.mwst_betrag), Number(e.brutto)),
+        fmt(Number(e.mwst_betrag)),
+        'EUR',
+      ]
+    })
+
+    const csv = [headers, ...rows]
+      .map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';'))
+      .join('\n')
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `BMD-Export-${jahr}.csv`
+    a.click()
+  }
+
   // ── Monatliche Aggregate für Diagramm ──────────────────────────────────────
   const MONATSNAMEN = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
   const MONATSNAMEN_LANG = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
@@ -772,13 +978,29 @@ export default function GUV() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               CSV
             </button>
+            <button onClick={exportBMD} style={{
+              padding: '7px 13px', borderRadius: 9, border: '1px solid #c7d2fe',
+              background: '#f0f0fe', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#4338ca',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              BMD
+            </button>
             <button onClick={drucken} style={{
-              padding: '7px 13px', borderRadius: 9, border: 'none',
-              background: '#1a2a3a', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: 'white',
+              padding: '7px 13px', borderRadius: 9, border: '1px solid #e5e0d8',
+              background: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#555',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
               PDF
+            </button>
+            <button onClick={jahresabschlussPDF} style={{
+              padding: '7px 13px', borderRadius: 9, border: 'none',
+              background: GOLD, fontSize: 12, fontWeight: 700, cursor: 'pointer', color: 'white',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              Jahresabschluss
             </button>
           </>
         )}
