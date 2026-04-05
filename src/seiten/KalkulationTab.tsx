@@ -503,7 +503,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
       const r = await fetch(`${BASE_URL}/kalkulation/preissuche?q=${encodeURIComponent(suchQ)}`, { headers: authHeaders() })
       const data = await r.json()
       if (!r.ok) {
-        setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: [], fehler: data.fehler || 'Server Fehler' } }))
+        const details = data.details ? '\n' + data.details.join('\n') : ''
+        setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: [], fehler: (data.fehler || 'Server Fehler') + details } }))
       } else {
         setKiSuche(prev => ({ ...prev, [p.id]: { laden: false, ergebnisse: data, fehler: undefined } }))
       }
