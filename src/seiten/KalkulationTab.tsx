@@ -1335,7 +1335,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         )}
                         {kiSuche[p.id] && !kiSuche[p.id].laden && kiSuche[p.id].ergebnisse.length === 0 && (
                           <div style={{ marginTop: 10 }}>
-                            <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 8 }}>
+                            <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 8, whiteSpace: 'pre-line' }}>
                               {kiSuche[p.id].fehler
                                 ? `⚠️ Fehler: ${kiSuche[p.id].fehler}`
                                 : 'Automatische Suche ergab keine Ergebnisse. Direkt suchen bei:'}
