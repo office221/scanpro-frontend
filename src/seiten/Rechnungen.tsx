@@ -111,6 +111,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const [bezahltModal, setBezahltModal] = useState<any>(null)
   const [bezahltDatum, setBezahltDatum] = useState(new Date().toISOString().split('T')[0])
   const [mahnungModal, setMahnungModal] = useState<any>(null)
+  const [mehrMenu, setMehrMenu] = useState<number | null>(null)
   const [mahnungFrist1, setMahnungFrist1] = useState(14)
   const [mahnungFrist2, setMahnungFrist2] = useState(7)
   const [mahnungFrist3, setMahnungFrist3] = useState(5)
@@ -642,55 +643,51 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                       </select>
                     </td>
                     <td style={{padding:'10px 14px'}}>
-                      <div style={{display:'flex', gap:4}}>
+                      <div style={{display:'flex', gap:4, alignItems:'center'}}>
+                        {/* Hauptaktionen: Bearbeiten + PDF */}
                         <button title="Bearbeiten" onClick={() => rechnungBearbeiten(r)}
                           style={{width:32,height:32,borderRadius:8,border:'1px solid #e5e0d8',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#555'}}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button title="Duplizieren" onClick={() => rechnungDuplizieren(r)}
-                          style={{width:32,height:32,borderRadius:8,border:'1px solid #dbeafe',background:'#f0f7ff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#1e40af'}}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         </button>
                         <button title="PDF öffnen" onClick={() => pdfOeffnen(r.id)}
                           style={{width:32,height:32,borderRadius:8,border:'1px solid #d1f5e0',background:'#f0fdf4',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#2d6a4f'}}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
                         </button>
-                        <button title="PDF speichern" onClick={() => pdfHerunterladen(r.id)}
-                          style={{width:32,height:32,borderRadius:8,border:'1px solid #d1f5e0',background:'#f0fdf4',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#2d6a4f'}}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        </button>
-                        {r.typ === 'Rechnung' && (
-                          <button title="E-Rechnung (ZUGFeRD)" onClick={() => eRechnungHerunterladen(r.id)}
-                            style={{width:32,height:32,borderRadius:8,border:'1px solid #c7d2fe',background:'#eef2ff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#4338ca',fontSize:11,fontWeight:700}}>
-                            eR
+
+                        {/* Mehr-Menü */}
+                        <div style={{position:'relative'}}>
+                          <button title="Mehr Aktionen" onClick={(ev) => {
+                            ev.stopPropagation()
+                            setMehrMenu(mehrMenu === r.id ? null : r.id)
+                          }}
+                            style={{width:32,height:32,borderRadius:8,border:'1px solid #e5e0d8',background: mehrMenu === r.id ? '#f4f1eb' : 'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#555',fontSize:16,fontWeight:700,letterSpacing:2}}>
+                            ···
                           </button>
-                        )}
-                        <button title="Mahnung erstellen" onClick={() => setMahnungModal(r)}
-                          style={{width:32,height:32,borderRadius:8,border:'1px solid #fef3c7',background:'#fffbeb',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#92400e'}}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        </button>
-                        {onTransferBeleg && (
-                          <button title="Als Beleg zum Belegscanner übertragen" onClick={() => alsBeleg(r)}
-                            style={{width:32,height:32,borderRadius:8,border:'1px solid #bfdbfe',background:'#eff6ff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#1d4ed8'}}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></svg>
-                          </button>
-                        )}
-                        {r.status === 'Bezahlt' && (
-                          <button title="Zu G&V übertragen" onClick={async () => {
-                            try {
-                              await api.post(`/guv/von-rechnung/${r.id}`, {})
-                              alert('✅ Rechnung wurde zur G&V übertragen!')
-                            } catch (e: any) {
-                              alert(e?.response?.data?.fehler || 'Fehler beim Übertragen')
-                            }
-                          }} style={{width:32,height:32,borderRadius:8,border:'1px solid #c8a96e44',background:'#fdf8f0',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#c8a96e'}}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                          </button>
-                        )}
-                        <button title="Löschen" onClick={() => rechnungLoeschen(r.id)}
-                          style={{width:32,height:32,borderRadius:8,border:'1px solid #fde8e6',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#c0392b'}}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                        </button>
+                          {mehrMenu === r.id && (
+                            <>
+                              <div style={{position:'fixed',inset:0,zIndex:98}} onClick={() => setMehrMenu(null)} />
+                              <div style={{position:'absolute',right:0,top:'100%',marginTop:4,background:'white',border:'1px solid #e5e0d8',borderRadius:12,boxShadow:'0 8px 30px rgba(0,0,0,0.12)',zIndex:99,minWidth:200,padding:'6px 0',overflow:'hidden'}}>
+                                {[
+                                  { label: 'PDF speichern', icon: '📥', onClick: () => pdfHerunterladen(r.id) },
+                                  ...(r.typ === 'Rechnung' ? [{ label: 'E-Rechnung (ZUGFeRD)', icon: '📋', onClick: () => eRechnungHerunterladen(r.id) }] : []),
+                                  { label: 'Duplizieren', icon: '📄', onClick: () => rechnungDuplizieren(r) },
+                                  { label: 'Mahnung erstellen', icon: '⚠️', onClick: () => setMahnungModal(r) },
+                                  ...(onTransferBeleg ? [{ label: 'Als Beleg übertragen', icon: '📎', onClick: () => alsBeleg(r) }] : []),
+                                  ...(r.status === 'Bezahlt' ? [{ label: 'Zu G&V übertragen', icon: '📊', onClick: async () => { try { await api.post(`/guv/von-rechnung/${r.id}`, {}); alert('✅ Zur G&V übertragen!') } catch (e: any) { alert(e?.response?.data?.fehler || 'Fehler') } } }] : []),
+                                  { label: 'Löschen', icon: '🗑️', onClick: () => rechnungLoeschen(r.id), danger: true },
+                                ].map((item: any, idx) => (
+                                  <button key={idx} onClick={() => { setMehrMenu(null); item.onClick() }}
+                                    style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 16px',border:'none',background:'transparent',cursor:'pointer',fontSize:12,fontWeight:500,color: item.danger ? '#dc2626' : '#1a2a3a',textAlign:'left' as const}}
+                                    onMouseEnter={e => (e.currentTarget.style.background = item.danger ? '#fef2f2' : '#f4f1eb')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                    <span style={{fontSize:15}}>{item.icon}</span>
+                                    {item.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
