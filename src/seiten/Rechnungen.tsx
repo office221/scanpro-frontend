@@ -369,7 +369,21 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
     try {
       const res = await fetch(`${baseUrl}/api/pdf/${id}?token=${token}&erechnung=1`)
+      const contentType = res.headers.get('Content-Type') || ''
+      if (!res.ok) {
+        const err = contentType.includes('json') ? await res.json() : { fehler: `HTTP ${res.status}` }
+        alert(`E-Rechnung Fehler: ${err.fehler || 'Unbekannt'}`)
+        return
+      }
+      if (!contentType.includes('json')) {
+        alert('Backend noch nicht aktualisiert. Bitte in 1-2 Minuten nochmal versuchen.')
+        return
+      }
       const data = await res.json()
+      if (!data.pdf || !data.xml) {
+        alert('E-Rechnung konnte nicht erstellt werden.')
+        return
+      }
       // PDF herunterladen
       const pdfBytes = Uint8Array.from(atob(data.pdf), c => c.charCodeAt(0))
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' })
@@ -384,7 +398,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       b.href = URL.createObjectURL(xmlBlob)
       b.download = data.xmlDateiname
       setTimeout(() => { b.click(); URL.revokeObjectURL(b.href) }, 500)
-    } catch { alert('Fehler beim Erstellen der E-Rechnung!') }
+    } catch (e: any) { alert(`Fehler: ${e.message || 'E-Rechnung konnte nicht erstellt werden'}`) }
   }
 
   const mahnungPdfOeffnen = (id: number, stufe: number) => {
