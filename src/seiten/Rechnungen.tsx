@@ -384,8 +384,10 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
         alert('E-Rechnung konnte nicht erstellt werden.')
         return
       }
-      // PDF herunterladen
-      const pdfBytes = Uint8Array.from(atob(data.pdf), c => c.charCodeAt(0))
+      // PDF herunterladen (Base64 → Blob)
+      const binaryStr = atob(data.pdf.replace(/\s/g, ''))
+      const pdfBytes = new Uint8Array(binaryStr.length)
+      for (let i = 0; i < binaryStr.length; i++) pdfBytes[i] = binaryStr.charCodeAt(i)
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(pdfBlob)
