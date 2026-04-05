@@ -1217,6 +1217,22 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                           {kiSuche[p.id]?.laden ? '⏳...' : '🔍'}
                         </button>
                       </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginTop: 4 }}>
+                        {(() => { const sq = encodeURIComponent((kiSuchBegriff[p.id] ?? p.bezeichnung ?? '').trim()); return [
+                          { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
+                          { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
+                          { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
+                          { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
+                          { name: '🏗️ Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
+                          { name: '🔵 Geizhals', url: `https://geizhals.at/?fs=${sq}&hloc=at` },
+                          { name: '📦 Amazon', url: `https://www.amazon.de/s?k=${sq}` },
+                        ]; })().map(s => (
+                          <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
+                            style={{ padding: '3px 8px', background: '#f0f4ff', border: '1px solid #c7d2fe', borderRadius: 6, fontSize: 10, color: '#3730a3', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
+                            {s.name}
+                          </a>
+                        ))}
+                      </div>
                       <button
                         onClick={() => loeschePreislisteMaterial(p.id)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 16, padding: '2px 6px' }}
