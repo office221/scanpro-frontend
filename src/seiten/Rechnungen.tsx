@@ -112,6 +112,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const [bezahltDatum, setBezahltDatum] = useState(new Date().toISOString().split('T')[0])
   const [mahnungModal, setMahnungModal] = useState<any>(null)
   const [mehrMenu, setMehrMenu] = useState<number | null>(null)
+  const [mehrMenuPos, setMehrMenuPos] = useState<{top:number,left:number}>({top:0,left:0})
   const [mahnungFrist1, setMahnungFrist1] = useState(14)
   const [mahnungFrist2, setMahnungFrist2] = useState(7)
   const [mahnungFrist3, setMahnungFrist3] = useState(5)
@@ -655,39 +656,16 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                         </button>
 
                         {/* Mehr-Menü */}
-                        <div style={{position:'relative'}}>
-                          <button title="Mehr Aktionen" onClick={(ev) => {
+                        <button title="Mehr Aktionen" onClick={(ev) => {
                             ev.stopPropagation()
-                            setMehrMenu(mehrMenu === r.id ? null : r.id)
+                            if (mehrMenu === r.id) { setMehrMenu(null); return }
+                            const rect = ev.currentTarget.getBoundingClientRect()
+                            setMehrMenuPos({top: rect.bottom + 4, left: rect.right})
+                            setMehrMenu(r.id)
                           }}
                             style={{width:32,height:32,borderRadius:8,border:'1px solid #e5e0d8',background: mehrMenu === r.id ? '#f4f1eb' : 'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#555',fontSize:16,fontWeight:700,letterSpacing:2}}>
                             ···
                           </button>
-                          {mehrMenu === r.id && (
-                            <>
-                              <div style={{position:'fixed',inset:0,zIndex:98}} onClick={() => setMehrMenu(null)} />
-                              <div style={{position:'absolute',right:0,top:'100%',marginTop:4,background:'white',border:'1px solid #e5e0d8',borderRadius:12,boxShadow:'0 8px 30px rgba(0,0,0,0.12)',zIndex:99,minWidth:200,padding:'6px 0',overflow:'hidden'}}>
-                                {[
-                                  { label: 'PDF speichern', icon: '📥', onClick: () => pdfHerunterladen(r.id) },
-                                  ...(r.typ === 'Rechnung' ? [{ label: 'E-Rechnung (ZUGFeRD)', icon: '📋', onClick: () => eRechnungHerunterladen(r.id) }] : []),
-                                  { label: 'Duplizieren', icon: '📄', onClick: () => rechnungDuplizieren(r) },
-                                  { label: 'Mahnung erstellen', icon: '⚠️', onClick: () => setMahnungModal(r) },
-                                  ...(onTransferBeleg ? [{ label: 'Als Beleg übertragen', icon: '📎', onClick: () => alsBeleg(r) }] : []),
-                                  ...(r.status === 'Bezahlt' ? [{ label: 'Zu G&V übertragen', icon: '📊', onClick: async () => { try { await api.post(`/guv/von-rechnung/${r.id}`, {}); alert('✅ Zur G&V übertragen!') } catch (e: any) { alert(e?.response?.data?.fehler || 'Fehler') } } }] : []),
-                                  { label: 'Löschen', icon: '🗑️', onClick: () => rechnungLoeschen(r.id), danger: true },
-                                ].map((item: any, idx) => (
-                                  <button key={idx} onClick={() => { setMehrMenu(null); item.onClick() }}
-                                    style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 16px',border:'none',background:'transparent',cursor:'pointer',fontSize:12,fontWeight:500,color: item.danger ? '#dc2626' : '#1a2a3a',textAlign:'left' as const}}
-                                    onMouseEnter={e => (e.currentTarget.style.background = item.danger ? '#fef2f2' : '#f4f1eb')}
-                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                    <span style={{fontSize:15}}>{item.icon}</span>
-                                    {item.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </div>
                       </div>
                     </td>
                   </tr>
@@ -1206,6 +1184,38 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mehr-Menü Portal — außerhalb aller overflow-Container */}
+      {mehrMenu !== null && ReactDOM.createPortal(
+        <>
+          <div style={{position:'fixed',inset:0,zIndex:9998}} onClick={() => setMehrMenu(null)} />
+          <div style={{position:'fixed',top:mehrMenuPos.top,left:mehrMenuPos.left,transform:'translateX(-100%)',background:'white',border:'1px solid #e5e0d8',borderRadius:12,boxShadow:'0 8px 30px rgba(0,0,0,0.12)',zIndex:9999,minWidth:210,padding:'6px 0'}}>
+            {(() => {
+              const r = rechnungen.find(x => x.id === mehrMenu)
+              if (!r) return null
+              const items: {label:string, icon:React.ReactNode, onClick:()=>void, danger?:boolean}[] = [
+                { label: 'PDF speichern', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, onClick: () => pdfHerunterladen(r.id) },
+                ...(r.typ === 'Rechnung' ? [{ label: 'E-Rechnung (ZUGFeRD)', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6"/><path d="M9 17h3"/><path d="M9 9h1"/></svg>, onClick: () => eRechnungHerunterladen(r.id) }] : []),
+                { label: 'Duplizieren', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>, onClick: () => rechnungDuplizieren(r) },
+                { label: 'Mahnung erstellen', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, onClick: () => setMahnungModal(r) },
+                ...(onTransferBeleg ? [{ label: 'Als Beleg übertragen', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>, onClick: () => alsBeleg(r) }] : []),
+                ...(r.status === 'Bezahlt' ? [{ label: 'Zu G&V übertragen', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, onClick: async () => { try { await api.post(`/guv/von-rechnung/${r.id}`, {}); alert('Zur G&V übertragen!') } catch (e: any) { alert(e?.response?.data?.fehler || 'Fehler') } } }] : []),
+                { label: 'Löschen', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>, onClick: () => rechnungLoeschen(r.id), danger: true },
+              ]
+              return items.map((item, idx) => (
+                <button key={idx} onClick={() => { setMehrMenu(null); item.onClick() }}
+                  style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 16px',border:'none',background:'transparent',cursor:'pointer',fontSize:12,fontWeight:500,color: item.danger ? '#dc2626' : '#1a2a3a',textAlign:'left' as const}}
+                  onMouseEnter={e => (e.currentTarget.style.background = item.danger ? '#fef2f2' : '#f4f1eb')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <span style={{display:'flex',alignItems:'center',color: item.danger ? '#dc2626' : '#888'}}>{item.icon}</span>
+                  {item.label}
+                </button>
+              ))
+            })()}
+          </div>
+        </>,
+        document.body
       )}
     </div>
   )
