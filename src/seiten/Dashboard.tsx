@@ -103,7 +103,24 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [sucheOffen,  setSucheOffen]  = useState(false)
   const [sucheText,   setSucheText]   = useState('')
   const [glockeOffen, setGlockeOffen] = useState(false)
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'läuft' | 'fertig' | 'fehler'>('idle')
+  const [backupInfo, setBackupInfo] = useState('')
   const sucheRef = useRef<HTMLInputElement>(null)
+
+  const backupJetzt = async () => {
+    setBackupStatus('läuft')
+    setBackupInfo('Backup wird erstellt...')
+    try {
+      const res = await api.post('/backup/jetzt')
+      setBackupStatus('fertig')
+      setBackupInfo(`${res.data.zeilen} Einträge gesichert (${res.data.dauer})`)
+      setTimeout(() => setBackupStatus('idle'), 5000)
+    } catch (e: any) {
+      setBackupStatus('fehler')
+      setBackupInfo(e.response?.data?.fehler || 'Backup fehlgeschlagen')
+      setTimeout(() => setBackupStatus('idle'), 5000)
+    }
+  }
 
   const toggleDark = () => {
     setDarkMode(prev => {
@@ -783,8 +800,9 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                         { label: 'Neues Angebot', icon: '📄', color: '#10b981', nav: 'Angebote'   },
                         { label: 'Neuer Kunde',   icon: '👤', color: '#f59e0b', nav: 'Kunden'     },
                         { label: 'Einstellungen', icon: '⚙️', color: '#64748b', nav: 'Einstellungen' },
+                        { label: 'Backup jetzt',  icon: '💾', color: '#8b5cf6', nav: '__backup__' },
                       ].map((item, i) => (
-                        <div key={i} onClick={() => setAktivNav(item.nav)}
+                        <div key={i} onClick={() => item.nav === '__backup__' ? backupJetzt() : setAktivNav(item.nav)}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `1px solid ${theme.schnellBorder}`, background: theme.schnellBg, cursor: 'pointer', transition: 'all 0.15s' }}
                           onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${item.color}11`; el.style.borderColor = `${item.color}44` }}
                           onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = theme.schnellBg; el.style.borderColor = theme.schnellBorder }}>
@@ -797,6 +815,23 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                       ))}
                     </div>
                   </div>
+
+                  {/* Backup Status */}
+                  {backupStatus !== 'idle' && (
+                    <div style={{
+                      ...theme.glass, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10,
+                      borderColor: backupStatus === 'fertig' ? '#10b981' : backupStatus === 'fehler' ? '#ef4444' : '#8b5cf6',
+                      background: backupStatus === 'fertig' ? 'rgba(16,185,129,0.08)' : backupStatus === 'fehler' ? 'rgba(239,68,68,0.08)' : 'rgba(139,92,246,0.08)',
+                    }}>
+                      <span style={{ fontSize: 18 }}>{backupStatus === 'läuft' ? '⏳' : backupStatus === 'fertig' ? '✅' : '❌'}</span>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: theme.textStrong }}>
+                          {backupStatus === 'läuft' ? 'Backup läuft...' : backupStatus === 'fertig' ? 'Backup erfolgreich!' : 'Backup fehlgeschlagen'}
+                        </div>
+                        <div style={{ fontSize: 11, color: theme.textMuted }}>{backupInfo}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </>
