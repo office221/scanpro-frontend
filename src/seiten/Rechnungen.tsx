@@ -369,37 +369,21 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://scanpro-backend-production.up.railway.app'
     try {
       const res = await fetch(`${baseUrl}/api/pdf/${id}?token=${token}&erechnung=1`)
-      const contentType = res.headers.get('Content-Type') || ''
       if (!res.ok) {
+        const contentType = res.headers.get('Content-Type') || ''
         const err = contentType.includes('json') ? await res.json() : { fehler: `HTTP ${res.status}` }
         alert(`E-Rechnung Fehler: ${err.fehler || 'Unbekannt'}`)
         return
       }
-      if (!contentType.includes('json')) {
-        alert('Backend noch nicht aktualisiert. Bitte in 1-2 Minuten nochmal versuchen.')
-        return
-      }
-      const data = await res.json()
-      if (!data.pdf || !data.xml) {
-        alert('E-Rechnung konnte nicht erstellt werden.')
-        return
-      }
-      // PDF herunterladen (Base64 → Blob)
-      const binaryStr = atob(data.pdf.replace(/\s/g, ''))
-      const pdfBytes = new Uint8Array(binaryStr.length)
-      for (let i = 0; i < binaryStr.length; i++) pdfBytes[i] = binaryStr.charCodeAt(i)
-      const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' })
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition') || ''
+      const match = disposition.match(/filename="(.+)"/)
+      const filename = match ? match[1] : `E-Rechnung-${id}.pdf`
       const a = document.createElement('a')
-      a.href = URL.createObjectURL(pdfBlob)
-      a.download = data.dateiname
+      a.href = URL.createObjectURL(blob)
+      a.download = filename
       a.click()
       URL.revokeObjectURL(a.href)
-      // XML herunterladen
-      const xmlBlob = new Blob([data.xml], { type: 'application/xml' })
-      const b = document.createElement('a')
-      b.href = URL.createObjectURL(xmlBlob)
-      b.download = data.xmlDateiname
-      setTimeout(() => { b.click(); URL.revokeObjectURL(b.href) }, 500)
     } catch (e: any) { alert(`Fehler: ${e.message || 'E-Rechnung konnte nicht erstellt werden'}`) }
   }
 
