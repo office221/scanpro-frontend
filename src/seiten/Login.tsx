@@ -346,7 +346,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
               animation: ready ? 'fadeSlideUp 0.8s 1.2s both, borderGlow 4s 2s ease-in-out infinite' : 'none',
             }}>
               {[
-                { num: '30', lbl: 'Tage kostenlos' },
+                { num: '14', lbl: 'Tage testen' },
                 { num: '14,90€', lbl: 'Pro Monat' },
                 { num: '∞', lbl: 'Rechnungen' },
               ].map((s, i) => (
@@ -431,7 +431,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                     borderRadius: 50, padding: '5px 14px', fontSize: 12, color: '#c8a96e', fontWeight: 600, marginBottom: 16,
                   }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block', animation: 'glowPulse 2s infinite' }}></span>
-                    30 Tage kostenlos — keine Kreditkarte
+                    14 Tage kostenlos testen — keine Kreditkarte
                   </div>
                   <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 26, fontWeight: 800, color: 'white', marginBottom: 4 }}>Konto erstellen</div>
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Bereits registriert? <span style={{ color: '#c8a96e', cursor: 'pointer', fontWeight: 600, transition: 'color 0.2s' }} onClick={() => { setAnsicht('login'); setFehler('') }}>Anmelden →</span></div>
@@ -470,7 +470,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                   transition: 'all 0.3s',
                   animation: 'fadeSlideUp 0.5s 0.8s both',
                 }}>
-                  {laden ? 'Wird gesendet...' : 'Kostenlos starten'}
+                  {laden ? 'Wird gesendet...' : '14 Tage kostenlos testen'}
                 </button>
 
                 <div style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.2)', marginTop: 16, animation: 'fadeSlideUp 0.5s 0.9s both' }}>
@@ -524,7 +524,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                     background: 'linear-gradient(135deg, #fff 40%, #c8a96e)',
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                   }}>Willkommen zurück</div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Noch kein Konto? <span style={{ color: '#c8a96e', cursor: 'pointer', fontWeight: 600, transition: 'color 0.2s' }} onClick={() => { setAnsicht('register'); setFehler('') }}>Kostenlos registrieren →</span></div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Noch kein Konto? <span style={{ color: '#c8a96e', cursor: 'pointer', fontWeight: 600, transition: 'color 0.2s' }} onClick={() => { setAnsicht('register'); setFehler('') }}>14 Tage kostenlos testen →</span></div>
                 </div>
 
                 {[
