@@ -24,6 +24,7 @@ const DEFAULT_LAYOUT = {
   titelSchriftPt: 20,
   ueberschriftSchriftPt: 10,
   bezeichnungSchriftPt: 8,
+  fusszeileSchriftPt: 7,
   abstandMm: 4,
 }
 
@@ -1141,6 +1142,7 @@ export default function Einstellungen() {
                 { label: 'Bezeichnung / Pos.', key: 'bezeichnungSchriftPt' as const, min:6, max:14, step:1 },
                 { label: 'Fließtext', key: 'bodySchriftPt' as const, min:6, max:12, step:1 },
                 { label: 'Firmenname', key: 'firmaSchriftPt' as const, min:8, max:16, step:1 },
+                { label: 'Fußzeile (IBAN etc.)', key: 'fusszeileSchriftPt' as const, min:5, max:10, step:0.5 },
               ].map(s => (
                 <div key={s.key} style={{marginBottom:8}}>
                   <div style={{display:'flex', justifyContent:'space-between', marginBottom:3}}>
