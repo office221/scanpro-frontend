@@ -51,6 +51,11 @@ const GOLD_DIM = 'rgba(200,169,110,0.14)'
 const INDIGO   = '#6366f1'
 const PURPLE   = '#8b5cf6'
 
+// Kleinunternehmergrenze (§ 6 Abs. 1 Z 27 UStG): 55.000 € Umsatz pro Jahr
+const KU_GRENZE = 55000
+const guvBetrag = (e: any) => Number(e.brutto ?? e.summe ?? e.betrag) || 0
+const istEinnahme = (e: any) => (e.typ || '').toLowerCase().includes('einnahme')
+
 // ── Nav structure ──────────────────────────────────────────────────────────
 const NAV_GRUPPEN = [
   { gruppe: 'Übersicht', items: [{ name: 'Dashboard', badge: null, rot: false, ki: false, children: [] }] },
@@ -97,6 +102,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [alleRechnungenDaten, setAlleRechnungenDaten] = useState<any[]>([])
   const [ueberfaelligeListe,  setUeberfaelligeListe]  = useState<any[]>([])
   const [immoObjListe,    setImmoObjListe]    = useState<any[]>([])
+  const [guvDaten,        setGuvDaten]        = useState<any[]>([])
   const [navExpObjekte,  setNavExpObjekte]  = useState(true)
   const [sharedFile,  setSharedFile]  = useState<File | null>(null)
   const [belegTransfer, setBelegTransfer] = useState<{ datei: File; vorschlag: any } | null>(null)
@@ -252,7 +258,18 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
 
   const ladeDaten = async () => {
     try {
-      const [kundenRes, rechnungenRes] = await Promise.all([api.get('/kunden'), api.get('/rechnungen')])
+      const jahr = new Date().getFullYear()
+      const [kundenRes, rechnungenRes, guvRes, guvVorjahrRes] = await Promise.all([
+        api.get('/kunden'),
+        api.get('/rechnungen'),
+        api.get(`/guv?jahr=${jahr}`).catch(() => ({ data: [] })),
+        // Vorjahr für das 6-Monats-Chart (relevant Jänner–Mai)
+        api.get(`/guv?jahr=${jahr - 1}`).catch(() => ({ data: [] })),
+      ])
+      setGuvDaten([
+        ...(Array.isArray(guvRes.data) ? guvRes.data : []),
+        ...(Array.isArray(guvVorjahrRes.data) ? guvVorjahrRes.data : []),
+      ])
       const alleKunden     = kundenRes.data
       const alleRechnungen = rechnungenRes.data
       const rechnungen     = alleRechnungen.filter((r: any) => r.typ === 'Rechnung')
@@ -305,6 +322,39 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   }, [alleRechnungenDaten])
 
   const bezahltProzent = totalJahr > 0 ? Math.min(Math.round((stats.umsatzJahr / totalJahr) * 100), 100) : 0
+
+  // G&V-Summen des laufenden Jahres (brutto, wie in der G&V-Ansicht);
+  // guvDaten enthält auch Vorjahres-Einträge fürs Chart, daher nach Jahr filtern
+  const guvSummen = useMemo(() => {
+    const jahr = new Date().getFullYear()
+    let einnahmen = 0, ausgaben = 0
+    for (const e of guvDaten) {
+      if (new Date(e.datum).getFullYear() !== jahr) continue
+      if (istEinnahme(e)) einnahmen += guvBetrag(e)
+      else ausgaben += guvBetrag(e)
+    }
+    return { einnahmen, ausgaben, gewinn: einnahmen - ausgaben }
+  }, [guvDaten])
+
+  const { guvMonate, maxGuvMonat } = useMemo(() => {
+    const heute = new Date()
+    const monate = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(heute.getFullYear(), heute.getMonth() - (5 - i), 1)
+      let ein = 0, aus = 0
+      for (const e of guvDaten) {
+        const ed = new Date(e.datum)
+        if (ed.getMonth() === d.getMonth() && ed.getFullYear() === d.getFullYear()) {
+          if (istEinnahme(e)) ein += guvBetrag(e)
+          else aus += guvBetrag(e)
+        }
+      }
+      return { label: d.toLocaleDateString('de-AT', { month: 'short' }), ein, aus }
+    })
+    return { guvMonate: monate, maxGuvMonat: Math.max(...monate.map(m => Math.max(m.ein, m.aus)), 1) }
+  }, [guvDaten])
+
+  const kuProzent = Math.min(Math.round((guvSummen.einnahmen / KU_GRENZE) * 100), 100)
+  const kuFarbe = kuProzent >= 90 ? '#ef4444' : kuProzent >= 80 ? '#f59e0b' : '#10b981'
 
   const gefilterteAktivitaet = useMemo(() => {
     if (activityFilter === 'Alle') return letzteRechnungen.slice(0, 8)
@@ -758,6 +808,59 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: theme.openCardSub, marginTop: 7, fontWeight: 500 }}>
                       <span>{bezahltProzent}% bezahlt</span>
                       <span>Total: € {totalJahr >= 1000 ? (totalJahr / 1000).toFixed(1) + 'k' : fmt(totalJahr)}</span>
+                    </div>
+                  </div>
+
+                  {/* Finanzen (G&V) */}
+                  <div style={{ ...theme.glass, padding: 22, cursor: 'pointer' }} onClick={() => setAktivNav('G&V Abrechnung')}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = theme.cardHoverShadow; el.style.borderColor = theme.cardHoverBorder }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.boxShadow = theme.glass.boxShadow as string; el.style.borderColor = '' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, color: theme.textStrong }}>Finanzen {new Date().getFullYear()}</div>
+                      <span style={{ color: '#818cf8', fontSize: 12, fontWeight: 600 }}>Zur G&V →</span>
+                    </div>
+                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 28, fontWeight: 800, letterSpacing: -0.5, color: guvSummen.gewinn >= 0 ? '#10b981' : '#ef4444', marginBottom: 2 }}>
+                      {guvSummen.gewinn >= 0 ? '+' : '−'} € {fmt(Math.abs(guvSummen.gewinn))}
+                    </div>
+                    <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 14 }}>{guvSummen.gewinn >= 0 ? 'Gewinn' : 'Verlust'} laut G&V</div>
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                      <div style={{ flex: 1, padding: '9px 12px', borderRadius: 10, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase' as const, color: '#10b981' }}>↑ Einnahmen</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: theme.textStrong, marginTop: 3 }}>€ {fmt(guvSummen.einnahmen)}</div>
+                      </div>
+                      <div style={{ flex: 1, padding: '9px 12px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase' as const, color: '#ef4444' }}>↓ Ausgaben</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: theme.textStrong, marginTop: 3 }}>€ {fmt(guvSummen.ausgaben)}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 52 }}>
+                      {guvMonate.map((m, i) => (
+                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, height: '100%' }}>
+                          <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 2, width: '100%' }}>
+                            <div style={{ flex: 1, height: `${Math.max((m.ein / maxGuvMonat) * 100, 3)}%`, background: m.ein > 0 ? '#10b981' : theme.barEmpty, borderRadius: '3px 3px 1px 1px', opacity: 0.85 }} />
+                            <div style={{ flex: 1, height: `${Math.max((m.aus / maxGuvMonat) * 100, 3)}%`, background: m.aus > 0 ? '#ef4444' : theme.barEmpty, borderRadius: '3px 3px 1px 1px', opacity: 0.7 }} />
+                          </div>
+                          <div style={{ fontSize: 9, color: theme.textMuted }}>{m.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${theme.divider}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase' as const, color: theme.textMuted }}>Kleinunternehmergrenze</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: kuFarbe }}>{kuProzent}%</span>
+                      </div>
+                      <div style={{ background: theme.progressBg, borderRadius: 8, height: 5, overflow: 'hidden' }}>
+                        <div style={{ width: `${kuProzent}%`, height: '100%', background: kuFarbe, borderRadius: 8, transition: 'width 1s ease' }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: theme.textMuted, marginTop: 6 }}>
+                        <span>€ {fmt(guvSummen.einnahmen)}</span>
+                        <span>von € {KU_GRENZE.toLocaleString('de-AT')}</span>
+                      </div>
+                      {kuProzent >= 80 && (
+                        <div style={{ fontSize: 10, color: kuFarbe, fontWeight: 600, marginTop: 6 }}>
+                          ⚠️ Grenze im Blick behalten — bei Überschreiten wird USt. fällig
+                        </div>
+                      )}
                     </div>
                   </div>
 
