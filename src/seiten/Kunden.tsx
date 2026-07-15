@@ -10,6 +10,7 @@ interface Kunde {
   firma?: string
   firmennummer?: string
   uid?: string
+  nameAufRechnung?: boolean
   email?: string
   telefon?: string
   strasse?: string
@@ -20,7 +21,7 @@ interface Kunde {
 
 const leerForm = {
   typ: 'Privat', vorname: '', nachname: '',
-  firma: '', firmennummer: '', uid: '',
+  firma: '', firmennummer: '', uid: '', nameAufRechnung: true,
   email: '', telefon: '',
   strasse: '', plz: '', ort: '', notiz: ''
 }
@@ -81,6 +82,7 @@ export default function Kunden() {
       firma: k.firma || '',
       firmennummer: k.firmennummer || '',
       uid: k.uid || '',
+      nameAufRechnung: k.nameAufRechnung !== false,
       email: k.email || '',
       telefon: k.telefon || '',
       strasse: k.strasse || '',
@@ -239,7 +241,7 @@ export default function Kunden() {
               {['Privat', 'Geschäftlich'].map(t => (
                 <button key={t}
                   style={{flex:1, padding:'7px', borderRadius:6, border:'none', background: fd.typ === t ? 'white' : 'transparent', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:500, cursor:'pointer', color: fd.typ === t ? '#1a1a1a' : '#888'}}
-                  onClick={() => setFormDaten({...fd, typ: t})}>
+                  onClick={() => setFormDaten({...fd, typ: t, ...(t === 'Privat' ? { nameAufRechnung: true } : {})})}>
                   {t === 'Privat' ? '👤' : '🏢'} {t}
                 </button>
               ))}
@@ -281,6 +283,12 @@ export default function Kunden() {
                         value={fd.firmennummer} onChange={e => setFormDaten({...fd, firmennummer: e.target.value})} />
                     </div>
                   </div>
+                  <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13, color:'#555', marginTop:2}}>
+                    <input type="checkbox" checked={fd.nameAufRechnung}
+                      onChange={e => setFormDaten({...fd, nameAufRechnung: e.target.checked})}
+                      style={{width:16, height:16, accentColor:'#c8a96e', cursor:'pointer'}} />
+                    Ansprechpartner ({fd.vorname || 'Vorname'} {fd.nachname || 'Nachname'}) auf Rechnung anzeigen
+                  </label>
                 </div>
               </div>
             )}
