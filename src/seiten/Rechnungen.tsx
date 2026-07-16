@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import api from '../services/api'
+import { StatusChip, btnPrimary, btnSecondary } from '../ui/theme'
 
 let _uidSeq = 0
 const newUid = () => ++_uidSeq
@@ -25,13 +26,13 @@ interface Kunde {
 }
 
 const STATUS_OPTIONEN = [
-  { wert: 'Entwurf',   label: '📝 Entwurf',    bg: '#f0f0f0', text: '#666' },
-  { wert: 'Gesendet',  label: '📬 Gesendet',   bg: '#dbeafe', text: '#1e40af' },
-  { wert: 'Bezahlt',   label: '✅ Bezahlt',    bg: '#d1f5e0', text: '#2d6a4f' },
-  { wert: 'Mahnung 1', label: '⚠️ Mahnung 1',  bg: '#fef3c7', text: '#92400e' },
-  { wert: 'Mahnung 2', label: '🔴 Mahnung 2',  bg: '#fde8e6', text: '#c0392b' },
-  { wert: 'Inkasso',   label: '⛔ Inkasso',    bg: '#1a1a1a', text: 'white' },
-  { wert: 'Storniert', label: '❌ Storniert',  bg: '#e5e5e5', text: '#999' },
+  { wert: 'Entwurf',   label: 'Entwurf',    bg: '#f0f0f0', text: '#666' },
+  { wert: 'Gesendet',  label: 'Gesendet',   bg: '#dbeafe', text: '#1e40af' },
+  { wert: 'Bezahlt',   label: 'Bezahlt',    bg: '#d1f5e0', text: '#2d6a4f' },
+  { wert: 'Mahnung 1', label: 'Mahnung 1',  bg: '#fef3c7', text: '#92400e' },
+  { wert: 'Mahnung 2', label: 'Mahnung 2',  bg: '#fde8e6', text: '#c0392b' },
+  { wert: 'Inkasso',   label: 'Inkasso',    bg: '#1a1a1a', text: 'white' },
+  { wert: 'Storniert', label: 'Storniert',  bg: '#e5e5e5', text: '#999' },
 ]
 
 function statusFarbe(status: string, ueberfaellig?: boolean) {
@@ -541,22 +542,21 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
 
       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
-        <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'#888'}}>Alle Rechnungen</div>
+        <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'var(--bf-text-muted)'}}>Alle Rechnungen</div>
         <button
-          style={{background:'#1a1a1a', color:'white', border:'none', borderRadius:8, padding:'9px 18px', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}
+          style={{...btnPrimary}}
           onClick={() => { formLeeren(); setFormOffen(true); if (isMobile) setVollbild(true) }}>
           + Neue Rechnung
         </button>
       </div>
 
-      <div style={{background:'white', borderRadius:10, border:'1px solid #e5e0d8', flex:1, overflow:'auto'}}>
+      <div style={{background:'var(--bf-card)', borderRadius:10, border:'1px solid var(--bf-border)', flex:1, overflow:'auto'}}>
         {rechnungen.length === 0 ? (
           <div style={{display:'flex', alignItems:'center', justifyContent:'center', height:'100%'}}>
-            <div style={{textAlign:'center', color:'#888'}}>
-              <div style={{fontSize:48, marginBottom:16}}>📋</div>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:700, marginBottom:8, color:'#1a1a1a'}}>Noch keine Rechnungen</div>
+            <div style={{textAlign:'center', color:'var(--bf-text-muted)'}}>
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:700, marginBottom:8, color:'var(--bf-text)'}}>Noch keine Rechnungen</div>
               <button
-                style={{background:'#c8a96e', color:'#0a0a0a', border:'none', borderRadius:8, padding:'10px 24px', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}
+                style={{...btnPrimary}}
                 onClick={() => setFormOffen(true)}>
                 + Erste Rechnung erstellen
               </button>
@@ -566,35 +566,34 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
           <div>
             {rechnungen.map((r: any) => {
               const ueberfaellig = r.faelligBis && new Date(r.faelligBis) < heute && r.status !== 'Bezahlt' && r.status !== 'Storniert'
-              const farbe = statusFarbe(r.status, ueberfaellig)
               const kunde = kunden.find(k => k.id === r.kundeId)
               const kundenName = kunde ? `${kunde.vorname} ${kunde.nachname}` : '—'
               const datumStr = r.datum ? new Date(r.datum).toLocaleDateString('de-AT') : '—'
               const faelligBisStr = r.faelligBis ? new Date(r.faelligBis).toLocaleDateString('de-AT') : '—'
               const gesamt = r.gesamt ? parseFloat(r.gesamt).toFixed(2) : '—'
               return (
-                <div key={r.id} style={{padding:'12px 16px', borderBottom:'1px solid #f0ede8', background: r.id%2===0 ? '#fafaf9' : 'white'}}>
+                <div key={r.id} style={{padding:'12px 16px', borderBottom:'1px solid var(--bf-divider)', background: r.id%2===0 ? 'var(--bf-soft)' : 'var(--bf-card)'}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6}}>
                     <div style={{fontFamily:'Syne, sans-serif', fontWeight:700, fontSize:13}}>{r.nummer}</div>
-                    <span style={{fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:4, background: farbe.bg, color: farbe.text}}>{r.status}{ueberfaellig && ' ⚠️'}</span>
+                    <StatusChip status={ueberfaellig && r.status === 'Gesendet' ? 'Überfällig' : r.status} label={r.status} />
                   </div>
-                  <div style={{fontSize:13, color:'#1a1a1a', marginBottom:4}}>{kundenName}</div>
+                  <div style={{fontSize:13, color:'var(--bf-text)', marginBottom:4}}>{kundenName}</div>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <div style={{fontSize:11, color:'#888'}}>{datumStr} · {faelligBisStr}</div>
-                    <div style={{fontSize:14, fontWeight:700, color:'#1a1a1a'}}>€ {gesamt}</div>
+                    <div style={{fontSize:11, color:'var(--bf-text-muted)'}}>{datumStr} · {faelligBisStr}</div>
+                    <div style={{fontSize:14, fontWeight:700, color:'var(--bf-text)'}}>€ {gesamt}</div>
                   </div>
                   <div style={{marginTop:8, display:'flex', gap:8}}>
                     <button title="PDF öffnen" onClick={() => pdfOeffnen(r.id)}
-                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #d1f5e0', background:'#f0fdf4', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#2d6a4f', fontSize:12}}>
+                      style={{...btnSecondary, minHeight:40, display:'flex', alignItems:'center', justifyContent:'center'}}>
                       PDF
                     </button>
                     <button title="Bearbeiten" onClick={() => rechnungBearbeiten(r)}
-                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #e5e0d8', background:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#555', fontSize:12}}>
-                      ✏️
+                      style={{...btnSecondary, minHeight:40, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                      Bearbeiten
                     </button>
                     <button title="Löschen" onClick={() => rechnungLoeschen(r.id)}
-                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #fde8e6', background:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#c0392b', fontSize:12}}>
-                      🗑
+                      style={{...btnSecondary, minHeight:40, display:'flex', alignItems:'center', justifyContent:'center', color:'#ef4444', borderColor:'rgba(239,68,68,0.35)'}}>
+                      Löschen
                     </button>
                   </div>
                 </div>
@@ -605,9 +604,9 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
           <div style={{overflowX:'auto'}}>
           <table style={{width:'100%', borderCollapse:'collapse'}}>
             <thead>
-              <tr style={{background:'#faf8f5'}}>
+              <tr style={{background:'var(--bf-thead)'}}>
                 {['Nummer', 'Kunde', 'Projekt', 'Datum', 'Fällig', 'Betrag', 'Status', 'Aktionen'].map(h => (
-                  <th key={h} style={{padding:'9px 14px', textAlign:'left', fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#888', fontWeight:700, borderBottom:'1px solid #e5e0d8'}}>{h}</th>
+                  <th key={h} style={{padding:'9px 14px', textAlign:'left', fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:700, borderBottom:'1px solid var(--bf-border)'}}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -617,20 +616,19 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                 const farbe = statusFarbe(r.status, ueberfaellig)
                 return (
                   <tr key={r.id}
-                    style={{borderBottom:'1px solid #f0ede8', background: ueberfaellig ? '#fff8f8' : 'transparent'}}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
-                    onMouseLeave={e => (e.currentTarget.style.background = ueberfaellig ? '#fff8f8' : 'transparent')}>
-                    <td style={{padding:'10px 14px', fontFamily:'Syne, sans-serif', fontSize:11, fontWeight:700, color:'#888'}}>{r.nummer}</td>
-                    <td style={{padding:'10px 14px', fontSize:12, color:'#1a1a1a'}}>
+                    style={{borderBottom:'1px solid var(--bf-divider)', background: ueberfaellig ? 'rgba(239,68,68,0.06)' : 'transparent'}}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = ueberfaellig ? 'rgba(239,68,68,0.06)' : 'transparent')}>
+                    <td style={{padding:'10px 14px', fontFamily:'Syne, sans-serif', fontSize:11, fontWeight:700, color:'var(--bf-text-muted)'}}>{r.nummer}</td>
+                    <td style={{padding:'10px 14px', fontSize:12, color:'var(--bf-text)'}}>
                       {kunden.find(k => k.id === r.kundeId)?.vorname} {kunden.find(k => k.id === r.kundeId)?.nachname}
                     </td>
-                    <td style={{padding:'10px 14px', fontSize:12, color:'#888'}}>{r.projektName || '—'}</td>
-                    <td style={{padding:'10px 14px', fontSize:12, color:'#888'}}>{new Date(r.datum).toLocaleDateString('de-AT')}</td>
-                    <td style={{padding:'10px 14px', fontSize:12, fontWeight: ueberfaellig ? 700 : 400, color: ueberfaellig ? '#c0392b' : '#888'}}>
+                    <td style={{padding:'10px 14px', fontSize:12, color:'var(--bf-text-muted)'}}>{r.projektName || '—'}</td>
+                    <td style={{padding:'10px 14px', fontSize:12, color:'var(--bf-text-muted)'}}>{new Date(r.datum).toLocaleDateString('de-AT')}</td>
+                    <td style={{padding:'10px 14px', fontSize:12, fontWeight: ueberfaellig ? 700 : 400, color: ueberfaellig ? '#c0392b' : 'var(--bf-text-muted)'}}>
                       {r.faelligBis ? new Date(r.faelligBis).toLocaleDateString('de-AT') : '—'}
-                      {ueberfaellig && <span style={{marginLeft:4}}>⚠️</span>}
                     </td>
-                    <td style={{padding:'10px 14px', fontSize:12, fontWeight:600, color:'#1a1a1a'}}>
+                    <td style={{padding:'10px 14px', fontSize:12, fontWeight:600, color:'var(--bf-text)', fontVariantNumeric:'tabular-nums'}}>
                       € {r.gesamt ? parseFloat(r.gesamt).toFixed(2) : '—'}
                     </td>
                     <td style={{padding:'10px 14px'}}>
@@ -647,7 +645,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                       <div style={{display:'flex', gap:4, alignItems:'center'}}>
                         {/* Hauptaktionen: Bearbeiten + PDF */}
                         <button title="Bearbeiten" onClick={() => rechnungBearbeiten(r)}
-                          style={{width:32,height:32,borderRadius:8,border:'1px solid #e5e0d8',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#555'}}>
+                          style={{width:32,height:32,borderRadius:8,border:'1px solid var(--bf-border)',background:'var(--bf-card)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--bf-text-soft)'}}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button title="PDF öffnen" onClick={() => pdfOeffnen(r.id)}
@@ -663,7 +661,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                             setMehrMenuPos({top: rect.bottom + 4, left: rect.right})
                             setMehrMenu(r.id)
                           }}
-                            style={{width:32,height:32,borderRadius:8,border:'1px solid #e5e0d8',background: mehrMenu === r.id ? '#f4f1eb' : 'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#555',fontSize:16,fontWeight:700,letterSpacing:2}}>
+                            style={{width:32,height:32,borderRadius:8,border:'1px solid var(--bf-border)',background: mehrMenu === r.id ? 'var(--bf-hover)' : 'var(--bf-card)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--bf-text-soft)',fontSize:16,fontWeight:700,letterSpacing:2}}>
                             ···
                           </button>
                       </div>
@@ -680,18 +678,18 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {/* BEZAHLT MODAL */}
       {bezahltModal && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:300}}>
-          <div style={{background:'white', borderRadius:14, width:380, padding:28, boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
-            <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, marginBottom:6}}>✅ Als bezahlt markieren</div>
-            <div style={{fontSize:13, color:'#888', marginBottom:20}}>Rechnung {bezahltModal.nummer}</div>
+          <div style={{background:'var(--bf-card)', borderRadius:14, width:380, padding:28, boxShadow:'var(--bf-shadow)'}}>
+            <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, marginBottom:6}}>Als bezahlt markieren</div>
+            <div style={{fontSize:13, color:'var(--bf-text-muted)', marginBottom:20}}>Rechnung {bezahltModal.nummer}</div>
             <label style={labelStyle}>Zahlungsdatum</label>
             <input style={{...inputStyle, marginBottom:20}} type="date"
               value={bezahltDatum} onChange={e => setBezahltDatum(e.target.value)} />
             <div style={{display:'flex', gap:10}}>
               <button
-                style={{flex:1, padding:12, background:'#2d6a4f', color:'white', border:'none', borderRadius:8, fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}
-                onClick={alsBezahltSpeichern}>✅ Bestätigen</button>
+                style={{...btnPrimary, flex:1}}
+                onClick={alsBezahltSpeichern}>Bestätigen</button>
               <button
-                style={{padding:12, background:'#f0ede8', color:'#888', border:'none', borderRadius:8, cursor:'pointer'}}
+                style={{...btnSecondary}}
                 onClick={() => setBezahltModal(null)}>Abbrechen</button>
             </div>
           </div>
@@ -701,30 +699,30 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {/* MAHNUNG MODAL */}
       {mahnungModal && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:300}}>
-          <div style={{background:'white', borderRadius:14, width:420, padding:28, boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
-            <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, marginBottom:4}}>⚠️ Mahnung erstellen</div>
-            <div style={{fontSize:13, color:'#888', marginBottom:24}}>Rechnung {mahnungModal.nummer} · € {parseFloat(mahnungModal.gesamt).toFixed(2)}</div>
+          <div style={{background:'var(--bf-card)', borderRadius:14, width:420, padding:28, boxShadow:'var(--bf-shadow)'}}>
+            <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, marginBottom:4}}>Mahnung erstellen</div>
+            <div style={{fontSize:13, color:'var(--bf-text-muted)', marginBottom:24}}>Rechnung {mahnungModal.nummer} · € {parseFloat(mahnungModal.gesamt).toFixed(2)}</div>
 
             <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:24}}>
               <button onClick={() => mahnungErstellen(1)}
                 style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fef3c7', background:'#fffbeb', cursor:'pointer', textAlign:'left'}}>
-                <div style={{fontWeight:700, fontSize:14, color:'#92400e'}}>📩 Zahlungserinnerung</div>
+                <div style={{fontWeight:700, fontSize:14, color:'#92400e'}}>Zahlungserinnerung</div>
                 <div style={{fontSize:12, color:'#a16207', marginTop:3}}>Freundliche Erinnerung · Frist: {mahnungFrist1} Tage</div>
               </button>
               <button onClick={() => mahnungErstellen(2)}
                 style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fed7aa', background:'#fff7ed', cursor:'pointer', textAlign:'left'}}>
-                <div style={{fontWeight:700, fontSize:14, color:'#c2410c'}}>⚠️ Mahnung</div>
+                <div style={{fontWeight:700, fontSize:14, color:'#c2410c'}}>Mahnung</div>
                 <div style={{fontSize:12, color:'#ea580c', marginTop:3}}>Formelle Mahnung · Frist: {mahnungFrist2} Tage</div>
               </button>
               <button onClick={() => mahnungErstellen(3)}
                 style={{padding:'14px 16px', borderRadius:10, border:'2px solid #fecaca', background:'#fff5f5', cursor:'pointer', textAlign:'left'}}>
-                <div style={{fontWeight:700, fontSize:14, color:'#c0392b'}}>🔴 Letzte Mahnung</div>
+                <div style={{fontWeight:700, fontSize:14, color:'#c0392b'}}>Letzte Mahnung</div>
                 <div style={{fontSize:12, color:'#e74c3c', marginTop:3}}>Letzte Mahnung vor rechtlichen Schritten · Frist: {mahnungFrist3} Tage</div>
               </button>
             </div>
 
             <button onClick={() => setMahnungModal(null)}
-              style={{width:'100%', padding:12, background:'#f0ede8', color:'#888', border:'none', borderRadius:8, cursor:'pointer', fontSize:13}}>
+              style={{...btnSecondary, width:'100%'}}>
               Abbrechen
             </button>
           </div>
@@ -735,27 +733,27 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {formOffen && ReactDOM.createPortal((
         <>
           {!vollbild && <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:9999}} onClick={() => { setFormOffen(false); setModalPos(null) }} />}
-          <div style={{position:'fixed', zIndex:10000, background:'white', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : modalSize.w, height: vollbild ? '100vh' : modalSize.h, minWidth: vollbild ? undefined : 560, left: vollbild ? 0 : (modalPos ? modalPos.x : Math.max(0, (window.innerWidth - modalSize.w) / 2)), top: vollbild ? 0 : (modalPos ? modalPos.y : Math.max(20, (window.innerHeight - modalSize.h) / 2)), boxShadow: vollbild ? 'none' : '0 24px 60px rgba(0,0,0,0.3)', overflow:'hidden', display:'flex', flexDirection:'column'}}>
+          <div style={{position:'fixed', zIndex:10000, background:'var(--bf-card)', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : modalSize.w, height: vollbild ? '100vh' : modalSize.h, minWidth: vollbild ? undefined : 560, left: vollbild ? 0 : (modalPos ? modalPos.x : Math.max(0, (window.innerWidth - modalSize.w) / 2)), top: vollbild ? 0 : (modalPos ? modalPos.y : Math.max(20, (window.innerHeight - modalSize.h) / 2)), boxShadow: vollbild ? 'none' : 'var(--bf-shadow)', overflow:'hidden', display:'flex', flexDirection:'column'}}>
             <div style={{flex:1, overflowY:'auto', overflowX:'hidden', display:'flex', flexDirection:'column'}}>
-            <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1, cursor: vollbild ? 'default' : 'move', userSelect:'none'}} onMouseDown={onMoveDrag}>{bearbeitenId ? '✏️ Rechnung bearbeiten' : '📋 Neue Rechnung'}</div>
+            <div style={{padding:'20px 24px', borderBottom:'1px solid var(--bf-border)', display:'flex', alignItems:'center', gap:12}}>
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1, cursor: vollbild ? 'default' : 'move', userSelect:'none'}} onMouseDown={onMoveDrag}>{bearbeitenId ? 'Rechnung bearbeiten' : 'Neue Rechnung'}</div>
               <button onMouseDown={e => e.stopPropagation()}
-                style={{padding:'6px 14px', borderRadius:7, border:'1px solid #c8a96e', background:'#fdf8f0', color:'#c8a96e', fontFamily:'DM Sans, sans-serif', fontSize:12, fontWeight:600, cursor:'pointer'}}
+                style={{...btnSecondary, padding:'6px 14px'}}
                 onClick={() => setAngebotWaehlenOffen(true)}>
-                📄 Aus Angebot
+                Aus Angebot
               </button>
               <button onMouseDown={e => e.stopPropagation()}
-                style={{padding:'6px 14px', borderRadius:7, border:'1px solid #6366f1', background:'#eef2ff', color:'#6366f1', fontFamily:'DM Sans, sans-serif', fontSize:12, fontWeight:600, cursor:'pointer'}}
+                style={{...btnSecondary, padding:'6px 14px'}}
                 onClick={stundenPickerOeffnen}>
-                ⏱ Aus Stundenliste
+                Aus Stundenliste
               </button>
               <button onMouseDown={e => e.stopPropagation()} onClick={() => { setVollbild(v => !v); setModalPos(null) }}
                 title={vollbild ? 'Verkleinern' : 'Vollbild'}
-                style={{background:'transparent', border:'none', fontSize:16, cursor:'pointer', color:'#888'}}>
+                style={{background:'transparent', border:'none', fontSize:16, cursor:'pointer', color:'var(--bf-text-muted)'}}>
                 {vollbild ? '⊡' : '⛶'}
               </button>
               <button onMouseDown={e => e.stopPropagation()} onClick={() => { setFormOffen(false); setVollbild(false); setModalPos(null) }}
-                style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
+                style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'var(--bf-text-muted)'}}>✕</button>
             </div>
 
             <div style={{padding:'24px 36px 24px 24px'}}>
@@ -763,7 +761,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               {/* KUNDE */}
               <div style={{marginBottom:16}}>
                 <label style={labelStyle}>Kunde *</label>
-                <select style={{...inputStyle, background:'white'}}
+                <select style={{...inputStyle, background:'var(--bf-input-bg)'}}
                   value={selectedKunde || ''}
                   onChange={e => setSelectedKunde(Number(e.target.value))}>
                   <option value="">Kunde auswählen...</option>
@@ -799,7 +797,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                 </div>
                 <div style={{gridColumn:'1 / -1'}}>
                   <label style={labelStyle}>Zahlungsbedingungen im PDF</label>
-                  <select style={{...inputStyle, background:'white'}}
+                  <select style={{...inputStyle, background:'var(--bf-input-bg)'}}
                     value={zahlungsModus}
                     onChange={e => setZahlungsModus(e.target.value)}>
                     <option value="standard">Standard – 14 Tage nach Rechnungserhalt</option>
@@ -822,13 +820,13 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               </div>
 
               {/* KLEINUNTERNEHMER */}
-              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'#f5f3ef', borderRadius:8}}>
+              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'var(--bf-soft)', borderRadius:8}}>
                 <input type="checkbox" checked={istKleinunternehmer}
                   onChange={e => setIstKleinunternehmer(e.target.checked)}
                   style={{width:16, height:16, cursor:'pointer'}} />
                 <div>
                   <div style={{fontSize:13, fontWeight:500}}>§6 Kleinunternehmer</div>
-                  <div style={{fontSize:11, color:'#888'}}>Keine MwSt. — Pflichttext wird automatisch hinzugefügt</div>
+                  <div style={{fontSize:11, color:'var(--bf-text-muted)'}}>Keine MwSt. — Pflichttext wird automatisch hinzugefügt</div>
                 </div>
               </div>
 
@@ -837,7 +835,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                 <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:10}}>Positionen</div>
                 <div style={{display:'flex', gap:8, marginBottom:4, paddingLeft:30}}>
                   {[['flex:1','Beschreibung'],['60px','Menge'],['78px','Einheit'],['100px','€ Preis'],['34px','']].map(([w,h],i) => (
-                    <div key={i} style={{width:h===''?34:undefined, flex:h==='Beschreibung'?1:undefined, flexShrink:0, fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#aaa', fontWeight:700}}>{h}</div>
+                    <div key={i} style={{width:h===''?34:undefined, flex:h==='Beschreibung'?1:undefined, flexShrink:0, fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:700}}>{h}</div>
                   ))}
                 </div>
                 {positionen.map((pos, idx) => (
@@ -846,28 +844,28 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                     <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 32px', gap:8, marginBottom:6, alignItems:'center'}}>
                       <div style={{display:'flex', flexDirection:'column', gap:2}}>
                         <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
-                          style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
+                          style={{background: idx === 0 ? 'var(--bf-soft)' : 'var(--bf-hover)', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▲</button>
                         <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
-                          style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
+                          style={{background: idx === positionen.length - 1 ? 'var(--bf-soft)' : 'var(--bf-hover)', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
                       <textarea
-                        style={{...inputStyle, resize:'vertical', overflow:'auto', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'#f5f3ef', borderColor:'#e5e0d8', color:'#3a2e1e'}}
+                        style={{...inputStyle, resize:'vertical', overflow:'auto', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'var(--bf-soft)', borderColor:'var(--bf-input-border)', color:'var(--bf-text)'}}
                         placeholder="Zwischentitel / Abschnittsbezeichnung..."
                         rows={1}
                         value={pos.beschreibung}
                         onChange={e => { positionAendern(idx, 'beschreibung', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
                         onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} />
                       <button onClick={() => positionLoeschen(idx)}
-                        style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
+                        style={{background:'transparent', border:'1px solid rgba(239,68,68,0.35)', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#ef4444', fontSize:14}}>✕</button>
                     </div>
                   ) : (
                     /* ── Normale Position ── */
                     <div key={idx} style={{display:'flex', gap:8, marginBottom:8, alignItems:'center'}}>
                       <div style={{width:22, flexShrink:0, display:'flex', flexDirection:'column', gap:2}}>
                         <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
-                          style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
+                          style={{background: idx === 0 ? 'var(--bf-soft)' : 'var(--bf-hover)', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▲</button>
                         <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
-                          style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
+                          style={{background: idx === positionen.length - 1 ? 'var(--bf-soft)' : 'var(--bf-hover)', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
                       <div style={{flex:1, minWidth:80, position:'relative'}}>
                         <textarea style={{...inputStyle, resize:'vertical', overflow:'auto', lineHeight:'20px', minHeight:38, display:'block'}}
@@ -887,15 +885,15 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
                           onBlur={() => setTimeout(() => setAutocomplete(null), 200)} />
                         {autocomplete && autocomplete.idx === idx && (
-                          <div style={{position:'absolute', top:'100%', left:0, right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:300, overflow:'hidden', marginTop:2}}>
+                          <div style={{position:'absolute', top:'100%', left:0, right:0, background:'var(--bf-card)', border:'1px solid var(--bf-border)', borderRadius:8, boxShadow:'var(--bf-shadow)', zIndex:300, overflow:'hidden', marginTop:2}}>
                             {autocomplete.items.map((v, i) => (
                               <div key={i} onMouseDown={() => vorlageEinfuegen(idx, v)}
-                                style={{padding:'7px 12px', cursor:'pointer', borderBottom: i < autocomplete.items.length-1 ? '1px solid #f0ede8' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
-                                onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                                style={{padding:'7px 12px', cursor:'pointer', borderBottom: i < autocomplete.items.length-1 ? '1px solid var(--bf-divider)' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                 <div>
-                                  <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a'}}>{v.name}</div>
-                                  {v.beschreibung && <div style={{fontSize:11, color:'#888', marginTop:1}}>{v.beschreibung}</div>}
+                                  <div style={{fontSize:12, fontWeight:600, color:'var(--bf-text)'}}>{v.name}</div>
+                                  {v.beschreibung && <div style={{fontSize:11, color:'var(--bf-text-muted)', marginTop:1}}>{v.beschreibung}</div>}
                                 </div>
                                 <div style={{fontSize:11, color:'#c8a96e', fontWeight:600, whiteSpace:'nowrap'}}>
                                   {parseFloat(v.einzelpreis) > 0 ? `€ ${parseFloat(v.einzelpreis).toFixed(2)}` : ''} {v.einheit}
@@ -905,7 +903,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           </div>
                         )}
                       </div>
-                      <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a', width:60, flexShrink:0}} type="text" inputMode="decimal"
+                      <input style={{...inputStyle, textAlign:'right', color:'var(--bf-text)', width:60, flexShrink:0}} type="text" inputMode="decimal"
                         value={pos.rawMenge !== undefined ? pos.rawMenge : (pos.menge === 0 ? '' : String(pos.menge))}
                         onFocus={e => { positionAendern(idx, 'rawMenge', pos.menge === 0 ? '' : String(pos.menge)); setTimeout(() => e.target.select(), 10) }}
                         onChange={e => positionAendern(idx, 'rawMenge', e.target.value)}
@@ -913,14 +911,14 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           const n = parseFloat(e.target.value.replace(',', '.')) || 0
                           const neu = [...positionen]; neu[idx] = { ...neu[idx], menge: n, rawMenge: undefined }; setPositionen(neu)
                         }} />
-                      <select style={{...inputStyle, background:'white', width:78, flexShrink:0}}
+                      <select style={{...inputStyle, background:'var(--bf-input-bg)', width:78, flexShrink:0}}
                         value={pos.einheit}
                         onChange={e => positionAendern(idx, 'einheit', e.target.value)}>
                         {['PA', 'M2', 'M3', 'LFM', 'STD', 'OBJ'].map(e => (
                           <option key={e} value={e}>{e}</option>
                         ))}
                       </select>
-                      <input style={{...inputStyle, textAlign:'right', color:'#1a1a1a', width:100, flexShrink:0}} type="text" inputMode="decimal"
+                      <input style={{...inputStyle, textAlign:'right', color:'var(--bf-text)', width:100, flexShrink:0}} type="text" inputMode="decimal"
                         value={pos.rawPreis !== undefined ? pos.rawPreis : (pos.einzelpreis === 0 ? '' : String(pos.einzelpreis))}
                         onFocus={e => { positionAendern(idx, 'rawPreis', pos.einzelpreis === 0 ? '' : String(pos.einzelpreis)); setTimeout(() => e.target.select(), 10) }}
                         onChange={e => positionAendern(idx, 'rawPreis', e.target.value)}
@@ -929,31 +927,31 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           const neu = [...positionen]; neu[idx] = { ...neu[idx], einzelpreis: n, rawPreis: undefined }; setPositionen(neu)
                         }} />
                       <button onClick={() => positionLoeschen(idx)}
-                        style={{background:'#fde8e6', border:'none', borderRadius:6, width:34, height:36, flexShrink:0, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
+                        style={{background:'transparent', border:'1px solid rgba(239,68,68,0.35)', borderRadius:6, width:34, height:36, flexShrink:0, cursor:'pointer', color:'#ef4444', fontSize:14}}>✕</button>
                     </div>
                   )
                 ))}
                 <div style={{display:'flex', gap:8, marginTop:4}}>
                   <div style={{position:'relative'}}>
                     <button onClick={() => setVorlagenPickerOffen(!vorlagenPickerOffen)}
-                      style={{padding:'9px 14px', border:'1px solid #c8a96e', borderRadius:8, background:'#fdf8f0', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap'}}>
+                      style={{...btnSecondary, display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap'}}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
                       Vorlage
                     </button>
                     {vorlagenPickerOffen && (
                       <>
                         <div style={{position:'fixed', inset:0, zIndex:199}} onClick={() => setVorlagenPickerOffen(false)} />
-                        <div style={{position:'absolute', bottom:'100%', left:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.15)', zIndex:200, minWidth:280, maxHeight:220, overflowY:'auto', marginBottom:4}}>
+                        <div style={{position:'absolute', bottom:'100%', left:0, background:'var(--bf-card)', border:'1px solid var(--bf-border)', borderRadius:8, boxShadow:'var(--bf-shadow)', zIndex:200, minWidth:280, maxHeight:220, overflowY:'auto', marginBottom:4}}>
                           {vorlagen.length === 0
-                            ? <div style={{padding:'12px 16px', fontSize:12, color:'#888', textAlign:'center'}}>Noch keine Vorlagen gespeichert.</div>
+                            ? <div style={{padding:'12px 16px', fontSize:12, color:'var(--bf-text-muted)', textAlign:'center'}}>Noch keine Vorlagen gespeichert.</div>
                             : vorlagen.map((v, i) => (
                                 <div key={i} onClick={() => vorlageAlsPositionHinzufuegen(v)}
-                                  style={{padding:'8px 14px', cursor:'pointer', borderBottom: i < vorlagen.length-1 ? '1px solid #f0ede8' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
-                                  onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                                  style={{padding:'8px 14px', cursor:'pointer', borderBottom: i < vorlagen.length-1 ? '1px solid var(--bf-divider)' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
+                                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                   <div>
-                                    <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a'}}>{v.name}</div>
-                                    {v.beschreibung && <div style={{fontSize:11, color:'#888', marginTop:1}}>{v.beschreibung}</div>}
+                                    <div style={{fontSize:12, fontWeight:600, color:'var(--bf-text)'}}>{v.name}</div>
+                                    {v.beschreibung && <div style={{fontSize:11, color:'var(--bf-text-muted)', marginTop:1}}>{v.beschreibung}</div>}
                                   </div>
                                   <div style={{fontSize:11, color:'#c8a96e', fontWeight:600, whiteSpace:'nowrap'}}>
                                     {parseFloat(v.einzelpreis) > 0 ? `€ ${parseFloat(v.einzelpreis).toFixed(2)}` : ''} {v.einheit}
@@ -966,24 +964,24 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                     )}
                   </div>
                   <button onClick={positionHinzufuegen}
-                    style={{flex:1, padding:'9px', border:'2px dashed #e5e0d8', borderRadius:8, background:'transparent', color:'#888', fontFamily:'DM Sans, sans-serif', fontSize:13, cursor:'pointer'}}>
+                    style={{flex:1, padding:'9px', border:'2px dashed var(--bf-border)', borderRadius:8, background:'transparent', color:'var(--bf-text-muted)', fontFamily:'DM Sans, sans-serif', fontSize:13, cursor:'pointer'}}>
                     + Position hinzufügen
                   </button>
                   <button onClick={() => setPositionen([...positionen, { uid: newUid(), typ: 'Text', beschreibung: '', menge: 0, einheit: '', einzelpreis: 0 }])}
-                    style={{padding:'9px 14px', border:'2px dashed #c8a96e', borderRadius:8, background:'#fdf8f0', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>
+                    style={{padding:'9px 14px', border:'2px dashed #c8a96e', borderRadius:8, background:'var(--bf-soft)', color:'#b8922a', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>
                     + Textzeile
                   </button>
                   <button onClick={kiTextGenerieren} disabled={kiTextLaden}
-                    style={{padding:'9px 14px', border:'2px dashed #6366f1', borderRadius:8, background: kiTextLaden ? '#f0f0ff' : 'white', color:'#6366f1', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:700, cursor: kiTextLaden ? 'not-allowed' : 'pointer', whiteSpace:'nowrap'}}>
-                    {kiTextLaden ? '⏳ KI denkt...' : '✨ KI-Positionen'}
+                    style={{padding:'9px 14px', border:'2px dashed #6366f1', borderRadius:8, background: kiTextLaden ? 'var(--bf-soft)' : 'var(--bf-card)', color:'#6366f1', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:700, cursor: kiTextLaden ? 'not-allowed' : 'pointer', whiteSpace:'nowrap'}}>
+                    {kiTextLaden ? 'KI denkt...' : 'KI-Positionen'}
                   </button>
                 </div>
               </div>
 
               {/* RABATT */}
-              <div style={{background:'#fdf8f0', border:'1px solid #e8d9b8', borderRadius:10, padding:16, marginBottom:12}}>
-                <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:12, color:'#92400e'}}>
-                  🏷️ Rabatt
+              <div style={{background:'var(--bf-soft)', border:'1px solid var(--bf-border)', borderRadius:10, padding:16, marginBottom:12}}>
+                <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:12, color:'var(--bf-text)'}}>
+                  Rabatt
                 </div>
                 <div style={{display:'flex', alignItems:'center', gap:12}}>
                   <div style={{flex:1}}>
@@ -995,12 +993,12 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                         value={rabattProzent}
                         onChange={e => setRabattProzent(parseFloat(e.target.value) || 0)}
                       />
-                      <span style={{fontSize:13, color:'#888'}}>%</span>
+                      <span style={{fontSize:13, color:'var(--bf-text-muted)'}}>%</span>
                     </div>
                   </div>
                   {rabattProzent > 0 && (
-                    <div style={{textAlign:'right', padding:'8px 12px', background:'white', borderRadius:8, border:'1px solid #e8d9b8'}}>
-                      <div style={{fontSize:10, color:'#aaa', textTransform:'uppercase', letterSpacing:0.5}}>Ersparnis</div>
+                    <div style={{textAlign:'right', padding:'8px 12px', background:'var(--bf-card)', borderRadius:8, border:'1px solid var(--bf-border)'}}>
+                      <div style={{fontSize:10, color:'var(--bf-text-muted)', textTransform:'uppercase', letterSpacing:0.5}}>Ersparnis</div>
                       <div style={{fontSize:16, fontWeight:800, color:'#c0392b'}}>− € {rabattBetrag.toFixed(2)}</div>
                     </div>
                   )}
@@ -1008,16 +1006,16 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               </div>
 
               {/* SKONTO */}
-              <div style={{background:'#f0f7ff', border:'1px solid #bdd8f5', borderRadius:10, padding:16, marginBottom:20}}>
+              <div style={{background:'var(--bf-soft)', border:'1px solid var(--bf-border)', borderRadius:10, padding:16, marginBottom:20}}>
                 <div style={{display:'flex', alignItems:'center', gap:10, marginBottom: skontoAktiv ? 14 : 0}}>
                   <input type="checkbox" checked={skontoAktiv}
                     onChange={e => setSkontoAktiv(e.target.checked)}
                     style={{width:16, height:16, cursor:'pointer'}} />
                   <div>
-                    <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, color:'#1e40af'}}>
-                      ⚡ Skonto anbieten
+                    <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, color:'var(--bf-text)'}}>
+                      Skonto anbieten
                     </div>
-                    <div style={{fontSize:11, color:'#888'}}>Nachlass bei früher Zahlung</div>
+                    <div style={{fontSize:11, color:'var(--bf-text-muted)'}}>Nachlass bei früher Zahlung</div>
                   </div>
                 </div>
 
@@ -1032,7 +1030,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           value={skontoProzent}
                           onChange={e => setSkontoProzent(parseFloat(e.target.value) || 2)}
                         />
-                        <span style={{fontSize:13, color:'#888', whiteSpace:'nowrap'}}>% Nachlass</span>
+                        <span style={{fontSize:13, color:'var(--bf-text-muted)', whiteSpace:'nowrap'}}>% Nachlass</span>
                       </div>
                     </div>
                     <div>
@@ -1044,20 +1042,20 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           value={skontoTage}
                           onChange={e => setSkontoTage(parseInt(e.target.value) || 7)}
                         />
-                        <span style={{fontSize:13, color:'#888', whiteSpace:'nowrap'}}>Tagen</span>
+                        <span style={{fontSize:13, color:'var(--bf-text-muted)', whiteSpace:'nowrap'}}>Tagen</span>
                       </div>
                     </div>
                     {/* Skonto Vorschau */}
-                    <div style={{gridColumn:'1 / -1', background:'white', borderRadius:8, padding:'10px 14px', border:'1px solid #bdd8f5', fontSize:12, color:'#1e40af'}}>
-                      💡 Bei Zahlung innerhalb von <strong>{skontoTage} Tagen</strong> erhalten Sie <strong>{skontoProzent}% Skonto</strong> = <strong>€ {skontoBetrag.toFixed(2)}</strong> Nachlass → Zahlung nur <strong>€ {gesamtNachSkonto.toFixed(2)}</strong>
+                    <div style={{gridColumn:'1 / -1', background:'var(--bf-card)', borderRadius:8, padding:'10px 14px', border:'1px solid var(--bf-border)', fontSize:12, color:'var(--bf-text-soft)'}}>
+                      Bei Zahlung innerhalb von <strong>{skontoTage} Tagen</strong> erhalten Sie <strong>{skontoProzent}% Skonto</strong> = <strong>€ {skontoBetrag.toFixed(2)}</strong> Nachlass → Zahlung nur <strong>€ {gesamtNachSkonto.toFixed(2)}</strong>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* SUMMEN */}
-              <div style={{background:'#f5f3ef', borderRadius:10, padding:16, marginBottom:20}}>
-                <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'#888'}}>
+              <div style={{background:'var(--bf-soft)', borderRadius:10, padding:16, marginBottom:20}}>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'var(--bf-text-muted)'}}>
                   <span>Zwischensumme</span><span>€ {zwischensumme.toFixed(2)}</span>
                 </div>
                 {rabattProzent > 0 && (
@@ -1066,31 +1064,31 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                   </div>
                 )}
                 {!istKleinunternehmer && (
-                  <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'#888'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'var(--bf-text-muted)'}}>
                     <span>MwSt. 20%</span><span>€ {mwst.toFixed(2)}</span>
                   </div>
                 )}
                 {istKleinunternehmer && (
                   <div style={{fontSize:11, color:'#c8a96e', marginBottom:6}}>§6 UStG — keine MwSt.</div>
                 )}
-                <div style={{display:'flex', justifyContent:'space-between', fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, borderTop:'1px solid #e5e0d8', paddingTop:10}}>
+                <div style={{display:'flex', justifyContent:'space-between', fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, borderTop:'1px solid var(--bf-border)', paddingTop:10}}>
                   <span>Gesamt</span><span>€ {gesamt.toFixed(2)}</span>
                 </div>
                 {skontoAktiv && (
                   <div style={{marginTop:8, padding:'8px 10px', background:'#dbeafe', borderRadius:6, fontSize:12, color:'#1e40af', fontWeight:500}}>
-                    ⚡ Bei Zahlung binnen {skontoTage} Tagen: <strong>€ {gesamtNachSkonto.toFixed(2)}</strong> ({skontoProzent}% Skonto)
+                    Bei Zahlung binnen {skontoTage} Tagen: <strong>€ {gesamtNachSkonto.toFixed(2)}</strong> ({skontoProzent}% Skonto)
                   </div>
                 )}
               </div>
 
               <div style={{display:'flex', gap:10}}>
                 <button
-                  style={{flex:1, padding:13, background:'#1a1a1a', color:'white', border:'none', borderRadius:9, fontFamily:'Syne, sans-serif', fontSize:14, fontWeight:700, cursor:'pointer'}}
+                  style={{...btnPrimary, flex:1}}
                   onClick={speichern} disabled={laden}>
-                  {laden ? '⏳ Wird gespeichert...' : '✅ Rechnung speichern'}
+                  {laden ? 'Wird gespeichert...' : 'Rechnung speichern'}
                 </button>
                 <button
-                  style={{padding:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:9, cursor:'pointer'}}
+                  style={{...btnSecondary}}
                   onClick={() => { setFormOffen(false); setModalPos(null) }}>Abbrechen</button>
               </div>
             </div>
@@ -1099,12 +1097,12 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               <div onMouseDown={onResizeDrag}
                 style={{position:'absolute', bottom:6, right:6, width:22, height:22, cursor:'nwse-resize', userSelect:'none', borderRadius:5, display:'flex', alignItems:'center', justifyContent:'center'}}>
                 <svg width="14" height="14" viewBox="0 0 14 14">
-                  <circle cx="12" cy="12" r="1.6" fill="#b8b0a6"/>
-                  <circle cx="7"  cy="12" r="1.6" fill="#b8b0a6"/>
-                  <circle cx="12" cy="7"  r="1.6" fill="#b8b0a6"/>
-                  <circle cx="2"  cy="12" r="1.6" fill="#b8b0a6"/>
-                  <circle cx="7"  cy="7"  r="1.6" fill="#b8b0a6"/>
-                  <circle cx="12" cy="2"  r="1.6" fill="#b8b0a6"/>
+                  <circle cx="12" cy="12" r="1.6" fill="var(--bf-text-muted)"/>
+                  <circle cx="7"  cy="12" r="1.6" fill="var(--bf-text-muted)"/>
+                  <circle cx="12" cy="7"  r="1.6" fill="var(--bf-text-muted)"/>
+                  <circle cx="2"  cy="12" r="1.6" fill="var(--bf-text-muted)"/>
+                  <circle cx="7"  cy="7"  r="1.6" fill="var(--bf-text-muted)"/>
+                  <circle cx="12" cy="2"  r="1.6" fill="var(--bf-text-muted)"/>
                 </svg>
               </div>
             )}
@@ -1116,26 +1114,25 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {/* STUNDEN PICKER MODAL */}
       {stundenPickerOffen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10100}}>
-          <div style={{background:'white', borderRadius:14, width:500, maxHeight:'80vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
-            <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center'}}>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:800, flex:1}}>⏱ Stunden-Projekt auswählen</div>
-              <button onClick={() => setStundenPickerOffen(false)} style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
+          <div style={{background:'var(--bf-card)', borderRadius:14, width:500, maxHeight:'80vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'var(--bf-shadow)'}}>
+            <div style={{padding:'20px 24px', borderBottom:'1px solid var(--bf-border)', display:'flex', alignItems:'center'}}>
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:800, flex:1}}>Stunden-Projekt auswählen</div>
+              <button onClick={() => setStundenPickerOffen(false)} style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'var(--bf-text-muted)'}}>✕</button>
             </div>
             <div style={{overflowY:'auto', flex:1}}>
               {stundenProjekte.length === 0 ? (
-                <div style={{padding:40, textAlign:'center', color:'#888'}}>
-                  <div style={{fontSize:32, marginBottom:12}}>⏱</div>
+                <div style={{padding:40, textAlign:'center', color:'var(--bf-text-muted)'}}>
                   <div>Keine Projekte in der Stundenliste</div>
                 </div>
               ) : stundenProjekte.map((p: any) => (
                 <div key={p.id}
-                  style={{padding:'14px 20px', borderBottom:'1px solid #f0ede8', cursor:'pointer', display:'flex', alignItems:'center', gap:12}}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                  style={{padding:'14px 20px', borderBottom:'1px solid var(--bf-divider)', cursor:'pointer', display:'flex', alignItems:'center', gap:12}}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   onClick={() => stundenUebernehmen(p)}>
                   <div style={{flex:1}}>
-                    <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, color:'#1a1a1a'}}>{p.name}</div>
-                    <div style={{fontSize:11, color:'#888', marginTop:2}}>
+                    <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, color:'var(--bf-text)'}}>{p.name}</div>
+                    <div style={{fontSize:11, color:'var(--bf-text-muted)', marginTop:2}}>
                       {p.firma || (p.vorname ? `${p.vorname} ${p.nachname}` : 'Kein Kunde')}
                       {' · '}{Number(p.gesamt_stunden).toFixed(2).replace('.', ',')} h
                       {p.stundensatz > 0 && ` · € ${(Number(p.gesamt_stunden) * p.stundensatz).toFixed(2).replace('.', ',')}`}
@@ -1151,28 +1148,27 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
 
       {angebotWaehlenOffen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200}}>
-          <div style={{background:'white', borderRadius:14, width:560, maxHeight:'80vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 24px 60px rgba(0,0,0,0.3)'}}>
-            <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center'}}>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:800, flex:1}}>📄 Angebot auswählen</div>
+          <div style={{background:'var(--bf-card)', borderRadius:14, width:560, maxHeight:'80vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'var(--bf-shadow)'}}>
+            <div style={{padding:'20px 24px', borderBottom:'1px solid var(--bf-border)', display:'flex', alignItems:'center'}}>
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:800, flex:1}}>Angebot auswählen</div>
               <button onClick={() => setAngebotWaehlenOffen(false)}
-                style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
+                style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'var(--bf-text-muted)'}}>✕</button>
             </div>
             <div style={{overflowY:'auto', flex:1}}>
               {angebote.length === 0 ? (
-                <div style={{padding:40, textAlign:'center', color:'#888'}}>
-                  <div style={{fontSize:32, marginBottom:12}}>📄</div>
+                <div style={{padding:40, textAlign:'center', color:'var(--bf-text-muted)'}}>
                   <div>Noch keine Angebote vorhanden</div>
                 </div>
               ) : (
                 angebote.map((a: any) => (
                   <div key={a.id}
-                    style={{padding:'14px 20px', borderBottom:'1px solid #f0ede8', cursor:'pointer', display:'flex', alignItems:'center', gap:12}}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                    style={{padding:'14px 20px', borderBottom:'1px solid var(--bf-divider)', cursor:'pointer', display:'flex', alignItems:'center', gap:12}}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     onClick={() => angebotUebernehmen(a)}>
                     <div style={{flex:1}}>
-                      <div style={{fontFamily:'Syne, sans-serif', fontSize:12, fontWeight:700, color:'#1a1a1a'}}>{a.nummer}</div>
-                      <div style={{fontSize:11, color:'#888', marginTop:2}}>
+                      <div style={{fontFamily:'Syne, sans-serif', fontSize:12, fontWeight:700, color:'var(--bf-text)'}}>{a.nummer}</div>
+                      <div style={{fontSize:11, color:'var(--bf-text-muted)', marginTop:2}}>
                         {kunden.find(k => k.id === a.kundeId)?.vorname} {kunden.find(k => k.id === a.kundeId)?.nachname}
                         {a.projektName ? ` — ${a.projektName}` : ''}
                       </div>
@@ -1190,7 +1186,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       {mehrMenu !== null && ReactDOM.createPortal(
         <>
           <div style={{position:'fixed',inset:0,zIndex:9998}} onClick={() => setMehrMenu(null)} />
-          <div style={{position:'fixed',top:mehrMenuPos.top,left:mehrMenuPos.left,transform:'translateX(-100%)',background:'white',border:'1px solid #e5e0d8',borderRadius:12,boxShadow:'0 8px 30px rgba(0,0,0,0.12)',zIndex:9999,minWidth:210,padding:'6px 0'}}>
+          <div style={{position:'fixed',top:mehrMenuPos.top,left:mehrMenuPos.left,transform:'translateX(-100%)',background:'var(--bf-card)',border:'1px solid var(--bf-border)',borderRadius:12,boxShadow:'var(--bf-shadow)',zIndex:9999,minWidth:210,padding:'6px 0'}}>
             {(() => {
               const r = rechnungen.find(x => x.id === mehrMenu)
               if (!r) return null
@@ -1205,10 +1201,10 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
               ]
               return items.map((item, idx) => (
                 <button key={idx} onClick={() => { setMehrMenu(null); item.onClick() }}
-                  style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 16px',border:'none',background:'transparent',cursor:'pointer',fontSize:12,fontWeight:500,color: item.danger ? '#dc2626' : '#1a2a3a',textAlign:'left' as const}}
-                  onMouseEnter={e => (e.currentTarget.style.background = item.danger ? '#fef2f2' : '#f4f1eb')}
+                  style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 16px',border:'none',background:'transparent',cursor:'pointer',fontSize:12,fontWeight:500,color: item.danger ? '#dc2626' : 'var(--bf-text)',textAlign:'left' as const}}
+                  onMouseEnter={e => (e.currentTarget.style.background = item.danger ? 'rgba(239,68,68,0.1)' : 'var(--bf-hover)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  <span style={{display:'flex',alignItems:'center',color: item.danger ? '#dc2626' : '#888'}}>{item.icon}</span>
+                  <span style={{display:'flex',alignItems:'center',color: item.danger ? '#dc2626' : 'var(--bf-text-muted)'}}>{item.icon}</span>
                   {item.label}
                 </button>
               ))
@@ -1223,11 +1219,11 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
 
 const labelStyle: React.CSSProperties = {
   display:'block', fontSize:11, textTransform:'uppercase',
-  letterSpacing:0.8, color:'#888', fontWeight:600, marginBottom:5
+  letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:600, marginBottom:5
 }
 
 const inputStyle: React.CSSProperties = {
-  width:'100%', padding:'9px 12px', border:'1px solid #e5e0d8',
+  width:'100%', padding:'9px 12px', border:'1px solid var(--bf-input-border)',
   borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none',
-  color:'#1a1a1a', background:'white', boxSizing:'border-box'
+  color:'var(--bf-text)', background:'var(--bf-input-bg)', boxSizing:'border-box'
 }

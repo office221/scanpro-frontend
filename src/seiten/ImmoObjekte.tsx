@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
+import { btnPrimary, btnSecondary, ACCENT } from '../ui/theme'
 
 const TYP_OPTIONEN = ['Wohnung', 'Haus', 'Gewerbe', 'Büro', 'Garage', 'Rohdachboden', 'Sonstiges']
-const TYP_FARBEN: Record<string, { bg: string; text: string }> = {
-  Wohnung:      { bg: '#dbeafe', text: '#1e40af' },
-  Haus:         { bg: '#d1f5e0', text: '#2d6a4f' },
-  Gewerbe:      { bg: '#ede9fe', text: '#6d28d9' },
-  Büro:         { bg: '#fef3c7', text: '#92400e' },
-  Garage:       { bg: '#f0f0f0', text: '#555' },
-  Rohdachboden: { bg: '#fce7f3', text: '#9d174d' },
-  Sonstiges:    { bg: '#f0ede8', text: '#888' },
+const TYP_FARBEN: Record<string, string> = {
+  Wohnung:      '#3b82f6',
+  Haus:         '#10b981',
+  Gewerbe:      '#8b5cf6',
+  Büro:         '#f59e0b',
+  Garage:       '#94a3b8',
+  Rohdachboden: '#ec4899',
+  Sonstiges:    '#94a3b8',
 }
 
 const leer = { name: '', typ: 'Wohnung', adresse: '', flaeche: '', zimmer: '', baujahr: '', kaufpreis: '', notizen: '' }
@@ -83,49 +84,51 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800 }}>🏠 Objekte / Wohnungen</div>
-          <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{objekte.length} Objekt{objekte.length !== 1 ? 'e' : ''}</div>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: 'var(--bf-text)' }}>Objekte / Wohnungen</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>{objekte.length} Objekt{objekte.length !== 1 ? 'e' : ''}</div>
         </div>
-        <button onClick={() => oeffnen()} style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 9, padding: '10px 20px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+        <button onClick={() => oeffnen()} style={{ ...btnPrimary, padding: '10px 20px', fontSize: 13 }}>
           + Neues Objekt
         </button>
       </div>
 
       {/* Liste */}
       {laden ? (
-        <div style={{ textAlign: 'center', color: '#aaa', padding: 40 }}>⏳ Laden...</div>
+        <div style={{ textAlign: 'center', color: 'var(--bf-text-muted)', padding: 40 }}>Laden...</div>
       ) : objekte.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, background: 'white', borderRadius: 12, border: '1px solid #e5e0d8' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🏠</div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Noch keine Objekte</div>
-          <div style={{ color: '#aaa', fontSize: 13 }}>Fügen Sie Ihr erstes Objekt hinzu</div>
+        <div style={{ textAlign: 'center', padding: 60, background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)' }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, marginBottom: 6, color: 'var(--bf-text)' }}>Noch keine Objekte</div>
+          <div style={{ color: 'var(--bf-text-muted)', fontSize: 13 }}>Fügen Sie Ihr erstes Objekt hinzu</div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           {objekte.map(o => {
             const farbe = TYP_FARBEN[o.typ] || TYP_FARBEN.Sonstiges
             return (
-              <div key={o.id} style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20, cursor: 'pointer', transition: 'box-shadow 0.15s' }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)')}
+              <div key={o.id} style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20, cursor: 'pointer', transition: 'box-shadow 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--bf-shadow)')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
                 onClick={() => onNavigate ? onNavigate(o.id) : oeffnen(o)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#1a2a3a', flex: 1, marginRight: 8 }}>{o.name}</div>
-                  <span style={{ background: farbe.bg, color: farbe.text, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>{o.typ}</span>
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: 'var(--bf-text)', flex: 1, marginRight: 8 }}>{o.name}</div>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', color: 'var(--bf-text-soft)', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: farbe, flexShrink: 0 }} />
+                    {o.typ}
+                  </span>
                 </div>
-                {o.adresse && <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>📍 {o.adresse}</div>}
-                <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#555', marginBottom: 12 }}>
-                  {o.flaeche && <span>📐 {o.flaeche} m²</span>}
-                  {o.zimmer && <span>🛏 {o.zimmer} Zi.</span>}
-                  {o.baujahr && <span>🏗 {o.baujahr}</span>}
+                {o.adresse && <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 8 }}>{o.adresse}</div>}
+                <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--bf-text-soft)', marginBottom: 12 }}>
+                  {o.flaeche && <span>{o.flaeche} m²</span>}
+                  {o.zimmer && <span>{o.zimmer} Zi.</span>}
+                  {o.baujahr && <span>Bj. {o.baujahr}</span>}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, background: parseInt(o.aktive_vertraege) > 0 ? '#d1f5e0' : '#f0ede8', color: parseInt(o.aktive_vertraege) > 0 ? '#2d6a4f' : '#888', padding: '2px 8px', borderRadius: 20 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', color: parseInt(o.aktive_vertraege) > 0 ? '#10b981' : 'var(--bf-text-muted)', padding: '2px 8px', borderRadius: 20 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: parseInt(o.aktive_vertraege) > 0 ? '#10b981' : 'var(--bf-text-muted)', flexShrink: 0 }} />
                     {o.aktive_vertraege} aktiver Vertrag
                   </span>
-                  <button onClick={e => { e.stopPropagation(); loeschen(o.id) }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0, minHeight: 40, minWidth: 40 }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}>
-                    🗑
+                  <button onClick={e => { e.stopPropagation(); loeschen(o.id) }} style={{ ...btnSecondary, color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)', padding: '5px 10px', fontSize: 11 }}>
+                    Löschen
                   </button>
                 </div>
               </div>
@@ -137,9 +140,9 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
       {/* Modal */}
       {formOffen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 0 : 20 }}>
-          <div style={{ background: 'white', borderRadius: isMobile ? 0 : 16, padding: 28, width: '100%', maxWidth: isMobile ? '100%' : 520, height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '90vh', overflowY: 'auto' }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20 }}>
-              {bearbeitenId ? '✏️ Objekt bearbeiten' : '🏠 Neues Objekt'}
+          <div style={{ background: 'var(--bf-card)', borderRadius: isMobile ? 0 : 16, padding: 28, width: '100%', maxWidth: isMobile ? '100%' : 520, height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '90vh', overflowY: 'auto' }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20, color: 'var(--bf-text)' }}>
+              {bearbeitenId ? 'Objekt bearbeiten' : 'Neues Objekt'}
             </div>
 
             <div style={{ display: 'grid', gap: 14 }}>
@@ -154,7 +157,7 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
                 <label style={labelStyle}>Typ</label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {TYP_OPTIONEN.map(t => (
-                    <button key={t} onClick={() => f('typ', t)} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${form.typ === t ? '#1a2a3a' : '#e5e0d8'}`, background: form.typ === t ? '#1a2a3a' : 'white', color: form.typ === t ? 'white' : '#555', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
+                    <button key={t} onClick={() => f('typ', t)} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${form.typ === t ? ACCENT : 'var(--bf-border)'}`, background: form.typ === t ? 'var(--bf-soft)' : 'var(--bf-card)', color: form.typ === t ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
                   ))}
                 </div>
               </div>
@@ -197,9 +200,9 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={() => setFormOffen(false)} style={{ flex: 1, padding: 11, borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', fontSize: 13, cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={speichern} disabled={speichernLaden || !form.name.trim()} style={{ flex: 2, padding: 11, borderRadius: 8, border: 'none', background: speichernLaden || !form.name.trim() ? '#e5e0d8' : '#1a1a1a', color: speichernLaden || !form.name.trim() ? '#aaa' : 'white', fontSize: 13, fontWeight: 700, cursor: speichernLaden || !form.name.trim() ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif' }}>
-                {speichernLaden ? '⏳ Speichern...' : '💾 Speichern'}
+              <button onClick={() => setFormOffen(false)} style={{ ...btnSecondary, flex: 1, padding: 11, fontSize: 13 }}>Abbrechen</button>
+              <button onClick={speichern} disabled={speichernLaden || !form.name.trim()} style={{ ...btnPrimary, flex: 2, padding: 11, fontSize: 13, opacity: speichernLaden || !form.name.trim() ? 0.55 : 1, cursor: speichernLaden || !form.name.trim() ? 'not-allowed' : 'pointer' }}>
+                {speichernLaden ? 'Speichern...' : 'Speichern'}
               </button>
             </div>
           </div>
@@ -209,5 +212,5 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
   )
 }
 
-const labelStyle: React.CSSProperties = { display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: '#888', fontWeight: 600, marginBottom: 5 }
-const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1px solid #e5e0d8', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
+const labelStyle: React.CSSProperties = { display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--bf-text-muted)', fontWeight: 600, marginBottom: 5 }
+const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', color: 'var(--bf-text)', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }

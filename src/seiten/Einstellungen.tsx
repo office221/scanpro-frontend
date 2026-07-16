@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
+import { btnPrimary, btnSecondary } from '../ui/theme'
 
 const GOLD = '#c8a96e'
 
@@ -372,29 +373,29 @@ export default function Einstellungen() {
 
       {/* Header */}
       <div style={{display:'flex', alignItems:'center', marginBottom:12}}>
-        <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'#888'}}>
+        <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'var(--bf-text-muted)'}}>
           Firmendaten & PDF-Einstellungen
         </div>
         <button
           onClick={speichern}
           disabled={laden}
-          style={{background: gespeichert ? '#2d6a4f' : '#1a1a1a', color:'white', border:'none', borderRadius:8, padding:'9px 20px', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}>
-          {laden ? '⏳ Speichern...' : gespeichert ? '✅ Gespeichert!' : '💾 Speichern'}
+          style={{...btnPrimary, padding:'9px 20px', fontSize:13, ...(gespeichert ? {background:'#10b981', boxShadow:'none'} : {})}}>
+          {laden ? 'Speichern...' : gespeichert ? 'Gespeichert!' : 'Speichern'}
         </button>
       </div>
 
       {/* ── Tab Navigation ─────────────────────────────────────── */}
-      <div style={{display:'flex', gap:2, marginBottom:20, borderBottom:'2px solid #e5e0d8'}}>
+      <div style={{display:'flex', gap:2, marginBottom:20, borderBottom:'2px solid var(--bf-border)'}}>
         {(['allgemein', 'layout'] as const).map(t => (
           <button key={t} onClick={() => setAktTab(t)} style={{
             padding:'9px 20px', border:'none', background:'none', cursor:'pointer',
             fontWeight:700, fontSize:13, fontFamily:'Syne, sans-serif',
-            color: aktTab === t ? '#1a2a3a' : '#aaa',
-            borderBottom: aktTab === t ? '2px solid #1a2a3a' : '2px solid transparent',
+            color: aktTab === t ? 'var(--bf-text)' : 'var(--bf-text-muted)',
+            borderBottom: aktTab === t ? '2px solid var(--bf-text)' : '2px solid transparent',
             marginBottom: -2, borderRadius:'8px 8px 0 0',
             transition:'all 0.15s',
           }}>
-            {t === 'allgemein' ? '⚙️ Allgemein' : '📐 Layout & Design'}
+            {t === 'allgemein' ? 'Allgemein' : 'Layout & Design'}
           </button>
         ))}
       </div>
@@ -405,9 +406,9 @@ export default function Einstellungen() {
       {aktTab === 'allgemein' && <>
 
       {/* Logo */}
-      <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+      <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
         <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:16}}>
-          🖼️ Firmenlogo
+          Firmenlogo
         </div>
 
         <div style={{display:'flex', alignItems:'flex-start', gap:20, marginBottom:16}}>
@@ -417,9 +418,9 @@ export default function Einstellungen() {
             onClick={() => logoRef.current?.click()}
             style={{
               width: 200, height: 120,
-              border:'2px dashed #e5e0d8', borderRadius:10,
+              border:'2px dashed var(--bf-border)', borderRadius:10,
               display:'flex', alignItems:'center', justifyContent:'center',
-              cursor:'pointer', overflow:'hidden', background:'#faf8f5', flexShrink:0
+              cursor:'pointer', overflow:'hidden', background:'var(--bf-soft)', flexShrink:0
             }}>
             {logoBase64 ? (
               <img
@@ -433,8 +434,7 @@ export default function Einstellungen() {
                 alt="Logo"
               />
             ) : (
-              <div style={{textAlign:'center', color:'#aaa'}}>
-                <div style={{fontSize:28}}>📷</div>
+              <div style={{textAlign:'center', color:'var(--bf-text-muted)'}}>
                 <div style={{fontSize:10, marginTop:4}}>Logo hochladen</div>
               </div>
             )}
@@ -444,24 +444,24 @@ export default function Einstellungen() {
           <div style={{flex:1}}>
             <button
               onClick={() => logoRef.current?.click()}
-              style={{padding:'8px 16px', border:'1px solid #e5e0d8', borderRadius:7, background:'white', fontSize:12, cursor:'pointer', marginBottom:8, display:'block', width:'100%'}}>
-              📁 Logo auswählen
+              style={{...btnSecondary, marginBottom:8, display:'block', width:'100%'}}>
+              Logo auswählen
             </button>
             {logoBase64 && (
               <button
                 onClick={() => setLogoBase64('')}
-                style={{padding:'8px 16px', border:'1px solid #fde8e6', borderRadius:7, background:'white', color:'#c0392b', fontSize:12, cursor:'pointer', display:'block', width:'100%', marginBottom:8}}>
-                🗑️ Logo entfernen
+                style={{...btnSecondary, color:'#ef4444', borderColor:'rgba(239,68,68,0.35)', display:'block', width:'100%', marginBottom:8}}>
+                Logo entfernen
               </button>
             )}
             {logoBase64 && (
               <button
                 onClick={() => { setLogoBreite(100); setLogoHoehe(100) }}
-                style={{padding:'8px 16px', border:'1px solid #e5e0d8', borderRadius:7, background:'#f5f3ef', fontSize:12, cursor:'pointer', display:'block', width:'100%'}}>
-                🔄 Zurücksetzen
+                style={{...btnSecondary, display:'block', width:'100%'}}>
+                Zurücksetzen
               </button>
             )}
-            <div style={{fontSize:10, color:'#aaa', marginTop:8}}>PNG, JPG — max. 2MB</div>
+            <div style={{fontSize:10, color:'var(--bf-text-muted)', marginTop:8}}>PNG, JPG — max. 2MB</div>
           </div>
         </div>
 
@@ -476,13 +476,13 @@ export default function Einstellungen() {
 
         {/* Breite & Höhe Slider */}
         {logoBase64 && (
-          <div style={{borderTop:'1px solid #f0ede8', paddingTop:16, display:'flex', flexDirection:'column', gap:16}}>
+          <div style={{borderTop:'1px solid var(--bf-divider)', paddingTop:16, display:'flex', flexDirection:'column', gap:16}}>
 
             {/* BREITE */}
             <div>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
-                <label style={{...labelStyle, marginBottom:0}}>↔️ Breite im PDF</label>
-                <span style={{fontSize:12, fontWeight:700, color:'#1a1a1a', background:'#f5f3ef', padding:'2px 10px', borderRadius:6}}>
+                <label style={{...labelStyle, marginBottom:0}}>Breite im PDF</label>
+                <span style={{fontSize:12, fontWeight:700, color:'var(--bf-text)', background:'var(--bf-soft)', padding:'2px 10px', borderRadius:6}}>
                   {logoBreite}% — {pdfBreiteMm}mm
                 </span>
               </div>
@@ -494,7 +494,7 @@ export default function Einstellungen() {
                 onChange={e => setLogoBreite(Number(e.target.value))}
                 style={{width:'100%', cursor:'pointer', accentColor:'#1e6a9e'}}
               />
-              <div style={{display:'flex', justifyContent:'space-between', fontSize:10, color:'#aaa', marginTop:3}}>
+              <div style={{display:'flex', justifyContent:'space-between', fontSize:10, color:'var(--bf-text-muted)', marginTop:3}}>
                 <span>Schmal</span>
                 <span>Normal</span>
                 <span>Sehr breit</span>
@@ -504,8 +504,8 @@ export default function Einstellungen() {
             {/* HÖHE */}
             <div>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6}}>
-                <label style={{...labelStyle, marginBottom:0}}>↕️ Höhe im PDF</label>
-                <span style={{fontSize:12, fontWeight:700, color:'#1a1a1a', background:'#f5f3ef', padding:'2px 10px', borderRadius:6}}>
+                <label style={{...labelStyle, marginBottom:0}}>Höhe im PDF</label>
+                <span style={{fontSize:12, fontWeight:700, color:'var(--bf-text)', background:'var(--bf-soft)', padding:'2px 10px', borderRadius:6}}>
                   {logoHoehe}% — {pdfHoeheMm}mm
                 </span>
               </div>
@@ -517,7 +517,7 @@ export default function Einstellungen() {
                 onChange={e => setLogoHoehe(Number(e.target.value))}
                 style={{width:'100%', cursor:'pointer', accentColor:'#1e6a9e'}}
               />
-              <div style={{display:'flex', justifyContent:'space-between', fontSize:10, color:'#aaa', marginTop:3}}>
+              <div style={{display:'flex', justifyContent:'space-between', fontSize:10, color:'var(--bf-text-muted)', marginTop:3}}>
                 <span>Flach</span>
                 <span>Normal</span>
                 <span>Sehr hoch</span>
@@ -529,9 +529,9 @@ export default function Einstellungen() {
       </div>
 
       {/* Firmendaten */}
-      <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+      <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
         <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:16}}>
-          🏢 Firmendaten
+          Firmendaten
         </div>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
           <div style={{gridColumn:'1 / -1'}}>
@@ -588,9 +588,9 @@ export default function Einstellungen() {
       </div>
 
       {/* Bankdaten */}
-      <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+      <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
         <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:16}}>
-          🏦 Bankverbindung
+          Bankverbindung
         </div>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
           <div style={{gridColumn:'1 / -1'}}>
@@ -617,11 +617,11 @@ export default function Einstellungen() {
       </div>
 
       {/* Mahnung Fristen */}
-      <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+      <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
         <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:4}}>
-          ⚠️ Mahnung – Zahlungsfristen
+          Mahnung – Zahlungsfristen
         </div>
-        <div style={{fontSize:11, color:'#888', marginBottom:16}}>
+        <div style={{fontSize:11, color:'var(--bf-text-muted)', marginBottom:16}}>
           Wie viele Tage hat der Kunde Zeit zu zahlen, nachdem eine Mahnung gesendet wurde?
         </div>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12}}>
@@ -636,9 +636,9 @@ export default function Einstellungen() {
                 value={mahnungFrist1}
                 onChange={e => setMahnungFrist1(Number(e.target.value))}
               />
-              <span style={{fontSize:12, color:'#888'}}>Tage</span>
+              <span style={{fontSize:12, color:'var(--bf-text-muted)'}}>Tage</span>
             </div>
-            <div style={{fontSize:10, color:'#aaa', marginTop:4}}>Stufe 1 – freundlich</div>
+            <div style={{fontSize:10, color:'var(--bf-text-muted)', marginTop:4}}>Stufe 1 – freundlich</div>
           </div>
           <div>
             <label style={labelStyle}>Mahnung</label>
@@ -651,9 +651,9 @@ export default function Einstellungen() {
                 value={mahnungFrist2}
                 onChange={e => setMahnungFrist2(Number(e.target.value))}
               />
-              <span style={{fontSize:12, color:'#888'}}>Tage</span>
+              <span style={{fontSize:12, color:'var(--bf-text-muted)'}}>Tage</span>
             </div>
-            <div style={{fontSize:10, color:'#aaa', marginTop:4}}>Stufe 2 – formal</div>
+            <div style={{fontSize:10, color:'var(--bf-text-muted)', marginTop:4}}>Stufe 2 – formal</div>
           </div>
           <div>
             <label style={labelStyle}>Letzte Mahnung</label>
@@ -666,26 +666,26 @@ export default function Einstellungen() {
                 value={mahnungFrist3}
                 onChange={e => setMahnungFrist3(Number(e.target.value))}
               />
-              <span style={{fontSize:12, color:'#888'}}>Tage</span>
+              <span style={{fontSize:12, color:'var(--bf-text-muted)'}}>Tage</span>
             </div>
-            <div style={{fontSize:10, color:'#aaa', marginTop:4}}>Stufe 3 – letzte Chance</div>
+            <div style={{fontSize:10, color:'var(--bf-text-muted)', marginTop:4}}>Stufe 3 – letzte Chance</div>
           </div>
         </div>
       </div>
 
       {/* ── KM-GELD EINSTELLUNG ───────────────────────────────────── */}
-      <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+      <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
         <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:4}}>
-          🚗 KM-Geld / Fahrtenbuch
+          KM-Geld / Fahrtenbuch
         </div>
-        <div style={{fontSize:11, color:'#888', marginBottom:16}}>
+        <div style={{fontSize:11, color:'var(--bf-text-muted)', marginBottom:16}}>
           Gesetzlicher km-Satz gem. § 26 EStG Österreich. Wird für die automatische Berechnung im KM-Buch und die G&V-Übertragung verwendet.
         </div>
         <div style={{display:'flex', alignItems:'center', gap:16, flexWrap:'wrap'}}>
           <div>
             <label style={{...labelStyle, marginBottom:6}}>km-Satz (€ pro km)</label>
             <div style={{display:'flex', alignItems:'center', gap:8}}>
-              <span style={{fontSize:14, color:'#888'}}>€</span>
+              <span style={{fontSize:14, color:'var(--bf-text-muted)'}}>€</span>
               <input
                 type="number"
                 step="0.01"
@@ -702,7 +702,7 @@ export default function Einstellungen() {
                   if (isNaN(v) || v <= 0) setKmSatz(0.42)
                 }}
               />
-              <span style={{fontSize:12, color:'#888'}}>/km</span>
+              <span style={{fontSize:12, color:'var(--bf-text-muted)'}}>/km</span>
             </div>
           </div>
           <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
@@ -712,25 +712,25 @@ export default function Einstellungen() {
               { label: '€ 0,38 (Fahrrad)', val: 0.38 },
             ].map(p => (
               <button key={p.val} onClick={() => setKmSatz(p.val)} style={{
-                padding:'6px 12px', borderRadius:8, border:'1px solid #e5e0d8',
-                background: kmSatz === p.val ? '#1a2a3a' : 'white',
-                color: kmSatz === p.val ? 'white' : '#555',
+                padding:'6px 12px', borderRadius:8, border:'1px solid var(--bf-border)',
+                background: kmSatz === p.val ? 'var(--bf-text)' : 'var(--bf-card)',
+                color: kmSatz === p.val ? 'var(--bf-card)' : 'var(--bf-text-soft)',
                 fontSize:11, fontWeight:600, cursor:'pointer',
               }}>{p.label}</button>
             ))}
           </div>
         </div>
-        <div style={{marginTop:12, padding:'10px 14px', background:'#fdf8f0', borderRadius:8, border:'1px solid #c8a96e33', fontSize:12, color:'#888'}}>
-          💡 Beispiel: 100 km × € {kmSatz.toFixed(4)} = <strong style={{color:'#c8a96e'}}>€ {(100 * kmSatz).toFixed(2)}</strong> KM-Geld (steuerfrei)
+        <div style={{marginTop:12, padding:'10px 14px', background:'var(--bf-soft)', borderRadius:8, border:'1px solid #c8a96e33', fontSize:12, color:'var(--bf-text-muted)'}}>
+          Beispiel: 100 km × € {kmSatz.toFixed(4)} = <strong style={{color:'#c8a96e'}}>€ {(100 * kmSatz).toFixed(2)}</strong> KM-Geld (steuerfrei)
         </div>
       </div>
 
       {/* ── PASSWORT ÄNDERN ────────────────────────────────────────── */}
-      <div style={{background:'white', borderRadius:10, border:'1px solid #e5e0d8', padding:'20px 22px', marginBottom:16}}>
-        <div style={{fontFamily:'Syne, sans-serif', fontSize:14, fontWeight:800, color:'#1a1a1a', marginBottom:4, display:'flex', alignItems:'center', gap:8}}>
-          🔐 Passwort ändern
+      <div style={{background:'var(--bf-card)', borderRadius:10, border:'1px solid var(--bf-border)', padding:'20px 22px', marginBottom:16}}>
+        <div style={{fontFamily:'Syne, sans-serif', fontSize:14, fontWeight:800, color:'var(--bf-text)', marginBottom:4, display:'flex', alignItems:'center', gap:8}}>
+          Passwort ändern
         </div>
-        <div style={{fontSize:12, color:'#aaa', marginBottom:18}}>Nach der Änderung wird eine Bestätigungs-E-Mail gesendet.</div>
+        <div style={{fontSize:12, color:'var(--bf-text-muted)', marginBottom:18}}>Nach der Änderung wird eine Bestätigungs-E-Mail gesendet.</div>
 
         {/* Aktuelles Passwort */}
         <div style={{marginBottom:12}}>
@@ -741,11 +741,11 @@ export default function Einstellungen() {
               placeholder="Dein aktuelles Passwort"
               value={pwAktuell}
               onChange={e => setPwAktuell(e.target.value)}
-              style={{...inputStyle, paddingRight:44}}
+              style={{...inputStyle, paddingRight:84}}
             />
             <button onClick={() => setPwSichtbar(s => ({...s, aktuell: !s.aktuell}))}
-              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#aaa', fontSize:16, padding:0}}>
-              {pwSichtbar.aktuell ? '🙈' : '👁️'}
+              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--bf-text-muted)', fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', padding:0}}>
+              {pwSichtbar.aktuell ? 'Verbergen' : 'Anzeigen'}
             </button>
           </div>
         </div>
@@ -760,13 +760,13 @@ export default function Einstellungen() {
               value={pwNeu}
               onChange={e => setPwNeu(e.target.value)}
               style={{
-                ...inputStyle, paddingRight:44,
+                ...inputStyle, paddingRight:84,
                 borderColor: pwNeu.length > 0 && pwNeu.length < 6 ? '#ef4444' : pwNeu.length >= 6 ? '#10b981' : undefined
               }}
             />
             <button onClick={() => setPwSichtbar(s => ({...s, neu: !s.neu}))}
-              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#aaa', fontSize:16, padding:0}}>
-              {pwSichtbar.neu ? '🙈' : '👁️'}
+              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--bf-text-muted)', fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', padding:0}}>
+              {pwSichtbar.neu ? 'Verbergen' : 'Anzeigen'}
             </button>
           </div>
           {/* Stärke-Anzeige */}
@@ -778,18 +778,18 @@ export default function Einstellungen() {
                 /[0-9]/.test(pwNeu),
                 /[^A-Za-z0-9]/.test(pwNeu),
               ].map((ok, i) => (
-                <div key={i} style={{flex:1, height:3, borderRadius:2, background: ok ? '#10b981' : '#e5e0d8', transition:'background 0.3s'}} />
+                <div key={i} style={{flex:1, height:3, borderRadius:2, background: ok ? '#10b981' : 'var(--bf-border)', transition:'background 0.3s'}} />
               ))}
             </div>
           )}
           {pwNeu.length > 0 && (
-            <div style={{fontSize:10, color:'#aaa', marginTop:4}}>
+            <div style={{fontSize:10, color:'var(--bf-text-muted)', marginTop:4}}>
               {pwNeu.length >= 6 && /[A-Z]/.test(pwNeu) && /[0-9]/.test(pwNeu) && /[^A-Za-z0-9]/.test(pwNeu)
-                ? '💪 Sehr stark'
+                ? 'Sehr stark'
                 : pwNeu.length >= 6 && (/[A-Z]/.test(pwNeu) || /[0-9]/.test(pwNeu))
-                ? '✅ Gut'
-                : pwNeu.length >= 6 ? '⚠️ Schwach – Groß/Kleinbuchstaben & Zahlen empfohlen'
-                : '❌ Zu kurz (min. 6 Zeichen)'}
+                ? 'Gut'
+                : pwNeu.length >= 6 ? 'Schwach – Groß/Kleinbuchstaben & Zahlen empfohlen'
+                : 'Zu kurz (min. 6 Zeichen)'}
             </div>
           )}
         </div>
@@ -804,20 +804,20 @@ export default function Einstellungen() {
               value={pwBestaetigt}
               onChange={e => setPwBestaetigt(e.target.value)}
               style={{
-                ...inputStyle, paddingRight:44,
+                ...inputStyle, paddingRight:84,
                 borderColor: pwBestaetigt.length > 0 ? (pwBestaetigt === pwNeu ? '#10b981' : '#ef4444') : undefined
               }}
             />
             <button onClick={() => setPwSichtbar(s => ({...s, best: !s.best}))}
-              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#aaa', fontSize:16, padding:0}}>
-              {pwSichtbar.best ? '🙈' : '👁️'}
+              style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--bf-text-muted)', fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', padding:0}}>
+              {pwSichtbar.best ? 'Verbergen' : 'Anzeigen'}
             </button>
           </div>
           {pwBestaetigt.length > 0 && pwBestaetigt !== pwNeu && (
-            <div style={{fontSize:11, color:'#ef4444', marginTop:4}}>❌ Passwörter stimmen nicht überein</div>
+            <div style={{fontSize:11, color:'#ef4444', marginTop:4}}>Passwörter stimmen nicht überein</div>
           )}
           {pwBestaetigt.length > 0 && pwBestaetigt === pwNeu && pwNeu.length >= 6 && (
-            <div style={{fontSize:11, color:'#10b981', marginTop:4}}>✅ Passwörter stimmen überein</div>
+            <div style={{fontSize:11, color:'#10b981', marginTop:4}}>Passwörter stimmen überein</div>
           )}
         </div>
 
@@ -837,22 +837,19 @@ export default function Einstellungen() {
           onClick={passwortAendern}
           disabled={pwLaden}
           style={{
-            background: pwLaden ? '#e5e0d8' : '#1a1a1a',
-            color: pwLaden ? '#aaa' : 'white',
-            border: 'none', borderRadius: 8, padding: '10px 22px',
-            fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700,
-            cursor: pwLaden ? 'not-allowed' : 'pointer',
-            display:'flex', alignItems:'center', gap:8
+            ...btnPrimary, padding: '10px 22px', fontSize: 13,
+            display:'flex', alignItems:'center', gap:8,
+            ...(pwLaden ? {opacity:0.6, cursor:'not-allowed'} : {})
           }}>
-          {pwLaden ? '⏳ Wird geändert...' : '🔐 Passwort ändern'}
+          {pwLaden ? 'Wird geändert...' : 'Passwort ändern'}
         </button>
       </div>
 
       {/* Vorschau */}
       {(firma || iban || logoBase64) && (
-        <div style={{background:'#f5f3ef', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
-          <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:12, color:'#888'}}>
-            👁️ PDF Vorschau Header
+        <div style={{background:'var(--bf-soft)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
+          <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:12, color:'var(--bf-text-muted)'}}>
+            PDF Vorschau Header
           </div>
           <div style={{background:'white', borderRadius:8, border:'1px solid #e5e0d8', padding:14, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16}}>
             <div style={{flexShrink:0}}>
@@ -881,7 +878,7 @@ export default function Einstellungen() {
           </div>
           {iban && (
             <div style={{background:'#f0f6fb', border:'1px solid #1e6a9e', borderLeftWidth:3, borderRadius:6, padding:'8px 12px', marginTop:10, fontSize:11, color:'#444'}}>
-              🏦 IBAN: <strong>{iban}</strong>{bic ? ` | BIC: ${bic}` : ''}{bank ? ` | ${bank}` : ''}
+              IBAN: <strong>{iban}</strong>{bic ? ` | BIC: ${bic}` : ''}{bank ? ` | ${bank}` : ''}
             </div>
           )}
         </div>
@@ -899,16 +896,14 @@ export default function Einstellungen() {
           <div style={{flex:1, minWidth:280}}>
 
             {/* ── Meine Presets ── */}
-            <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+            <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
-                <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, color:'#1a2a3a'}}>💾 Meine Presets</div>
+                <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, color:'var(--bf-text)'}}>Meine Presets</div>
                 <button onClick={() => setPresetSpeichernOffen(o => !o)} style={{
-                  padding:'5px 12px', borderRadius:7, border:'none',
-                  background: presetSpeichernOffen ? '#e5e0d8' : layout.akzentFarbe,
-                  color: presetSpeichernOffen ? '#666' : 'white',
-                  fontSize:11, fontWeight:700, cursor:'pointer', transition:'all 0.15s',
+                  ...(presetSpeichernOffen ? btnSecondary : btnPrimary),
+                  padding:'5px 12px', fontSize:11, transition:'all 0.15s',
                 }}>
-                  {presetSpeichernOffen ? '✕ Abbrechen' : '+ Aktuelles speichern'}
+                  {presetSpeichernOffen ? 'Abbrechen' : '+ Aktuelles speichern'}
                 </button>
               </div>
 
@@ -924,19 +919,17 @@ export default function Einstellungen() {
                     autoFocus
                   />
                   <button onClick={presetSpeichern} disabled={!presetName.trim() || presetLaden} style={{
-                    padding:'7px 14px', borderRadius:7, border:'none', whiteSpace:'nowrap',
-                    background: presetName.trim() ? layout.akzentFarbe : '#e5e0d8',
-                    color: presetName.trim() ? 'white' : '#aaa',
-                    fontSize:12, fontWeight:700, cursor: presetName.trim() ? 'pointer' : 'not-allowed',
+                    ...btnPrimary, padding:'7px 14px', whiteSpace:'nowrap',
+                    ...(!presetName.trim() || presetLaden ? {opacity:0.5, cursor:'not-allowed'} : {}),
                   }}>
-                    {presetLaden ? '⏳' : '💾 Speichern'}
+                    {presetLaden ? 'Speichern...' : 'Speichern'}
                   </button>
                 </div>
               )}
 
               {/* Preset-Liste */}
               {presets.length === 0 ? (
-                <div style={{fontSize:11, color:'#bbb', textAlign:'center', padding:'12px 0'}}>
+                <div style={{fontSize:11, color:'var(--bf-text-muted)', textAlign:'center', padding:'12px 0'}}>
                   Noch keine Presets gespeichert
                 </div>
               ) : (
@@ -948,11 +941,11 @@ export default function Einstellungen() {
                       style={{
                         display:'flex', alignItems:'center', gap:10,
                         padding:'9px 12px', borderRadius:8, cursor:'pointer',
-                        border:'1.5px solid #e5e0d8', background:'#faf8f5',
+                        border:'1.5px solid var(--bf-border)', background:'var(--bf-soft)',
                         transition:'all 0.15s',
                       }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = layout.akzentFarbe)}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e0d8')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--bf-border)')}
                     >
                       {/* Farbvorschau */}
                       <div style={{display:'flex', gap:3, flexShrink:0}}>
@@ -961,17 +954,17 @@ export default function Einstellungen() {
                         <div style={{width:13, height:13, borderRadius:'50%', background: p.layout?.dunkelFarbe || '#1a2a3a', boxShadow:'0 1px 3px rgba(0,0,0,0.2)'}} />
                       </div>
                       {/* Name */}
-                      <span style={{flex:1, fontSize:13, fontWeight:600, color:'#1a2a3a'}}>{p.name}</span>
+                      <span style={{flex:1, fontSize:13, fontWeight:600, color:'var(--bf-text)'}}>{p.name}</span>
                       {/* Datum */}
-                      <span style={{fontSize:10, color:'#bbb', flexShrink:0}}>
+                      <span style={{fontSize:10, color:'var(--bf-text-muted)', flexShrink:0}}>
                         {new Date(p.createdAt).toLocaleDateString('de-AT')}
                       </span>
                       {/* Löschen */}
                       <button
                         onClick={e => { e.stopPropagation(); presetLoeschen(p.id) }}
-                        style={{background:'none', border:'none', color:'#ccc', cursor:'pointer', fontSize:16, padding:'0 2px', lineHeight:1, flexShrink:0}}
+                        style={{background:'none', border:'none', color:'var(--bf-text-muted)', cursor:'pointer', fontSize:16, padding:'0 2px', lineHeight:1, flexShrink:0}}
                         onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--bf-text-muted)')}
                       >✕</button>
                     </div>
                   ))}
@@ -980,15 +973,15 @@ export default function Einstellungen() {
             </div>
 
             {/* ── Layout-Zuordnung ── */}
-            <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
-              <div style={{...labelStyle, marginBottom:8}}>📌 Layout-Zuordnung</div>
-              <div style={{fontSize:11, color:'#aaa', marginBottom:14, lineHeight:1.5}}>
+            <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
+              <div style={{...labelStyle, marginBottom:8}}>Layout-Zuordnung</div>
+              <div style={{fontSize:11, color:'var(--bf-text-muted)', marginBottom:14, lineHeight:1.5}}>
                 Welches Preset soll für Rechnungen bzw. Angebote verwendet werden?
               </div>
 
               {/* Rechnungen */}
               <div style={{marginBottom:12}}>
-                <label style={labelStyle}>🧾 Rechnungen</label>
+                <label style={labelStyle}>Rechnungen</label>
                 <select
                   value={zuordnungR ?? ''}
                   onChange={e => setZuordnungR(e.target.value ? Number(e.target.value) : null)}
@@ -1003,7 +996,7 @@ export default function Einstellungen() {
 
               {/* Angebote */}
               <div style={{marginBottom:14}}>
-                <label style={labelStyle}>📋 Angebote</label>
+                <label style={labelStyle}>Angebote</label>
                 <select
                   value={zuordnungA ?? ''}
                   onChange={e => setZuordnungA(e.target.value ? Number(e.target.value) : null)}
@@ -1020,18 +1013,15 @@ export default function Einstellungen() {
                 onClick={zuordnungSpeichern}
                 disabled={zuordnungLaden}
                 style={{
-                  width:'100%', padding:'9px', borderRadius:8, border:'none',
-                  background: zuordnungLaden ? '#e5e0d8' : layout.akzentFarbe,
-                  color: zuordnungLaden ? '#aaa' : 'white',
-                  fontWeight:700, fontSize:12, cursor: zuordnungLaden ? 'not-allowed' : 'pointer',
-                  fontFamily:'Syne, sans-serif',
+                  ...btnPrimary, width:'100%', padding:'9px',
+                  ...(zuordnungLaden ? {opacity:0.6, cursor:'not-allowed'} : {}),
                 }}>
-                {zuordnungLaden ? '⏳ Speichern...' : '✅ Zuordnung speichern'}
+                {zuordnungLaden ? 'Speichern...' : 'Zuordnung speichern'}
               </button>
             </div>
 
             {/* Preset Themes */}
-            <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+            <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
               <div style={{...labelStyle, marginBottom:12}}>Design-Themes</div>
               <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
                 {THEMES.map(t => (
@@ -1042,7 +1032,7 @@ export default function Einstellungen() {
                     style={{
                       display:'flex', flexDirection:'column', alignItems:'center', gap:6,
                       border: layout.theme === t.name ? `2px solid ${t.akzentFarbe}` : '2px solid transparent',
-                      borderRadius:10, padding:'8px 10px', cursor:'pointer', background:'#faf8f5',
+                      borderRadius:10, padding:'8px 10px', cursor:'pointer', background:'var(--bf-soft)',
                       transition:'all 0.15s'
                     }}>
                     <div style={{display:'flex', gap:3}}>
@@ -1050,34 +1040,34 @@ export default function Einstellungen() {
                       <div style={{width:18, height:18, borderRadius:'50%', background:t.goldFarbe}} />
                       <div style={{width:18, height:18, borderRadius:'50%', background:t.dunkelFarbe}} />
                     </div>
-                    <div style={{fontSize:10, fontWeight:700, color: layout.theme === t.name ? t.akzentFarbe : '#888'}}>{t.name}</div>
+                    <div style={{fontSize:10, fontWeight:700, color: layout.theme === t.name ? t.akzentFarbe : 'var(--bf-text-muted)'}}>{t.name}</div>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Farben + Logo-Position */}
-            <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+            <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
               {/* Farbpicker */}
               <div style={{marginBottom:16}}>
                 <div style={{...labelStyle}}>Farben</div>
                 <div style={{display:'flex', gap:12}}>
                   <div>
-                    <div style={{fontSize:10, color:'#aaa', marginBottom:4}}>Akzentfarbe</div>
+                    <div style={{fontSize:10, color:'var(--bf-text-muted)', marginBottom:4}}>Akzentfarbe</div>
                     <div style={{display:'flex', alignItems:'center', gap:8}}>
                       <input type="color" value={layout.akzentFarbe}
                         onChange={e => setLayout(prev => ({ ...prev, akzentFarbe: e.target.value, theme: 'Custom' }))}
                         style={{width:44, height:36, border:'none', borderRadius:8, cursor:'pointer', padding:2, background:'none'}} />
-                      <span style={{fontSize:11, color:'#666', fontFamily:'monospace'}}>{layout.akzentFarbe}</span>
+                      <span style={{fontSize:11, color:'var(--bf-text-soft)', fontFamily:'monospace'}}>{layout.akzentFarbe}</span>
                     </div>
                   </div>
                   <div>
-                    <div style={{fontSize:10, color:'#aaa', marginBottom:4}}>Sekundärfarbe</div>
+                    <div style={{fontSize:10, color:'var(--bf-text-muted)', marginBottom:4}}>Sekundärfarbe</div>
                     <div style={{display:'flex', alignItems:'center', gap:8}}>
                       <input type="color" value={layout.goldFarbe}
                         onChange={e => setLayout(prev => ({ ...prev, goldFarbe: e.target.value, theme: 'Custom' }))}
                         style={{width:44, height:36, border:'none', borderRadius:8, cursor:'pointer', padding:2, background:'none'}} />
-                      <span style={{fontSize:11, color:'#666', fontFamily:'monospace'}}>{layout.goldFarbe}</span>
+                      <span style={{fontSize:11, color:'var(--bf-text-soft)', fontFamily:'monospace'}}>{layout.goldFarbe}</span>
                     </div>
                   </div>
                 </div>
@@ -1090,11 +1080,11 @@ export default function Einstellungen() {
                     <button key={pos} onClick={() => setLayout(prev => ({ ...prev, logoPosition: pos }))}
                       style={{
                         flex:1, padding:'8px 4px', borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:700,
-                        border: layout.logoPosition === pos ? `2px solid ${layout.akzentFarbe}` : '1.5px solid #e5e0d8',
-                        background: layout.logoPosition === pos ? layout.akzentFarbe + '15' : 'white',
-                        color: layout.logoPosition === pos ? layout.akzentFarbe : '#888',
+                        border: layout.logoPosition === pos ? `2px solid ${layout.akzentFarbe}` : '1.5px solid var(--bf-border)',
+                        background: layout.logoPosition === pos ? layout.akzentFarbe + '15' : 'var(--bf-card)',
+                        color: layout.logoPosition === pos ? layout.akzentFarbe : 'var(--bf-text-muted)',
                       }}>
-                      {pos === 'links' ? '⬅ Links' : pos === 'mitte' ? '↕ Mitte' : 'Rechts ➡'}
+                      {pos === 'links' ? 'Links' : pos === 'mitte' ? 'Mitte' : 'Rechts'}
                     </button>
                   ))}
                 </div>
@@ -1102,7 +1092,7 @@ export default function Einstellungen() {
             </div>
 
             {/* Maße & Schriftgrößen */}
-            <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+            <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
               <div style={{...labelStyle, marginBottom:12}}>Maße & Schriftgrößen</div>
 
               <div style={{marginBottom:12}}>
@@ -1146,7 +1136,7 @@ export default function Einstellungen() {
               ].map(s => (
                 <div key={s.key} style={{marginBottom:8}}>
                   <div style={{display:'flex', justifyContent:'space-between', marginBottom:3}}>
-                    <span style={{fontSize:11, color:'#888'}}>{s.label}</span>
+                    <span style={{fontSize:11, color:'var(--bf-text-muted)'}}>{s.label}</span>
                     <span style={{fontSize:11, fontWeight:700, color:layout.akzentFarbe}}>{layout[s.key]} pt</span>
                   </div>
                   <input type="range" min={s.min} max={s.max} step={s.step} value={layout[s.key]}
@@ -1157,36 +1147,35 @@ export default function Einstellungen() {
             </div>
 
             {/* Schriftart hochladen */}
-            <div style={{background:'white', borderRadius:12, border:'1px solid #e5e0d8', padding:20, marginBottom:16}}>
+            <div style={{background:'var(--bf-card)', borderRadius:12, border:'1px solid var(--bf-border)', padding:20, marginBottom:16}}>
               <div style={{...labelStyle, marginBottom:10}}>Eigene Schriftart</div>
               <input ref={schriftRef} type="file" accept=".ttf,.otf,.woff,.woff2" style={{display:'none'}} onChange={schriftHochladen} />
               {schriftName ? (
                 <div style={{display:'flex', alignItems:'center', gap:8, padding:'8px 12px', background:'#f0fdf4', borderRadius:8, border:'1px solid #bbf7d0'}}>
-                  <span style={{fontSize:18}}>🔤</span>
                   <span style={{flex:1, fontSize:12, fontWeight:600, color:'#065f46'}}>{schriftName}</span>
                   <button onClick={schriftLoeschen} style={{background:'none', border:'none', color:'#ef4444', cursor:'pointer', fontSize:16, padding:0}}>✕</button>
                 </div>
               ) : (
                 <button onClick={() => schriftRef.current?.click()} disabled={schriftLaden}
-                  style={{padding:'8px 14px', borderRadius:8, border:'1.5px dashed #e5e0d8', background:'#faf8f5', cursor:'pointer', fontSize:12, color:'#888', width:'100%', textAlign:'left'}}>
-                  {schriftLaden ? '⏳ Wird hochgeladen...' : '+ TTF / OTF / WOFF hochladen'}
+                  style={{padding:'8px 14px', borderRadius:8, border:'1.5px dashed var(--bf-border)', background:'var(--bf-soft)', cursor:'pointer', fontSize:12, color:'var(--bf-text-muted)', width:'100%', textAlign:'left'}}>
+                  {schriftLaden ? 'Wird hochgeladen...' : '+ TTF / OTF / WOFF hochladen'}
                 </button>
               )}
-              <div style={{fontSize:10, color:'#bbb', marginTop:4}}>Max 2MB · wird in alle PDFs eingebettet</div>
+              <div style={{fontSize:10, color:'var(--bf-text-muted)', marginTop:4}}>Max 2MB · wird in alle PDFs eingebettet</div>
             </div>
 
             {/* KI Design */}
-            <div style={{background:'#fdf8f0', borderRadius:10, padding:14, border:`1px solid ${GOLD}44`, marginBottom:16}}>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:12, fontWeight:700, color:GOLD, marginBottom:8}}>✨ KI Design Generator</div>
+            <div style={{background:'var(--bf-soft)', borderRadius:10, padding:14, border:`1px solid ${GOLD}44`, marginBottom:16}}>
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:12, fontWeight:700, color:GOLD, marginBottom:8}}>KI Design Generator</div>
               <textarea
                 value={kiText}
                 onChange={e => setKiText(e.target.value)}
                 placeholder='z.B. "modern, dunkel, minimalistisch" oder "freundlich, grün, nachhaltig"'
-                style={{width:'100%', padding:'8px 10px', borderRadius:8, border:'1px solid #e8c98e', fontSize:12, resize:'none', outline:'none', fontFamily:'DM Sans, sans-serif', minHeight:56, background:'white', boxSizing:'border-box'}}
+                style={{width:'100%', padding:'8px 10px', borderRadius:8, border:'1px solid #e8c98e', fontSize:12, resize:'none', outline:'none', fontFamily:'DM Sans, sans-serif', minHeight:56, background:'var(--bf-input-bg)', color:'var(--bf-text)', boxSizing:'border-box'}}
               />
               <button onClick={kiDesign} disabled={kiLaden || !kiText.trim()}
-                style={{marginTop:8, width:'100%', padding:'9px', borderRadius:8, border:'none', background:kiLaden ? '#e5e0d8' : GOLD, color: kiLaden ? '#aaa' : '#0a0a0a', fontWeight:800, fontSize:12, cursor: kiLaden ? 'not-allowed' : 'pointer', fontFamily:'Syne, sans-serif'}}>
-                {kiLaden ? '⏳ KI generiert...' : '✨ Design erstellen lassen'}
+                style={{marginTop:8, width:'100%', padding:'9px', borderRadius:8, border:'none', background:kiLaden ? 'var(--bf-soft)' : GOLD, color: kiLaden ? 'var(--bf-text-muted)' : '#0a0a0a', fontWeight:800, fontSize:12, cursor: kiLaden ? 'not-allowed' : 'pointer', fontFamily:'Syne, sans-serif'}}>
+                {kiLaden ? 'KI generiert...' : 'Design erstellen lassen'}
               </button>
 
               {/* Trennlinie */}
@@ -1195,17 +1184,17 @@ export default function Einstellungen() {
               {/* Farben aus Logo */}
               {logoBase64 && (
                 <button onClick={kiLogoFarben} disabled={kiLogoLaden}
-                  style={{width:'100%', padding:'8px', borderRadius:8, border:`1px dashed ${GOLD}`, background: kiLogoLaden ? '#fdf8ef' : 'white', color:'#b8860b', fontWeight:700, fontSize:12, cursor: kiLogoLaden ? 'not-allowed' : 'pointer', marginBottom:8}}>
-                  {kiLogoLaden ? '⏳ Analysiere Logo...' : '🎨 Farben aus Logo erkennen'}
+                  style={{width:'100%', padding:'8px', borderRadius:8, border:`1px dashed ${GOLD}`, background: kiLogoLaden ? 'var(--bf-soft)' : 'var(--bf-card)', color:'#b8860b', fontWeight:700, fontSize:12, cursor: kiLogoLaden ? 'not-allowed' : 'pointer', marginBottom:8}}>
+                  {kiLogoLaden ? 'Analysiere Logo...' : 'Farben aus Logo erkennen'}
                 </button>
               )}
 
               {/* Design aus Bild */}
               <button onClick={() => bildAnalyseRef.current?.click()} disabled={kiBildLaden}
-                style={{width:'100%', padding:'8px', borderRadius:8, border:'1px dashed #6366f1', background: kiBildLaden ? '#f0f0ff' : 'white', color:'#6366f1', fontWeight:700, fontSize:12, cursor: kiBildLaden ? 'not-allowed' : 'pointer'}}>
-                {kiBildLaden ? '⏳ Analysiere Dokument...' : '📄 Design aus Bild übernehmen'}
+                style={{width:'100%', padding:'8px', borderRadius:8, border:'1px dashed #6366f1', background: kiBildLaden ? 'var(--bf-soft)' : 'var(--bf-card)', color:'#6366f1', fontWeight:700, fontSize:12, cursor: kiBildLaden ? 'not-allowed' : 'pointer'}}>
+                {kiBildLaden ? 'Analysiere Dokument...' : 'Design aus Bild übernehmen'}
               </button>
-              <div style={{fontSize:10, color:'#bbb', marginTop:4}}>Screenshot einer Rechnung/Angebot hochladen</div>
+              <div style={{fontSize:10, color:'var(--bf-text-muted)', marginTop:4}}>Screenshot einer Rechnung/Angebot hochladen</div>
               <input ref={bildAnalyseRef} type="file" accept="image/png,image/jpeg" style={{display:'none'}} onChange={kiBildAnalyse} />
             </div>
 
@@ -1213,21 +1202,19 @@ export default function Einstellungen() {
 
           {/* ── Rechte Spalte: Große Live-Vorschau ── */}
           <div style={{flexShrink:0, position:'sticky', top:20, alignSelf:'flex-start'}}>
-            <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:10, color:'#1a2a3a'}}>
-              📄 Live-Vorschau
+            <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:10, color:'var(--bf-text)'}}>
+              Live-Vorschau
             </div>
             <LiveVorschau />
-            <div style={{fontSize:10, color:'#bbb', textAlign:'center', marginTop:8}}>Live-Vorschau (nicht druckgenau)</div>
+            <div style={{fontSize:10, color:'var(--bf-text-muted)', textAlign:'center', marginTop:8}}>Live-Vorschau (nicht druckgenau)</div>
             <button
               onClick={speichern}
               disabled={laden}
               style={{
-                marginTop:12, width:'100%', padding:'11px', borderRadius:8, border:'none',
-                background: gespeichert ? '#2d6a4f' : '#1a2a3a',
-                color:'white', fontWeight:800, fontSize:13, cursor:'pointer',
-                fontFamily:'Syne, sans-serif',
+                ...btnPrimary, marginTop:12, width:'100%', padding:'11px', fontSize:13,
+                ...(gespeichert ? {background:'#10b981', boxShadow:'none'} : {}),
               }}>
-              {laden ? '⏳ Speichern...' : gespeichert ? '✅ Gespeichert!' : '💾 Layout speichern'}
+              {laden ? 'Speichern...' : gespeichert ? 'Gespeichert!' : 'Layout speichern'}
             </button>
           </div>
 
@@ -1240,11 +1227,12 @@ export default function Einstellungen() {
 
 const labelStyle: React.CSSProperties = {
   display:'block', fontSize:11, textTransform:'uppercase',
-  letterSpacing:0.8, color:'#888', fontWeight:600, marginBottom:5
+  letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:600, marginBottom:5
 }
 
 const inputStyle: React.CSSProperties = {
-  width:'100%', padding:'9px 12px', border:'1px solid #e5e0d8',
+  width:'100%', padding:'9px 12px', border:'1px solid var(--bf-input-border)',
   borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none',
+  background:'var(--bf-input-bg)', color:'var(--bf-text)',
   boxSizing:'border-box'
 }

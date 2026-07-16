@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
+import { StatusChip, btnPrimary, btnSecondary } from '../ui/theme'
 
 const GOLD  = '#c8a96e'
 const GRUEN = '#10b981'
@@ -275,7 +276,7 @@ export default function GUV() {
         .total td { font-weight: bold; background: #f0ece4 !important; border-top: 2px solid #1a2a3a; }
         @media print { body { padding: 10px; } }
       </style></head><body>
-      <h1>📊 G&amp;V Abrechnung ${jahr}</h1>
+      <h1>G&amp;V Abrechnung ${jahr}</h1>
       <div class="meta">Erstellt: ${new Date().toLocaleDateString('de-AT')} &nbsp;·&nbsp; ${gefiltert.length} Einträge &nbsp;·&nbsp; Filter: ${filter === 'alle' ? 'Alle' : filter === 'einnahme' ? 'Einnahmen' : 'Ausgaben'}</div>
       <div class="summary">
         <div class="sbox" style="background:#f0fdf4;border:1px solid #bbf7d0">
@@ -287,7 +288,7 @@ export default function GUV() {
           <div class="sbetrag" style="color:#dc2626">€ ${fmt(sumABrutto)}</div>
         </div>
         <div class="sbox" style="background:#fdf8f0;border:1px solid #e8c98e">
-          <div class="slabel">${gewinn >= 0 ? '✅ Gewinn' : '❌ Verlust'}</div>
+          <div class="slabel">${gewinn >= 0 ? 'Gewinn' : 'Verlust'}</div>
           <div class="sbetrag" style="color:${gewinn >= 0 ? '#854d0e' : '#dc2626'}">€ ${fmt(Math.abs(gewinn))}</div>
         </div>
         <div class="sbox" style="background:#f0f0fe;border:1px solid #c7d2fe">
@@ -553,11 +554,11 @@ export default function GUV() {
 
   // ── Styles ────────────────────────────────────────────────────────────────
   const card: React.CSSProperties = {
-    background: 'white',
+    background: 'var(--bf-card)',
     borderRadius: 16,
     padding: '20px',
-    border: '1px solid #f0ece4',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+    border: '1px solid var(--bf-border)',
+    boxShadow: 'var(--bf-shadow)',
   }
 
   return (
@@ -572,11 +573,11 @@ export default function GUV() {
       <div style={{ marginBottom: 24 }}>
         <h2 style={{
           fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 20 : 24,
-          fontWeight: 800, margin: 0, color: '#1a2a3a',
+          fontWeight: 800, margin: 0, color: 'var(--bf-text)',
         }}>
-          📊 Gewinn & Verlust
+          Gewinn & Verlust
         </h2>
-        <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 4 }}>
           {einnahmen.length} Einnahmen · {ausgaben.length} Ausgaben · Jahr {jahr}
         </div>
 
@@ -588,8 +589,8 @@ export default function GUV() {
               fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700,
               background: j === jahr
                 ? `linear-gradient(135deg, ${GOLD}, #e8c98e)`
-                : '#f4f1eb',
-              color: j === jahr ? '#0a0a0a' : '#888',
+                : 'var(--bf-soft)',
+              color: j === jahr ? '#0a0a0a' : 'var(--bf-text-muted)',
               boxShadow: j === jahr ? '0 4px 14px rgba(200,169,110,0.35)' : 'none',
               transition: 'all 0.2s',
             }}>{j}</button>
@@ -612,8 +613,8 @@ export default function GUV() {
           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 17 : 21, fontWeight: 800, color: GRUEN, lineHeight: 1.1 }}>
             € {fmt(sumEBrutto)}
           </div>
-          <div style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>Netto € {fmt(sumENetto)}</div>
-          <div style={{ fontSize: 11, color: '#ccc' }}>MwSt € {fmt(sumEMwst)}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 6 }}>Netto € {fmt(sumENetto)}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>MwSt € {fmt(sumEMwst)}</div>
         </div>
 
         {/* Ausgaben */}
@@ -624,32 +625,32 @@ export default function GUV() {
           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 17 : 21, fontWeight: 800, color: ROT, lineHeight: 1.1 }}>
             € {fmt(sumABrutto)}
           </div>
-          <div style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>Netto € {fmt(sumANetto)}</div>
-          <div style={{ fontSize: 11, color: '#ccc' }}>MwSt € {fmt(sumAMwst)}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 6 }}>Netto € {fmt(sumANetto)}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>MwSt € {fmt(sumAMwst)}</div>
         </div>
 
         {/* Gewinn / Verlust */}
         <div style={{ ...card, borderTop: `3px solid ${gewinnNetto >= 0 ? GOLD : ROT}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: gewinnNetto >= 0 ? GOLD : ROT, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-            {gewinnNetto >= 0 ? '✅ Gewinn' : '❌ Verlust'}
+            {gewinnNetto >= 0 ? 'Gewinn' : 'Verlust'}
           </div>
           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 17 : 21, fontWeight: 800, color: gewinnNetto >= 0 ? '#1a6a40' : ROT, lineHeight: 1.1 }}>
             € {fmt(Math.abs(gewinnNetto))}
           </div>
-          <div style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>Netto</div>
-          <div style={{ fontSize: 11, color: '#ccc' }}>Brutto € {fmt(Math.abs(gewinnBrutto))}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 6 }}>Netto</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>Brutto € {fmt(Math.abs(gewinnBrutto))}</div>
         </div>
 
         {/* MwSt-Saldo */}
         <div style={{ ...card, borderTop: `3px solid ${BLAU}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: BLAU, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-            📋 MwSt-Saldo
+            MwSt-Saldo
           </div>
           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 17 : 21, fontWeight: 800, color: mwstSaldo >= 0 ? BLAU : GRUEN, lineHeight: 1.1 }}>
             € {fmt(Math.abs(mwstSaldo))}
           </div>
-          <div style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>{mwstSaldo >= 0 ? 'Zahllast' : 'Guthaben'}</div>
-          <div style={{ fontSize: 11, color: '#ccc' }}>ans Finanzamt</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 6 }}>{mwstSaldo >= 0 ? 'Zahllast' : 'Guthaben'}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>ans Finanzamt</div>
         </div>
       </div>
 
@@ -664,24 +665,24 @@ export default function GUV() {
             {/* Header + Toggle */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
               <div>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#1a2a3a' }}>
-                  📊 Einnahmen & Ausgaben – {jahr}
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: 'var(--bf-text)' }}>
+                  Einnahmen & Ausgaben – {jahr}
                 </div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
+                <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 3 }}>
                   {diagrammAnsicht === 'jahr'
                     ? '12-Monats-Balkendiagramm · Brutto-Beträge · Hover für Details'
                     : `Monatsdetail: ${MONATSNAMEN_LANG[diagrammMonat - 1]} ${jahr}`}
                 </div>
               </div>
               {/* Toggle Jahr / Monat */}
-              <div style={{ display: 'flex', background: '#f4f1eb', borderRadius: 10, padding: 3, gap: 2, flexShrink: 0 }}>
-                {([{ k: 'jahr', l: '📅 Jahresansicht' }, { k: 'monat', l: '📆 Monatsdetail' }] as const).map(t => (
+              <div style={{ display: 'flex', background: 'var(--bf-soft)', borderRadius: 10, padding: 3, gap: 2, flexShrink: 0 }}>
+                {([{ k: 'jahr', l: 'Jahresansicht' }, { k: 'monat', l: 'Monatsdetail' }] as const).map(t => (
                   <button key={t.k} onClick={() => setDiagrammAnsicht(t.k)} style={{
                     padding: '7px 13px', borderRadius: 8, border: 'none', cursor: 'pointer',
                     fontSize: 12, fontWeight: 700,
-                    background: diagrammAnsicht === t.k ? 'white' : 'transparent',
-                    color: diagrammAnsicht === t.k ? '#1a2a3a' : '#aaa',
-                    boxShadow: diagrammAnsicht === t.k ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                    background: diagrammAnsicht === t.k ? 'var(--bf-card)' : 'transparent',
+                    color: diagrammAnsicht === t.k ? 'var(--bf-text)' : 'var(--bf-text-muted)',
+                    boxShadow: diagrammAnsicht === t.k ? 'var(--bf-shadow)' : 'none',
                     transition: 'all 0.2s',
                   }}>{t.l}</button>
                 ))}
@@ -695,7 +696,7 @@ export default function GUV() {
                   {/* Y-Achse */}
                   <div style={{ display: 'flex', flexDirection: 'column-reverse', justifyContent: 'space-between', height: CHART_H + 22, paddingBottom: 22, marginRight: 8, flexShrink: 0 }}>
                     {[0,1,2,3,4].map(i => (
-                      <div key={i} style={{ fontSize: 9, color: '#ccc', textAlign: 'right', minWidth: 38, lineHeight: 1 }}>
+                      <div key={i} style={{ fontSize: 9, color: 'var(--bf-text-muted)', textAlign: 'right', minWidth: 38, lineHeight: 1 }}>
                         {i === 0 ? '€ 0' : `€ ${(maxWertJahr * i / 4).toLocaleString('de-AT', { maximumFractionDigits: 0 })}`}
                       </div>
                     ))}
@@ -708,7 +709,7 @@ export default function GUV() {
                       <div key={i} style={{
                         position: 'absolute', left: 0, right: 0,
                         bottom: 22 + Math.round(p * CHART_H),
-                        height: 1, background: i === 0 ? '#e5e0d8' : '#f4f1eb', zIndex: 0,
+                        height: 1, background: i === 0 ? 'var(--bf-border)' : 'var(--bf-divider)', zIndex: 0,
                       }} />
                     ))}
 
@@ -767,7 +768,7 @@ export default function GUV() {
                             {/* X-Label */}
                             <div style={{
                               fontSize: isMobile ? 8 : 10, marginTop: 5,
-                              color: istAktMonat ? BLAU : m.hatDaten ? '#666' : '#ccc',
+                              color: istAktMonat ? BLAU : m.hatDaten ? 'var(--bf-text-soft)' : 'var(--bf-text-muted)',
                               fontWeight: istAktMonat ? 800 : 600,
                             }}>{m.label}</div>
                             {istAktMonat && <div style={{ width: 4, height: 4, borderRadius: '50%', background: BLAU, marginTop: 1 }} />}
@@ -783,26 +784,26 @@ export default function GUV() {
                   <div style={{ display: 'flex', gap: 18 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                       <div style={{ width: 12, height: 12, borderRadius: 3, background: GRUEN }} />
-                      <span style={{ color: '#555', fontWeight: 600 }}>Einnahmen</span>
+                      <span style={{ color: 'var(--bf-text-soft)', fontWeight: 600 }}>Einnahmen</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                       <div style={{ width: 12, height: 12, borderRadius: 3, background: ROT }} />
-                      <span style={{ color: '#555', fontWeight: 600 }}>Ausgaben</span>
+                      <span style={{ color: 'var(--bf-text-soft)', fontWeight: 600 }}>Ausgaben</span>
                     </div>
                     {jahr === aktuellesJahr && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                         <div style={{ width: 4, height: 4, borderRadius: '50%', background: BLAU }} />
-                        <span style={{ color: '#aaa' }}>aktueller Monat</span>
+                        <span style={{ color: 'var(--bf-text-muted)' }}>aktueller Monat</span>
                       </div>
                     )}
                   </div>
-                  <span style={{ fontSize: 11, color: '#ccc' }}>← Hover für Details</span>
+                  <span style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>← Hover für Details</span>
                 </div>
 
                 {/* Gewinn/Verlust Mini-Chips je Monat */}
                 {monatsDaten.some(m => m.hatDaten) && (
-                  <div style={{ marginTop: 14, padding: '12px 14px', background: '#faf8f5', borderRadius: 10 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                  <div style={{ marginTop: 14, padding: '12px 14px', background: 'var(--bf-soft)', borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
                       Gewinn / Verlust pro Monat (Netto)
                     </div>
                     <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -829,9 +830,9 @@ export default function GUV() {
                     <button key={i} onClick={() => setDiagrammMonat(m.monat)} style={{
                       padding: '6px 11px', borderRadius: 8, border: 'none', cursor: 'pointer',
                       fontSize: 11, fontWeight: 700,
-                      background: diagrammMonat === m.monat ? '#1a2a3a' : m.hatDaten ? '#f4f1eb' : '#fafafa',
-                      color:      diagrammMonat === m.monat ? 'white'    : m.hatDaten ? '#555'    : '#ccc',
-                      boxShadow:  diagrammMonat === m.monat ? '0 3px 10px rgba(0,0,0,0.15)' : 'none',
+                      background: diagrammMonat === m.monat ? 'var(--bf-text)' : m.hatDaten ? 'var(--bf-soft)' : 'var(--bf-hover)',
+                      color:      diagrammMonat === m.monat ? 'var(--bf-card)' : m.hatDaten ? 'var(--bf-text-soft)' : 'var(--bf-text-muted)',
+                      boxShadow:  diagrammMonat === m.monat ? 'var(--bf-shadow)' : 'none',
                       position: 'relative',
                     }}>
                       {m.label}
@@ -848,8 +849,7 @@ export default function GUV() {
                   const monatA = monatEintraege.filter(e => e.typ === 'ausgabe')
 
                   if (monatEintraege.length === 0) return (
-                    <div style={{ textAlign: 'center', padding: '30px 16px', color: '#ccc' }}>
-                      <div style={{ fontSize: 40, marginBottom: 8 }}>📭</div>
+                    <div style={{ textAlign: 'center', padding: '30px 16px', color: 'var(--bf-text-muted)' }}>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>Keine Daten für {mDat.labelLang}</div>
                       <div style={{ fontSize: 11, marginTop: 4 }}>Monate mit Daten sind mit ● markiert</div>
                     </div>
@@ -873,24 +873,24 @@ export default function GUV() {
                         <div style={{ background: `${GRUEN}12`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${GRUEN}22` }}>
                           <div style={{ fontSize: 10, color: GRUEN, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>↑ Einnahmen</div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: GRUEN }}>€ {fmt(mDat.einnahmen)}</div>
-                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>{monatE.length} Einträge</div>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 3 }}>{monatE.length} Einträge</div>
                         </div>
                         <div style={{ background: `${ROT}10`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${ROT}22` }}>
                           <div style={{ fontSize: 10, color: ROT, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>↓ Ausgaben</div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: ROT }}>€ {fmt(mDat.ausgaben)}</div>
-                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>{monatA.length} Einträge</div>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 3 }}>{monatA.length} Einträge</div>
                         </div>
-                        <div style={{ background: gewinnMonat >= 0 ? '#fdf8f0' : '#fff5f5', borderRadius: 12, padding: '12px 16px', border: `1px solid ${gewinnMonat >= 0 ? GOLD : ROT}33`, gridColumn: isMobile ? '1 / -1' : 'auto' }}>
+                        <div style={{ background: gewinnMonat >= 0 ? `${GOLD}12` : `${ROT}10`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${gewinnMonat >= 0 ? GOLD : ROT}33`, gridColumn: isMobile ? '1 / -1' : 'auto' }}>
                           <div style={{ fontSize: 10, color: gewinnMonat >= 0 ? GOLD : ROT, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
-                            {gewinnMonat >= 0 ? '✅ Gewinn' : '❌ Verlust'}
+                            {gewinnMonat >= 0 ? 'Gewinn' : 'Verlust'}
                           </div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: gewinnMonat >= 0 ? '#1a6a40' : ROT }}>€ {fmt(Math.abs(gewinnMonat))}</div>
-                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Brutto</div>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 3 }}>Brutto</div>
                         </div>
                       </div>
 
                       {/* Horizontale Balken nach Kategorie */}
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
                         Aufschlüsselung nach Kategorie
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -899,7 +899,7 @@ export default function GUV() {
                           .map(([kat, v]) => (
                           <div key={kat}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{kat}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--bf-text)' }}>{kat}</span>
                               <span style={{ fontSize: 12, display: 'flex', gap: 10 }}>
                                 {v.ein > 0 && <span style={{ color: GRUEN, fontWeight: 700 }}>+€ {fmt(v.ein)}</span>}
                                 {v.aus > 0 && <span style={{ color: ROT,   fontWeight: 700 }}>−€ {fmt(v.aus)}</span>}
@@ -930,7 +930,7 @@ export default function GUV() {
       {/* ── Kategorien-Chips ────────────────────────────────────────────────── */}
       {Object.keys(ausgabenNachKat).length > 0 && (
         <div style={{ ...card, marginBottom: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
             Ausgaben nach Kategorie
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -939,10 +939,10 @@ export default function GUV() {
               .map(([kat, summe]) => (
                 <div key={kat} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '6px 14px', background: '#fdf8f0',
+                  padding: '6px 14px', background: 'var(--bf-soft)',
                   borderRadius: 20, border: `1px solid ${GOLD}33`,
                 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1a2a3a' }}>{kat}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--bf-text)' }}>{kat}</span>
                   <span style={{ fontSize: 12, color: ROT, fontWeight: 700 }}>€ {fmt(summe)}</span>
                 </div>
               ))}
@@ -958,10 +958,11 @@ export default function GUV() {
           { key: 'ausgabe',  label: '↓ Ausgaben',  count: ausgaben.length },
         ].map(t => (
           <button key={t.key} onClick={() => setFilter(t.key as any)} style={{
-            padding: '7px 14px', borderRadius: 9, border: 'none', cursor: 'pointer',
+            ...btnSecondary,
+            padding: '7px 14px',
             fontSize: 12, fontWeight: 700,
-            background: filter === t.key ? '#1a2a3a' : '#f4f1eb',
-            color: filter === t.key ? 'white' : '#888',
+            background: filter === t.key ? 'var(--bf-text)' : 'var(--bf-soft)',
+            color: filter === t.key ? 'var(--bf-card)' : 'var(--bf-text-muted)',
             transition: 'all 0.2s',
           }}>
             {t.label} ({t.count})
@@ -971,32 +972,28 @@ export default function GUV() {
           <>
             <div style={{ flex: 1 }} />
             <button onClick={exportCSV} style={{
-              padding: '7px 13px', borderRadius: 9, border: '1px solid #e5e0d8',
-              background: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#555',
+              ...btnSecondary, padding: '7px 13px',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               CSV
             </button>
             <button onClick={exportBMD} style={{
-              padding: '7px 13px', borderRadius: 9, border: '1px solid #c7d2fe',
-              background: '#f0f0fe', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#4338ca',
+              ...btnSecondary, padding: '7px 13px',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               BMD
             </button>
             <button onClick={drucken} style={{
-              padding: '7px 13px', borderRadius: 9, border: '1px solid #e5e0d8',
-              background: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#555',
+              ...btnSecondary, padding: '7px 13px',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
               PDF
             </button>
             <button onClick={jahresabschlussPDF} style={{
-              padding: '7px 13px', borderRadius: 9, border: 'none',
-              background: GOLD, fontSize: 12, fontWeight: 700, cursor: 'pointer', color: 'white',
+              ...btnPrimary, padding: '7px 13px',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -1008,16 +1005,15 @@ export default function GUV() {
 
       {/* ── Liste ──────────────────────────────────────────────────────────── */}
       {laden ? (
-        <div style={{ textAlign: 'center', padding: 50, color: '#ccc' }}>Lädt...</div>
+        <div style={{ textAlign: 'center', padding: 50, color: 'var(--bf-text-muted)' }}>Lädt...</div>
       ) : gefiltert.length === 0 ? (
         <div style={{ ...card, textAlign: 'center', padding: '50px 24px' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
-          <div style={{ fontSize: 15, color: '#aaa', marginBottom: 6 }}>
+          <div style={{ fontSize: 15, color: 'var(--bf-text-muted)', marginBottom: 6 }}>
             Noch keine Einträge für {jahr}
           </div>
-          <div style={{ fontSize: 12, color: '#ccc' }}>
-            Bezahlte Rechnungen → ⬇ Gold-Button → G&V<br/>
-            Belege → ⬇ Gold-Button → G&V
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)' }}>
+            Bezahlte Rechnungen → Gold-Button → G&V<br/>
+            Belege → Gold-Button → G&V
           </div>
         </div>
       ) : (
@@ -1029,13 +1025,13 @@ export default function GUV() {
               display: 'grid',
               gridTemplateColumns: '100px 1fr 130px 90px 90px 100px 70px',
               padding: '8px 18px',
-              background: '#f8f6f2',
+              background: 'var(--bf-thead)',
               borderRadius: 10,
               gap: 8,
             }}>
               {['Datum', 'Bezeichnung', 'Kategorie', 'Netto', 'MwSt', 'Brutto', ''].map((h, i) => (
                 <div key={i} style={{
-                  fontSize: 10, fontWeight: 700, color: '#bbb',
+                  fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)',
                   textTransform: 'uppercase', letterSpacing: 0.7,
                   textAlign: i >= 3 && i <= 5 ? 'right' : 'left',
                 }}>{h}</div>
@@ -1048,17 +1044,17 @@ export default function GUV() {
             <div key={e.id}
               onClick={() => detailOeffnen(e)}
               style={{
-                background: 'white',
+                background: 'var(--bf-card)',
                 borderRadius: 12,
-                border: '1px solid #f0ece4',
+                border: '1px solid var(--bf-border)',
                 borderLeft: `4px solid ${e.typ === 'einnahme' ? GRUEN : ROT}`,
-                boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+                boxShadow: 'var(--bf-shadow)',
                 overflow: 'hidden',
                 cursor: 'pointer',
                 transition: 'box-shadow 0.15s, background 0.15s',
               }}
               onMouseEnter={ev => (ev.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)')}
-              onMouseLeave={ev => (ev.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.04)')}
+              onMouseLeave={ev => (ev.currentTarget.style.boxShadow = 'var(--bf-shadow)')}
             >
               {isMobile ? (
                 /* ── Mobile Karte ── */
@@ -1077,16 +1073,16 @@ export default function GUV() {
                         </span>
                       </div>
                       <div style={{
-                        fontSize: 13, fontWeight: 600, color: '#1a2a3a',
+                        fontSize: 13, fontWeight: 600, color: 'var(--bf-text)',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         marginBottom: 4,
                       }}>
                         {e.bezeichnung || '—'}
                       </div>
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 11, color: '#aaa' }}>
-                        <span>📅 {e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : '—'}</span>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 11, color: 'var(--bf-text-muted)' }}>
+                        <span>{e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : '—'}</span>
                         <span style={{
-                          background: '#fdf8f0', color: GOLD,
+                          background: 'var(--bf-soft)', color: GOLD,
                           padding: '1px 8px', borderRadius: 10,
                           border: `1px solid ${GOLD}33`, fontSize: 10, fontWeight: 600,
                         }}>{e.kategorie}</span>
@@ -1097,22 +1093,23 @@ export default function GUV() {
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <div style={{
                         fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800,
+                        fontVariantNumeric: 'tabular-nums',
                         color: e.typ === 'einnahme' ? GRUEN : ROT,
                       }}>
                         {e.typ === 'einnahme' ? '+' : '−'} € {fmt(Number(e.brutto))}
                       </div>
-                      <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 2 }}>
                         Netto € {fmt(Number(e.netto))}
                       </div>
                       {Number(e.mwst_betrag) > 0 && (
-                        <div style={{ fontSize: 11, color: '#ccc' }}>
+                        <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>
                           MwSt € {fmt(Number(e.mwst_betrag))}
                         </div>
                       )}
                       <div style={{ display: 'flex', gap: 6, marginTop: 6 }} onClick={ev => ev.stopPropagation()}>
                         {e.quelle_id && e.quelle !== 'manuell' && (
                           <button onClick={() => dateiOeffnen(e)} style={{
-                            background: 'none', border: '1px solid #e0ecff',
+                            background: 'none', border: '1px solid rgba(99,102,241,0.35)',
                             borderRadius: 6, color: BLAU, cursor: 'pointer',
                             fontSize: 11, padding: '3px 8px',
                             display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -1122,8 +1119,8 @@ export default function GUV() {
                           </button>
                         )}
                         <button onClick={() => loeschen(e.id)} style={{
-                          background: 'none', border: '1px solid #f0ece4',
-                          borderRadius: 6, color: '#ccc', cursor: 'pointer',
+                          background: 'none', border: '1px solid rgba(239,68,68,0.35)',
+                          borderRadius: 6, color: '#ef4444', cursor: 'pointer',
                           fontSize: 11, padding: '3px 8px',
                         }}>✕ entfernen</button>
                       </div>
@@ -1139,34 +1136,35 @@ export default function GUV() {
                   alignItems: 'center',
                   gap: 8,
                 }}>
-                  <div style={{ fontSize: 12, color: '#888' }}>
+                  <div style={{ fontSize: 12, color: 'var(--bf-text-muted)' }}>
                     {e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : '—'}
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{
-                      fontSize: 13, fontWeight: 600, color: '#1a2a3a',
+                      fontSize: 13, fontWeight: 600, color: 'var(--bf-text)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>{e.bezeichnung}</div>
                     {e.quelle !== 'manuell' && (
-                      <div style={{ fontSize: 10, color: '#bbb' }}>via {e.quelle}</div>
+                      <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>via {e.quelle}</div>
                     )}
                   </div>
                   <div>
                     <span style={{
                       fontSize: 11, padding: '3px 10px', borderRadius: 12,
-                      background: '#fdf8f0', color: GOLD,
+                      background: 'var(--bf-soft)', color: GOLD,
                       border: `1px solid ${GOLD}33`, whiteSpace: 'nowrap',
                     }}>{e.kategorie}</span>
                   </div>
-                  <div style={{ textAlign: 'right', fontSize: 13, color: '#666' }}>
+                  <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--bf-text-soft)', fontVariantNumeric: 'tabular-nums' }}>
                     € {fmt(Number(e.netto))}
                   </div>
-                  <div style={{ textAlign: 'right', fontSize: 13, color: '#aaa' }}>
+                  <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--bf-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
                     € {fmt(Number(e.mwst_betrag))}
                   </div>
                   <div style={{
                     textAlign: 'right',
                     fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800,
+                    fontVariantNumeric: 'tabular-nums',
                     color: e.typ === 'einnahme' ? GRUEN : ROT,
                   }}>
                     {e.typ === 'einnahme' ? '+' : '−'} € {fmt(Number(e.brutto))}
@@ -1178,13 +1176,13 @@ export default function GUV() {
                         title="Datei ansehen"
                         style={{
                           background: 'none', border: 'none',
-                          color: '#bbb', cursor: 'pointer', fontSize: 15,
+                          color: 'var(--bf-text-muted)', cursor: 'pointer', fontSize: 15,
                           width: 28, height: 28, borderRadius: 6,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           transition: 'all 0.15s',
                         }}
                         onMouseEnter={ev => (ev.currentTarget.style.color = BLAU)}
-                        onMouseLeave={ev => (ev.currentTarget.style.color = '#bbb')}
+                        onMouseLeave={ev => (ev.currentTarget.style.color = 'var(--bf-text-muted)')}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                       </button>
@@ -1194,13 +1192,13 @@ export default function GUV() {
                       title="Entfernen"
                       style={{
                         background: 'none', border: 'none',
-                        color: '#ddd', cursor: 'pointer', fontSize: 16,
+                        color: 'var(--bf-text-muted)', cursor: 'pointer', fontSize: 16,
                         width: 28, height: 28, borderRadius: 6,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.15s',
                       }}
                       onMouseEnter={ev => (ev.currentTarget.style.color = ROT)}
-                      onMouseLeave={ev => (ev.currentTarget.style.color = '#ddd')}
+                      onMouseLeave={ev => (ev.currentTarget.style.color = 'var(--bf-text-muted)')}
                     >✕</button>
                   </div>
                 </div>
@@ -1305,7 +1303,7 @@ export default function GUV() {
             zIndex: 1000, padding: 16,
           }} onClick={detailSchliessen}>
             <div style={{
-              background: 'white', borderRadius: 20,
+              background: 'var(--bf-card)', borderRadius: 20,
               width: '100%', maxWidth: isMobile ? 520 : 820,
               boxShadow: '0 24px 64px rgba(0,0,0,0.35)', overflow: 'hidden',
               maxHeight: '90vh', display: 'flex', flexDirection: 'column',
@@ -1313,19 +1311,12 @@ export default function GUV() {
             }} onClick={ev => ev.stopPropagation()}>
 
               {/* ── Header: hell wie Belegscanner ── */}
-              <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0ece4', display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-                  background: isEin ? '#d1fae5' : '#fee2e2',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-                }}>
-                  {isEin ? '💰' : '🛒'}
-                </div>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--bf-divider)', display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {e.bezeichnung || '—'}
                   </div>
-                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>
                     {e.datum ? new Date(e.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
                   </div>
                 </div>
@@ -1333,42 +1324,32 @@ export default function GUV() {
                   <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: isEin ? '#059669' : '#ef4444' }}>
                     {isEin ? '+' : '−'} € {fmt(Number(e.brutto))}
                   </div>
-                  <span style={{
-                    fontSize: 11, fontWeight: 800, marginTop: 4, display: 'inline-block',
-                    background: isEin ? '#d1fae5' : '#fee2e2',
-                    color: isEin ? '#065f46' : '#991b1b',
-                    padding: '2px 10px', borderRadius: 20,
-                  }}>
-                    {isEin ? '↑ Einnahme' : '↓ Ausgabe'}
+                  <span style={{ marginTop: 4, display: 'inline-block' }}>
+                    <StatusChip status={isEin ? 'Einnahme' : 'Ausgabe'} />
                   </span>
                 </div>
-                <button onClick={detailSchliessen} style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: '#555', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                <button onClick={detailSchliessen} style={{ background: 'var(--bf-soft)', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: 'var(--bf-text-soft)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
               </div>
 
               {/* ── Inhalt: Info links + Datei-Vorschau rechts ── */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', flex: 1, overflow: 'hidden' }}>
 
                 {/* Info-Felder – Icon-Box-Stil wie Belegscanner */}
-                <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 18, borderRight: isMobile ? 'none' : '1px solid #f0ece4' }}>
+                <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 18, borderRight: isMobile ? 'none' : '1px solid var(--bf-divider)' }}>
                   {([
-                    { icon: '🏢', bg: '#f0f0f0', label: 'Lieferant',    value: x.lieferant },
-                    { icon: '📂', bg: '#e8f0fe', label: 'Kategorie',    value: e.kategorie },
-                    { icon: '📅', bg: '#fff3e0', label: 'Datum',        value: e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : null },
-                    { icon: '#️⃣', bg: '#f3e5f5', label: 'Rechnungsnr.', value: x.rechnungsnummer },
-                    { icon: '💵', bg: '#e8f5e9', label: 'MwSt',         value: Number(e.mwst_betrag) > 0 ? `€ ${fmt(Number(e.mwst_betrag))}` : '0 % (Kleinunternehmer)' },
-                    { icon: '📝', bg: '#fce4ec', label: 'Notiz',        value: x.notiz },
-                    { icon: '📌', bg: '#f3f4f6', label: 'Quelle',       value: e.quelle === 'beleg' ? 'Belegscanner' : e.quelle === 'rechnung' ? 'Rechnung' : e.quelle === 'km' ? 'KM-Buch' : 'Manuell' },
-                  ] as { icon: string; bg: string; label: string; value: string | undefined | null }[])
+                    { label: 'Lieferant',    value: x.lieferant },
+                    { label: 'Kategorie',    value: e.kategorie },
+                    { label: 'Datum',        value: e.datum ? new Date(e.datum).toLocaleDateString('de-AT') : null },
+                    { label: 'Rechnungsnr.', value: x.rechnungsnummer },
+                    { label: 'MwSt',         value: Number(e.mwst_betrag) > 0 ? `€ ${fmt(Number(e.mwst_betrag))}` : '0 % (Kleinunternehmer)' },
+                    { label: 'Notiz',        value: x.notiz },
+                    { label: 'Quelle',       value: e.quelle === 'beleg' ? 'Belegscanner' : e.quelle === 'rechnung' ? 'Rechnung' : e.quelle === 'km' ? 'KM-Buch' : 'Manuell' },
+                  ] as { label: string; value: string | undefined | null }[])
                     .filter(r => r.value)
                     .map(r => (
-                      <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: r.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                          {r.icon}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', fontWeight: 700, marginBottom: 3 }}>{r.label}</div>
-                          <div style={{ fontSize: 14, color: '#1a2a3a', fontWeight: 600 }}>{r.value}</div>
-                        </div>
+                      <div key={r.label}>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--bf-text-muted)', fontWeight: 700, marginBottom: 3 }}>{r.label}</div>
+                        <div style={{ fontSize: 14, color: 'var(--bf-text)', fontWeight: 600 }}>{r.value}</div>
                       </div>
                     ))
                   }
@@ -1377,18 +1358,18 @@ export default function GUV() {
                   {x.buero_anteil != null && x.buero_anteil < 100 && x.betrag_gesamt != null && (
                     <div style={{ background: '#ede9fe', borderRadius: 10, padding: '12px 14px', border: '1px solid #c4b5fd' }}>
                       <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7c3aed', fontWeight: 700, marginBottom: 8 }}>
-                        🏢 Büro/Privat-Aufteilung
+                        Büro/Privat-Aufteilung
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                         <div>
-                          <div style={{ fontSize: 10, color: '#7c3aed', fontWeight: 700, marginBottom: 2 }}>🏢 Büroanteil ({x.buero_anteil}%)</div>
+                          <div style={{ fontSize: 10, color: '#7c3aed', fontWeight: 700, marginBottom: 2 }}>Büroanteil ({x.buero_anteil}%)</div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#4f46e5' }}>
                             € {fmt(x.betrag_gesamt * x.buero_anteil / 100)}
                           </div>
                           <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 1 }}>✓ wurde übertragen</div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 10, color: '#9333ea', fontWeight: 700, marginBottom: 2 }}>🏠 Privatanteil ({100 - x.buero_anteil}%)</div>
+                          <div style={{ fontSize: 10, color: '#9333ea', fontWeight: 700, marginBottom: 2 }}>Privatanteil ({100 - x.buero_anteil}%)</div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#9333ea' }}>
                             € {fmt(x.betrag_gesamt * (100 - x.buero_anteil) / 100)}
                           </div>
@@ -1408,34 +1389,31 @@ export default function GUV() {
                     fontSize: 14, fontWeight: 800, color: '#065f46',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}>
-                    ✅ In G&V eingetragen
+                    In G&V eingetragen
                   </div>
                 </div>
 
                 {/* Datei-Vorschau rechts */}
-                <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', background: '#faf8f5' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>📎 Beleg-Datei</div>
+                <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', background: 'var(--bf-soft)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8 }}>Beleg-Datei</div>
                   {detailDateiUrl ? (
                     <>
                       {x.datei_typ === 'application/pdf' ? (
                         <embed src={detailDateiUrl} type="application/pdf"
-                          style={{ width: '100%', flex: 1, minHeight: 280, borderRadius: 12, border: '1px solid #e5e0d8' }} />
+                          style={{ width: '100%', flex: 1, minHeight: 280, borderRadius: 12, border: '1px solid var(--bf-border)' }} />
                       ) : (
                         <img src={detailDateiUrl} alt="Vorschau"
-                          style={{ width: '100%', maxHeight: 380, objectFit: 'contain', borderRadius: 12, border: '1px solid #e5e0d8', background: 'white', cursor: 'zoom-in' }}
+                          style={{ width: '100%', maxHeight: 380, objectFit: 'contain', borderRadius: 12, border: '1px solid var(--bf-border)', background: 'var(--bf-card)', cursor: 'zoom-in' }}
                           onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }} />
                       )}
                       <button onClick={() => { detailSchliessen(); setTimeout(() => dateiOeffnen(e), 100) }}
-                        style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 10, padding: '11px', fontSize: 13, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
-                        🔍 Vollbild anzeigen
+                        style={{ ...btnSecondary, padding: '11px' }}>
+                        Vollbild anzeigen
                       </button>
                     </>
                   ) : (
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#ccc', minHeight: 200 }}>
-                      <div style={{ fontSize: 48 }}>
-                        {e.quelle === 'reisekosten' ? '✈️' : (!dateiLadenFertig && e.quelle !== 'manuell' ? '⏳' : '📄')}
-                      </div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#bbb', textAlign: 'center' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--bf-text-muted)', minHeight: 200 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--bf-text-muted)', textAlign: 'center' }}>
                         {e.quelle === 'manuell'
                           ? 'Manuell erfasst'
                           : e.quelle === 'reisekosten'
@@ -1446,14 +1424,14 @@ export default function GUV() {
                       </div>
                       {e.quelle === 'reisekosten' && e.quelle_id && (
                         <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }}
-                          style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}66`, borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#7a5c1e', cursor: 'pointer', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          style={{ ...btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                           Reisekosten-Details
                         </button>
                       )}
                       {e.quelle_id && e.quelle !== 'manuell' && e.quelle !== 'reisekosten' && dateiLadenFertig && (
                         <button onClick={() => { detailSchliessen(); dateiOeffnen(e) }}
-                          style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, color: '#888', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          style={{ ...btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                           Datei öffnen
                         </button>
@@ -1464,15 +1442,14 @@ export default function GUV() {
               </div>
 
               {/* Footer – wie Belegscanner */}
-              <div style={{ padding: '14px 22px', borderTop: '1px solid #f0ece4', display: 'flex', gap: 8 }}>
+              <div style={{ padding: '14px 22px', borderTop: '1px solid var(--bf-divider)', display: 'flex', gap: 8 }}>
                 <button onClick={detailSchliessen} style={{
-                  flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #e5e0d8',
-                  background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555',
-                }}>✕ Schließen</button>
+                  ...btnSecondary, flex: 1, padding: '11px',
+                }}>Schließen</button>
                 <button onClick={() => { detailSchliessen(); loeschen(e.id) }} style={{
-                  padding: '11px 16px', borderRadius: 10, border: '1.5px solid #fde8e6',
-                  background: 'white', fontSize: 14, cursor: 'pointer', color: ROT,
-                }}>🗑</button>
+                  ...btnSecondary, padding: '11px 16px',
+                  color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)',
+                }}>Löschen</button>
               </div>
             </div>
           </div>
@@ -1485,31 +1462,28 @@ export default function GUV() {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1500 }} onClick={() => setConfirmModal(null)} />
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-            background: 'white', borderRadius: 20, width: '90%', maxWidth: 380,
+            background: 'var(--bf-card)', borderRadius: 20, width: '90%', maxWidth: 380,
             boxShadow: '0 32px 80px rgba(0,0,0,0.35)', zIndex: 1501,
             fontFamily: 'DM Sans, sans-serif', overflow: 'hidden',
           }}>
             <div style={{ padding: '28px 24px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 44, marginBottom: 10 }}>🗑️</div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a2a3a', marginBottom: 8 }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 8 }}>
                 Wirklich löschen?
               </div>
-              <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 13, color: 'var(--bf-text-muted)', lineHeight: 1.6 }}>
                 {confirmModal.text}
               </div>
-              <div style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>
+              <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 6 }}>
                 Diese Aktion kann nicht rückgängig gemacht werden.
               </div>
             </div>
             <div style={{ padding: '12px 20px 22px', display: 'flex', gap: 10 }}>
               <button onClick={() => setConfirmModal(null)} style={{
-                flex: 1, padding: '12px', borderRadius: 10, border: '1.5px solid #e5e0d8',
-                background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555',
+                ...btnSecondary, flex: 1, padding: '12px',
               }}>Abbrechen</button>
               <button onClick={confirmModal.onJa} style={{
-                flex: 1, padding: '12px', borderRadius: 10, border: 'none',
-                background: '#ef4444', color: 'white', fontSize: 13, fontWeight: 800,
-                cursor: 'pointer', boxShadow: '0 4px 14px rgba(239,68,68,0.4)',
+                ...btnSecondary, flex: 1, padding: '12px', fontWeight: 800,
+                color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)',
               }}>Ja, löschen</button>
             </div>
           </div>
@@ -1519,34 +1493,30 @@ export default function GUV() {
       {/* ── Reisekosten-Detail-Modal (aus G&V heraus) ──────────────────────── */}
       {reiseDetail && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,20,0.65)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 20, maxWidth: 520, width: '100%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 20, maxWidth: 520, width: '100%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
             {/* Header */}
             <div style={{ background: `linear-gradient(135deg, ${GOLD}, #e8c98e)`, padding: '20px 24px' }}>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#0a0a0a' }}>✈️ {reiseDetail.zielort}</div>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#0a0a0a' }}>{reiseDetail.zielort}</div>
               <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.55)', marginTop: 4 }}>{reiseDetail.zweck}</div>
             </div>
             {/* Inhalt */}
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '55vh', overflowY: 'auto' }}>
               {[
-                { icon: '📅', bg: '#fff3e0', label: 'Datum', value: reiseDetail.datum ? new Date(reiseDetail.datum).toLocaleDateString('de-AT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '—' },
-                { icon: '🕐', bg: '#f0f0fe', label: 'Reisezeit', value: reiseDetail.uhrzeit_start && reiseDetail.uhrzeit_ende ? `${reiseDetail.uhrzeit_start} – ${reiseDetail.uhrzeit_ende} (${Number(reiseDetail.stunden_dauer || 0).toFixed(1)} Std.)` : '—' },
-                { icon: '📏', bg: '#f0fdf4', label: 'Strecke', value: `${Number(reiseDetail.km_einfach).toFixed(1)} km einfach · ${(Number(reiseDetail.km_einfach) * 2).toFixed(1)} km gesamt` },
-                { icon: '🍽', bg: '#fff0f0', label: 'Mahlzeit gestellt', value: reiseDetail.essen_bekommen ? 'Ja – Taggeld um € 15,00 reduziert' : 'Nein' },
+                { label: 'Datum', value: reiseDetail.datum ? new Date(reiseDetail.datum).toLocaleDateString('de-AT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '—' },
+                { label: 'Reisezeit', value: reiseDetail.uhrzeit_start && reiseDetail.uhrzeit_ende ? `${reiseDetail.uhrzeit_start} – ${reiseDetail.uhrzeit_ende} (${Number(reiseDetail.stunden_dauer || 0).toFixed(1)} Std.)` : '—' },
+                { label: 'Strecke', value: `${Number(reiseDetail.km_einfach).toFixed(1)} km einfach · ${(Number(reiseDetail.km_einfach) * 2).toFixed(1)} km gesamt` },
+                { label: 'Mahlzeit gestellt', value: reiseDetail.essen_bekommen ? 'Ja – Taggeld um € 15,00 reduziert' : 'Nein' },
               ].map((r, i) => (
-                <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: r.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{r.icon}</div>
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8 }}>{r.label}</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2a3a', marginTop: 2 }}>{r.value}</div>
-                  </div>
+                <div key={i}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8 }}>{r.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--bf-text)', marginTop: 2 }}>{r.value}</div>
                 </div>
               ))}
               {/* KM-Buch Verknüpfungen */}
               {(reiseDetail.km_fahrt_hin_id || reiseDetail.km_fahrt_rueck_id) && (
                 <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f0f0fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🔗</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>KM-Buch Verknüpfung</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>KM-Buch Verknüpfung</div>
                     {reiseDetail.km_fahrt_hin_id && (
                       <div style={{ fontSize: 13, color: GRUEN, fontWeight: 600, marginBottom: 3 }}>
                         ↗ Hinfahrt: {reiseDetail.km_hin_ziel?.split(',').slice(0, 2).join(',') || '—'} · {Number(reiseDetail.km_hin_km || 0).toFixed(1)} km
@@ -1561,7 +1531,7 @@ export default function GUV() {
                 </div>
               )}
               {/* Abrechnung Box */}
-              <div style={{ background: '#fdf8f0', borderRadius: 14, padding: '14px 16px', border: `1px solid ${GOLD}44` }}>
+              <div style={{ background: 'var(--bf-soft)', borderRadius: 14, padding: '14px 16px', border: `1px solid ${GOLD}44` }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>Abrechnung § 26 EStG 2026</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, textAlign: 'center' }}>
                   <div>
@@ -1573,15 +1543,14 @@ export default function GUV() {
                     <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: GRUEN }}>€ {fmt(Number(reiseDetail.taggeld))}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: 10, color: '#7a5c1e', fontWeight: 700, marginBottom: 4 }}>Gesamt</div>
-                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#7a5c1e' }}>€ {fmt(Number(reiseDetail.gesamt))}</div>
+                    <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, marginBottom: 4 }}>Gesamt</div>
+                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: GOLD }}>€ {fmt(Number(reiseDetail.gesamt))}</div>
                   </div>
                 </div>
               </div>
             </div>
             {/* G&V Banner – immer grün, da aus G&V heraus geöffnet */}
             <div style={{ margin: '0 24px 4px', padding: '10px 14px', background: '#d1fae5', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 16 }}>✅</span>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#065f46' }}>In G&V eingetragen</div>
                 <div style={{ fontSize: 11, color: '#047857', marginTop: 1 }}>
@@ -1592,11 +1561,10 @@ export default function GUV() {
               </div>
             </div>
             {/* Footer */}
-            <div style={{ padding: '14px 24px', borderTop: '1px solid #f0ece4' }}>
+            <div style={{ padding: '14px 24px', borderTop: '1px solid var(--bf-divider)' }}>
               <button onClick={() => setReiseDetail(null)} style={{
-                width: '100%', padding: '11px', borderRadius: 10, border: '1.5px solid #e5e0d8',
-                background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555',
-              }}>✕ Schließen</button>
+                ...btnSecondary, width: '100%', padding: '11px',
+              }}>Schließen</button>
             </div>
           </div>
         </div>
@@ -1608,9 +1576,8 @@ export default function GUV() {
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
         }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: '32px 48px', textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-            <div style={{ fontSize: 14, color: '#666' }}>Datei wird geladen...</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 16, padding: '32px 48px', textAlign: 'center' }}>
+            <div style={{ fontSize: 14, color: 'var(--bf-text-soft)' }}>Datei wird geladen...</div>
           </div>
         </div>
       )}
@@ -1627,16 +1594,16 @@ export default function GUV() {
             padding: '10px 16px', background: '#1a2a3a', flexShrink: 0,
           }}>
             <span style={{ flex: 1, fontSize: 13, color: 'white', fontWeight: 600 }}>
-              📄 {dateiModal.name}
+              {dateiModal.name}
             </span>
             <button onClick={dateiDrucken} style={{
               background: GOLD, color: '#000', border: 'none', borderRadius: 8,
               padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}>🖨 Drucken</button>
+            }}>Drucken</button>
             <button onClick={dateiHerunterladen} style={{
               background: '#334155', color: 'white', border: 'none', borderRadius: 8,
               padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}>⬇ Speichern</button>
+            }}>Speichern</button>
             <button onClick={dateiSchliessen} style={{
               background: '#ef4444', color: 'white', border: 'none', borderRadius: 8,
               padding: '7px 12px', fontSize: 14, fontWeight: 700, cursor: 'pointer',

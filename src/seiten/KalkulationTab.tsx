@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { btnPrimary, btnSecondary } from '../ui/theme'
 
 const BASE_URL = 'https://scanpro-backend-production.up.railway.app/api'
 
@@ -586,19 +587,11 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
 
   // Styles
   const cardStyle: React.CSSProperties = {
-    background: 'white', borderRadius: 12, border: '1px solid #e8e2d9', overflow: 'hidden', marginBottom: 12,
+    background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', overflow: 'hidden', marginBottom: 12,
   }
   const inputSm: React.CSSProperties = {
-    border: '1px solid #e5e0d8', borderRadius: 6, padding: '5px 8px', fontSize: 12,
-    fontFamily: 'inherit', outline: 'none', background: 'white',
-  }
-  const btnPrimary: React.CSSProperties = {
-    background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 8,
-    padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-  }
-  const btnSecondary: React.CSSProperties = {
-    background: 'white', color: '#1a2a3a', border: '1px solid #e5e0d8', borderRadius: 8,
-    padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+    border: '1px solid var(--bf-input-border)', borderRadius: 6, padding: '5px 8px', fontSize: 12,
+    fontFamily: 'inherit', outline: 'none', background: 'var(--bf-input-bg)', color: 'var(--bf-text)',
   }
   const btnDanger: React.CSSProperties = {
     background: 'none', color: '#dc2626', border: 'none', cursor: 'pointer', fontSize: 16, padding: '2px 6px',
@@ -607,16 +600,16 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Haupt-Tab-Switcher */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#f0ede8', borderRadius: 10, padding: 4 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'var(--bf-soft)', borderRadius: 10, padding: 4 }}>
         {[
-          { id: 'lv', label: '📋 Leistungsverzeichnis' },
-          { id: 'preisliste', label: '💰 Preisliste' }
+          { id: 'lv', label: 'Leistungsverzeichnis' },
+          { id: 'preisliste', label: 'Preisliste' }
         ].map(t => (
           <button key={t.id} onClick={() => setHauptTab(t.id as any)}
             style={{ flex: 1, padding: '10px 16px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-              background: hauptTab === t.id ? 'white' : 'transparent',
-              color: hauptTab === t.id ? '#1a2a3a' : '#888',
-              boxShadow: hauptTab === t.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none' }}>
+              background: hauptTab === t.id ? 'var(--bf-card)' : 'transparent',
+              color: hauptTab === t.id ? 'var(--bf-text)' : 'var(--bf-text-muted)',
+              boxShadow: hauptTab === t.id ? 'var(--bf-shadow)' : 'none' }}>
             {t.label}
           </button>
         ))}
@@ -626,10 +619,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#1a2a3a' }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: 'var(--bf-text)' }}>
             Kalkulation / Leistungsverzeichnis
           </div>
-          <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>LBH22-orientierte Baukostenplanung</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>LBH22-orientierte Baukostenplanung</div>
         </div>
         <button style={btnPrimary} onClick={() => oeffneLVForm()}>+ Neues LV</button>
       </div>
@@ -644,33 +637,33 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
       {lvFormOffen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => setLvFormOffen(false)}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 28, width: '90%', maxWidth: 520, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+          <div style={{ background: 'var(--bf-card)', borderRadius: 16, padding: 28, width: '90%', maxWidth: 520, boxShadow: 'var(--bf-shadow)' }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 20, color: '#1a2a3a' }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 20, color: 'var(--bf-text)' }}>
               {lvEditId ? 'LV bearbeiten' : 'Neues Leistungsverzeichnis'}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Name *</label>
+                <label style={{ fontSize: 11, color: 'var(--bf-text-muted)', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Name *</label>
                 <input value={lvName} onChange={e => setLvName(e.target.value)}
                   style={{ ...inputSm, width: '100%', padding: '9px 12px', fontSize: 13 }}
                   placeholder="z.B. Sanierung Wohnung EG" />
               </div>
               <div>
-                <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Beschreibung</label>
+                <label style={{ fontSize: 11, color: 'var(--bf-text-muted)', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Beschreibung</label>
                 <textarea value={lvBeschreibung} onChange={e => setLvBeschreibung(e.target.value)} rows={3}
                   style={{ ...inputSm, width: '100%', padding: '9px 12px', fontSize: 13, resize: 'vertical' }}
                   placeholder="Kurze Beschreibung des Projekts..." />
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Datum</label>
+                  <label style={{ fontSize: 11, color: 'var(--bf-text-muted)', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Datum</label>
                   <input type="date" value={lvDatum} onChange={e => setLvDatum(e.target.value)}
                     style={{ ...inputSm, width: '100%', padding: '9px 12px', fontSize: 13 }} />
                 </div>
                 {lvEditId && (
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Status</label>
+                    <label style={{ fontSize: 11, color: 'var(--bf-text-muted)', fontWeight: 600, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.7 }}>Status</label>
                     <select value={lvStatus} onChange={e => setLvStatus(e.target.value)}
                       style={{ ...inputSm, width: '100%', padding: '9px 12px', fontSize: 13 }}>
                       {Object.keys(STATUS_COLORS).map(s => <option key={s}>{s}</option>)}
@@ -689,11 +682,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
 
       {/* LV Liste */}
       {ladenLV ? (
-        <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>Lade...</div>
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--bf-text-muted)' }}>Lade...</div>
       ) : lvListe.length === 0 ? (
-        <div style={{ ...cardStyle, padding: 40, textAlign: 'center', color: '#aaa' }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
-          <div style={{ fontWeight: 600, marginBottom: 6, color: '#888' }}>Noch kein Leistungsverzeichnis</div>
+        <div style={{ ...cardStyle, padding: 40, textAlign: 'center', color: 'var(--bf-text-muted)' }}>
+          <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--bf-text-muted)' }}>Noch kein Leistungsverzeichnis</div>
           <div style={{ fontSize: 12 }}>Erstellen Sie das erste LV für dieses Objekt</div>
           <button style={{ ...btnPrimary, marginTop: 16 }} onClick={() => oeffneLVForm()}>+ Neues LV erstellen</button>
         </div>
@@ -707,12 +699,12 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
               return (
                 <div key={lv.id} onClick={() => setAktivLV(lv)}
                   style={{
-                    border: isActive ? '2px solid #1a2a3a' : '1px solid #e8e2d9',
+                    border: isActive ? '2px solid #1a2a3a' : '1px solid var(--bf-border)',
                     borderRadius: 10,
                     padding: '10px 14px',
                     cursor: 'pointer',
-                    background: isActive ? '#1a2a3a' : 'white',
-                    color: isActive ? 'white' : '#333',
+                    background: isActive ? '#1a2a3a' : 'var(--bf-card)',
+                    color: isActive ? 'white' : 'var(--bf-text)',
                     minWidth: 160,
                     maxWidth: 240,
                     flex: '0 0 auto',
@@ -736,27 +728,27 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-                      <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: '#1a2a3a' }}>{aktivLV.name}</span>
+                      <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: 'var(--bf-text)' }}>{aktivLV.name}</span>
                       <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: (STATUS_COLORS[aktivLV.status] || STATUS_COLORS.Entwurf).bg, color: (STATUS_COLORS[aktivLV.status] || STATUS_COLORS.Entwurf).color }}>
                         {aktivLV.status}
                       </span>
                     </div>
-                    {aktivLV.beschreibung && <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{aktivLV.beschreibung}</div>}
-                    {aktivLV.datum && <div style={{ fontSize: 11, color: '#aaa' }}>{new Date(aktivLV.datum).toLocaleDateString('de-AT')}</div>}
+                    {aktivLV.beschreibung && <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 4 }}>{aktivLV.beschreibung}</div>}
+                    {aktivLV.datum && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>{new Date(aktivLV.datum).toLocaleDateString('de-AT')}</div>}
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <button style={{ ...btnSecondary, fontSize: 12 }} onClick={() => oeffneLVForm(aktivLV)}>Bearbeiten</button>
-                    <button style={{ ...btnSecondary, fontSize: 12, color: '#dc2626', borderColor: '#fca5a5' }} onClick={() => loescheLV(aktivLV.id)}>Löschen</button>
-                    <button style={{ ...btnSecondary, fontSize: 12 }} onClick={drucken} disabled={pdfLaden}>🖨 Drucken</button>
+                    <button style={{ ...btnSecondary, fontSize: 12, color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)' }} onClick={() => loescheLV(aktivLV.id)}>Löschen</button>
+                    <button style={{ ...btnSecondary, fontSize: 12 }} onClick={drucken} disabled={pdfLaden}>Drucken</button>
                     <button style={{ ...btnPrimary, fontSize: 12 }} onClick={downloadPDF} disabled={pdfLaden}>
-                      {pdfLaden ? 'Laden...' : '⬇ PDF'}
+                      {pdfLaden ? 'Laden...' : 'PDF'}
                     </button>
                   </div>
                 </div>
               </div>
 
               {ladenDetails ? (
-                <div style={{ textAlign: 'center', padding: 30, color: '#999' }}>Lade Positionen...</div>
+                <div style={{ textAlign: 'center', padding: 30, color: 'var(--bf-text-muted)' }}>Lade Positionen...</div>
               ) : (
                 <>
                   {/* Gewerke */}
@@ -770,10 +762,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                     return (
                       <div key={g.id} style={{ ...cardStyle, marginBottom: 12 }}>
                         {/* Gewerk-Header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#f8f6f2', borderBottom: '1px solid #e8e2d9', cursor: 'pointer', userSelect: 'none' }}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bf-soft)', borderBottom: '1px solid var(--bf-border)', cursor: 'pointer', userSelect: 'none' }}
                           onClick={() => setGewerkeCollapsed(prev => ({ ...prev, [g.id]: !prev[g.id] }))}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-                            <span style={{ fontSize: 14, color: '#999' }}>{isCollapsed ? '▶' : '▼'}</span>
+                            <span style={{ fontSize: 14, color: 'var(--bf-text-muted)' }}>{isCollapsed ? '▶' : '▼'}</span>
                             {gewerkEditId === g.id ? (
                               <input
                                 value={gewerkEditName}
@@ -785,15 +777,15 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                 autoFocus
                               />
                             ) : (
-                              <span style={{ fontWeight: 700, fontSize: 14, color: '#1a2a3a' }}
+                              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--bf-text)' }}
                                 onDoubleClick={e => { e.stopPropagation(); setGewerkEditId(g.id); setGewerkEditName(g.name) }}>
                                 {g.name}
                               </span>
                             )}
-                            <span style={{ fontSize: 11, color: '#888' }}>({posListe.length} Pos.)</span>
+                            <span style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>({posListe.length} Pos.)</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontWeight: 700, fontSize: 13, color: '#1a2a3a' }}>€ {fmt(gewerkSum)}</span>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>€ {fmt(gewerkSum)}</span>
                             <button style={btnDanger} onClick={e => { e.stopPropagation(); loescheGewerk(g.id) }} title="Gewerk löschen">✕</button>
                           </div>
                         </div>
@@ -805,15 +797,15 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                               <div style={{ overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
                                   <thead>
-                                    <tr style={{ background: '#2c3e50' }}>
+                                    <tr style={{ background: 'var(--bf-thead)' }}>
                                       {['Pos-Nr', 'Bezeichnung', 'Einheit', 'Menge', 'EP €/Einheit', 'GP €', ''].map(h => (
-                                        <th key={h} style={{ padding: '8px 10px', textAlign: h === 'GP €' || h === 'EP €/Einheit' || h === 'Menge' ? 'right' : 'left', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.7, color: 'white', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
+                                        <th key={h} style={{ padding: '8px 10px', textAlign: h === 'GP €' || h === 'EP €/Einheit' || h === 'Menge' ? 'right' : 'left', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.7, color: 'var(--bf-text-muted)', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
                                       ))}
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {posListe.map((pos, idx) => (
-                                      <tr key={pos.id} style={{ background: idx % 2 === 0 ? 'white' : '#fdfcfb' }}>
+                                      <tr key={pos.id} style={{ background: idx % 2 === 0 ? 'var(--bf-card)' : 'var(--bf-soft)' }}>
                                         <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 70 }}>
                                           <input
                                             value={String(getPosWert(pos, 'posNr'))}
@@ -862,7 +854,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                             style={{ ...inputSm, width: 100, textAlign: 'right' }}
                                           />
                                         </td>
-                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 100, textAlign: 'right', fontWeight: 700, fontSize: 13, color: '#1a2a3a', whiteSpace: 'nowrap' }}>
+                                        <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 100, textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--bf-text)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                                           € {fmt(Number(getPosWert(pos, 'gesamtpreis')))}
                                         </td>
                                         <td style={{ padding: '6px 10px', verticalAlign: 'middle', width: 40, textAlign: 'center' }}>
@@ -876,12 +868,12 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                             )}
 
                             {/* Gewerk-Footer */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#faf9f7', borderTop: posListe.length > 0 ? '1px solid #e8e2d9' : 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--bf-thead)', borderTop: posListe.length > 0 ? '1px solid var(--bf-border)' : 'none' }}>
                               <button style={{ ...btnSecondary, fontSize: 12, padding: '6px 12px' }}
                                 onClick={() => fuegePositionHinzu(g.id)}>
                                 + Position hinzufügen
                               </button>
-                              <div style={{ fontWeight: 700, fontSize: 13, color: '#1a2a3a' }}>
+                              <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>
                                 Summe: <span style={{ color: '#c8a96e' }}>€ {fmt(gewerkSum)}</span>
                               </div>
                             </div>
@@ -900,20 +892,20 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                     {gewerkDropdownOffen && (
                       <div style={{
                         position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                        background: 'white', border: '1px solid #e8e2d9', borderRadius: 10,
-                        boxShadow: '0 8px 30px rgba(0,0,0,0.12)', padding: '8px 0', maxHeight: 320, overflowY: 'auto',
+                        background: 'var(--bf-card)', border: '1px solid var(--bf-border)', borderRadius: 10,
+                        boxShadow: 'var(--bf-shadow)', padding: '8px 0', maxHeight: 320, overflowY: 'auto',
                         marginTop: 4,
                       }}>
                         {STANDARD_GEWERKE.map(name => (
                           <div key={name}
-                            style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: '#333', transition: 'background 0.1s' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#f8f6f2')}
+                            style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: 'var(--bf-text)', transition: 'background 0.1s' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                             onClick={() => fuegeGewerkHinzu(name)}>
                             {name}
                           </div>
                         ))}
-                        <div style={{ borderTop: '1px solid #e8e2d9', margin: '6px 0' }} />
+                        <div style={{ borderTop: '1px solid var(--bf-border)', margin: '6px 0' }} />
                         {eigeneGewerkEingabe ? (
                           <div style={{ padding: '8px 12px', display: 'flex', gap: 6 }}>
                             <input
@@ -946,10 +938,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         ) : (
                           <div
                             style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: '#c8a96e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#fdf8f0')}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                             onClick={e => { e.stopPropagation(); setEigeneGewerkEingabe(true) }}>
-                            ✏️ Eigene Bezeichnung eingeben
+                            Eigene Bezeichnung eingeben
                           </div>
                         )}
                       </div>
@@ -959,19 +951,19 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                   {/* Gesamtkalkulation */}
                   {gewerke.length > 0 && (
                     <div style={{ ...cardStyle, padding: '16px 20px' }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#1a2a3a', marginBottom: 12, fontFamily: 'Syne, sans-serif' }}>Gesamtkalkulation</div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--bf-text)', marginBottom: 12, fontFamily: 'Syne, sans-serif' }}>Gesamtkalkulation</div>
                       <div style={{ maxWidth: 320, marginLeft: 'auto' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee', fontSize: 13 }}>
-                          <span style={{ color: '#666' }}>Nettobetrag:</span>
-                          <span style={{ fontWeight: 600 }}>€ {fmt(grandTotal)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--bf-divider)', fontSize: 13 }}>
+                          <span style={{ color: 'var(--bf-text-soft)' }}>Nettobetrag:</span>
+                          <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>€ {fmt(grandTotal)}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee', fontSize: 13, color: '#888' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--bf-divider)', fontSize: 13, color: 'var(--bf-text-muted)' }}>
                           <span>MwSt 19%:</span>
                           <span>€ {fmt(mwst)}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#1a2a3a', borderRadius: 8, marginTop: 8, fontSize: 15 }}>
                           <span style={{ color: 'white', fontWeight: 700 }}>Gesamtbetrag brutto:</span>
-                          <span style={{ color: '#c8a96e', fontWeight: 800 }}>€ {fmt(brutto)}</span>
+                          <span style={{ color: '#c8a96e', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>€ {fmt(brutto)}</span>
                         </div>
                       </div>
                     </div>
@@ -981,20 +973,20 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                   <div style={{ ...cardStyle, padding: '20px 24px', marginTop: 16 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a2a3a', fontFamily: 'Syne, sans-serif' }}>🔩 Materialien & Produkte</div>
-                        <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Hersteller, Artikel, Mengen und Preise</div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--bf-text)', fontFamily: 'Syne, sans-serif' }}>Materialien & Produkte</div>
+                        <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>Hersteller, Artikel, Mengen und Preise</div>
                       </div>
                       <button onClick={fuegeMaterialHinzu} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12 }}>+ Material hinzufügen</button>
                     </div>
 
                     {materialien.length === 0 ? (
-                      <div style={{ color: '#aaa', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>Noch keine Materialien erfasst</div>
+                      <div style={{ color: 'var(--bf-text-muted)', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>Noch keine Materialien erfasst</div>
                     ) : (
                       <>
                         {/* Header */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 80px 110px 110px 80px 32px 32px', gap: 6, padding: '6px 4px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 80px 110px 110px 80px 32px 32px', gap: 6, padding: '6px 4px', borderBottom: '2px solid var(--bf-border)', marginBottom: 4 }}>
                           {['Artikel / Bezeichnung', 'Einheit', 'Menge', 'Günstigster EP', 'Günstigster GP', 'Lieferant', '', ''].map((h, i) => (
-                            <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
+                            <div key={i} style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
                           ))}
                         </div>
                         {materialien.map(m => {
@@ -1004,25 +996,25 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                           const matBestLieferant = matBestPreis !== null ? matAngebote.find((a: any) => parseFloat(a.einheitspreis) === matBestPreis)?.lieferant : null
                           const menge = parseFloat(m.menge) || 0
                           return (
-                          <div key={m.id} style={{ borderBottom: '1px solid #f0ede8' }}>
+                          <div key={m.id} style={{ borderBottom: '1px solid var(--bf-divider)' }}>
                             {/* Main row */}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 80px 110px 110px 80px 32px 32px', gap: 6, padding: '6px 0', alignItems: 'center' }}>
                               {/* Artikel */}
-                              <input value={m.artikel || ''} onChange={e => aktualisiereM(m.id, 'artikel', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Artikel / Bezeichnung..." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
-                              <select value={m.einheit || 'Stk'} onChange={e => { const v = e.target.value; aktualisiereM(m.id, 'einheit', v); setTimeout(() => speicherMaterial({ ...m, einheit: v }), 0) }} style={{ padding: '5px 6px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}>
+                              <input value={m.artikel || ''} onChange={e => aktualisiereM(m.id, 'artikel', e.target.value)} onBlur={() => speicherMaterial(m)} placeholder="Artikel / Bezeichnung..." style={{ padding: '5px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 12 }} />
+                              <select value={m.einheit || 'Stk'} onChange={e => { const v = e.target.value; aktualisiereM(m.id, 'einheit', v); setTimeout(() => speicherMaterial({ ...m, einheit: v }), 0) }} style={{ padding: '5px 6px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 12 }}>
                                 {['Stk', 'm²', 'm³', 'm', 'lfm', 'Psch', 'kg', 't', 'l', 'Pkg', 'Rll'].map(e => <option key={e} value={e}>{e}</option>)}
                               </select>
-                              <input type="text" inputMode="decimal" value={m.menge ?? ''} onChange={e => aktualisiereM(m.id, 'menge', e.target.value)} onBlur={e => { const v = parseFloat(e.target.value.replace(',','.')) || 0; aktualisiereM(m.id, 'menge', v); setTimeout(() => speicherMaterial(m), 0) }} onFocus={e => e.target.select()} placeholder="0" style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
+                              <input type="text" inputMode="decimal" value={m.menge ?? ''} onChange={e => aktualisiereM(m.id, 'menge', e.target.value)} onBlur={e => { const v = parseFloat(e.target.value.replace(',','.')) || 0; aktualisiereM(m.id, 'menge', v); setTimeout(() => speicherMaterial(m), 0) }} onFocus={e => e.target.select()} placeholder="0" style={{ padding: '5px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 12, textAlign: 'right' as const }} />
                               {/* Best EP */}
-                              <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: 700, color: matBestPreis !== null ? '#2e7d32' : '#aaa', textAlign: 'right' as const }}>
+                              <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: 700, color: matBestPreis !== null ? '#2e7d32' : 'var(--bf-text-muted)', textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' }}>
                                 {matBestPreis !== null ? `€ ${fmt(matBestPreis)}` : '—'}
                               </div>
                               {/* Best GP */}
-                              <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: 700, color: matBestPreis !== null ? '#2e7d32' : '#aaa', textAlign: 'right' as const }}>
+                              <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: 700, color: matBestPreis !== null ? '#2e7d32' : 'var(--bf-text-muted)', textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' }}>
                                 {matBestPreis !== null ? `€ ${fmt(matBestPreis * menge)}` : '—'}
                               </div>
                               {/* Best Lieferant */}
-                              <div style={{ padding: '5px 4px', fontSize: 11, color: matBestLieferant ? '#2e7d32' : '#aaa', fontWeight: matBestLieferant ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                              <div style={{ padding: '5px 4px', fontSize: 11, color: matBestLieferant ? '#2e7d32' : 'var(--bf-text-muted)', fontWeight: matBestLieferant ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                                 {matBestLieferant || '—'}
                               </div>
                               {/* Expand toggle */}
@@ -1033,8 +1025,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                   if (newExpanded) ladeAngebote(m.id)
                                 }}
                                 title={materialExpanded[m.id] ? 'Preisvergleich schließen' : 'Preisvergleich öffnen'}
-                                style={{ background: materialExpanded[m.id] ? '#e8f5e9' : 'none', border: '1px solid #e8e2d9', borderRadius: 6, cursor: 'pointer', fontSize: 13, padding: 0, width: 32, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                📊
+                                style={{ background: materialExpanded[m.id] ? '#e8f5e9' : 'none', border: '1px solid var(--bf-input-border)', borderRadius: 6, cursor: 'pointer', fontSize: 13, padding: 0, width: 32, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {materialExpanded[m.id] ? '▼' : '▶'}
                               </button>
                               {/* Delete */}
                               <button onClick={() => loescheMaterial(m.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
@@ -1042,23 +1034,23 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
 
                             {/* Expanded Preisvergleich panel */}
                             {materialExpanded[m.id] && (
-                              <div style={{ background: '#f9f8f6', borderRadius: 10, padding: '16px 20px', marginBottom: 8, border: '1px solid #ede8e0' }}>
+                              <div style={{ background: 'var(--bf-soft)', borderRadius: 10, padding: '16px 20px', marginBottom: 8, border: '1px solid var(--bf-border)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>📊 Preisvergleich</div>
-                                  <button onClick={() => fuegeAngebotHinzu(m.id)} style={{ padding: '6px 12px', background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>+ Angebot hinzufügen</button>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bf-text)' }}>Preisvergleich</div>
+                                  <button onClick={() => fuegeAngebotHinzu(m.id)} style={{ ...btnPrimary, padding: '6px 12px', fontSize: 12 }}>+ Angebot hinzufügen</button>
                                 </div>
 
                                 {/* Shop-Buttons für Direktsuche */}
                                 <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 12, alignItems: 'center' }}>
                                   {(() => { const sq = encodeURIComponent((m.artikel || '').trim()); return [
-                                    { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
-                                    { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
-                                    { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
-                                    { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
-                                    { name: '🏗️ Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
-                                    { name: '🔵 Geizhals', url: `https://geizhals.at/?fs=${sq}&hloc=at` },
-                                    { name: '📦 Amazon', url: `https://www.amazon.de/s?k=${sq}` },
-                                    ...eigeneShops.map(s => ({ name: `⭐ ${s.name}`, url: s.urlMuster.replace('{suche}', sq), eigen: true, idx: eigeneShops.indexOf(s) })),
+                                    { name: 'Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
+                                    { name: 'OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
+                                    { name: 'Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
+                                    { name: 'Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
+                                    { name: 'Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
+                                    { name: 'Geizhals', url: `https://geizhals.at/?fs=${sq}&hloc=at` },
+                                    { name: 'Amazon', url: `https://www.amazon.de/s?k=${sq}` },
+                                    ...eigeneShops.map(s => ({ name: s.name, url: s.urlMuster.replace('{suche}', sq), eigen: true, idx: eigeneShops.indexOf(s) })),
                                   ]; })().map((s: any) => (
                                     <span key={s.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
                                       <a href={s.url} target="_blank" rel="noopener noreferrer"
@@ -1075,16 +1067,16 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                 </div>
                                 {shopFormOffen && (
                                   <div style={{ display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' as const }}>
-                                    <input value={neuerShopName} onChange={e => setNeuerShopName(e.target.value)} placeholder="Shop-Name" style={{ padding: '4px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, width: 100 }} />
-                                    <input value={neuerShopUrl} onChange={e => setNeuerShopUrl(e.target.value)} placeholder="Such-URL mit {suche}" style={{ padding: '4px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, flex: 1, minWidth: 200 }}
+                                    <input value={neuerShopName} onChange={e => setNeuerShopName(e.target.value)} placeholder="Shop-Name" style={{ padding: '4px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 11, width: 100 }} />
+                                    <input value={neuerShopUrl} onChange={e => setNeuerShopUrl(e.target.value)} placeholder="Such-URL mit {suche}" style={{ padding: '4px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 11, flex: 1, minWidth: 200 }}
                                       onKeyDown={e => e.key === 'Enter' && shopSpeichern()} />
-                                    <button onClick={shopSpeichern} style={{ padding: '4px 10px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>Speichern</button>
-                                    <span style={{ fontSize: 9, color: '#888' }}>Tipp: URL mit {'{suche}'} als Platzhalter</span>
+                                    <button onClick={shopSpeichern} style={{ ...btnPrimary, padding: '4px 10px', fontSize: 11 }}>Speichern</button>
+                                    <span style={{ fontSize: 9, color: 'var(--bf-text-muted)' }}>Tipp: URL mit {'{suche}'} als Platzhalter</span>
                                   </div>
                                 )}
 
                                 {(!angebote[m.id] || angebote[m.id].length === 0) ? (
-                                  <div style={{ color: '#aaa', fontSize: 12, textAlign: 'center', padding: '12px 0' }}>Noch keine Angebote. Klicke "+ Angebot hinzufügen"</div>
+                                  <div style={{ color: 'var(--bf-text-muted)', fontSize: 12, textAlign: 'center', padding: '12px 0' }}>Noch keine Angebote. Klicke "+ Angebot hinzufügen"</div>
                                 ) : (() => {
                                   const liste = angebote[m.id] || []
                                   const preise = liste.map((a: any) => parseFloat(a.einheitspreis) || 0).filter((v: number) => v > 0)
@@ -1093,9 +1085,9 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                   return (
                                     <>
                                       {/* Offer table header */}
-                                      <div style={{ display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 60px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid #e8e2d9', marginBottom: 4 }}>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 60px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid var(--bf-border)', marginBottom: 4 }}>
                                         {['Lieferant', 'Art.-Nr.', 'EP (€)', 'GP (€)', 'Diff.', 'Link', ''].map((h, i) => (
-                                          <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
+                                          <div key={i} style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
                                         ))}
                                       </div>
                                       {liste.map((a: any) => {
@@ -1107,8 +1099,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                           <div key={a.id} style={{
                                             display: 'grid', gridTemplateColumns: '180px 100px 110px 110px 60px 1fr 30px', gap: 8,
                                             padding: '6px 8px', borderRadius: 8, marginBottom: 4, alignItems: 'center',
-                                            background: isBest ? '#f0faf4' : 'white',
-                                            border: isBest ? '1.5px solid #4caf50' : '1px solid #ede8e0',
+                                            background: isBest ? '#f0faf4' : 'var(--bf-card)',
+                                            border: isBest ? '1.5px solid #4caf50' : '1px solid var(--bf-border)',
                                             transition: 'all 0.2s'
                                           }}>
                                             <div style={{ position: 'relative' }}>
@@ -1118,14 +1110,13 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                                 onChange={e => aktualisiereAngebot(m.id, a.id, 'lieferant', e.target.value)}
                                                 onBlur={() => speicherAngebot(a)}
                                                 placeholder="Lieferant..."
-                                                style={{ width: '100%', padding: '5px 8px', border: isBest ? '1px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const, background: 'transparent', fontWeight: isBest ? 700 : 400 }}
+                                                style={{ width: '100%', padding: '5px 8px', border: isBest ? '1px solid #4caf50' : '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const, background: 'transparent', fontWeight: isBest ? 700 : 400 }}
                                               />
                                               <datalist id={`lieferant-${a.id}`}>
                                                 {['Hornbach', 'OBI', 'Bauhaus', 'Hagebau', 'Lagerhaus', 'Würth', 'Knauf', 'Rigips', 'Mapei', 'Weber', 'Schüco', 'Velux', 'Sika', 'Baumit', 'Geberit', 'Viessmann', 'Grohe', 'Hansgrohe', 'Bosch', 'Siemens'].map(h => <option key={h} value={h} />)}
                                               </datalist>
-                                              {isBest && <span style={{ position: 'absolute', right: -22, top: '50%', transform: 'translateY(-50%)', fontSize: 14 }}>✅</span>}
                                             </div>
-                                            <input value={a.artikelnummer || ''} onChange={e => aktualisiereAngebot(m.id, a.id, 'artikelnummer', e.target.value)} onBlur={() => speicherAngebot(a)} placeholder="Art.-Nr." style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }} />
+                                            <input value={a.artikelnummer || ''} onChange={e => aktualisiereAngebot(m.id, a.id, 'artikelnummer', e.target.value)} onBlur={() => speicherAngebot(a)} placeholder="Art.-Nr." style={{ padding: '5px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 12 }} />
                                             <input
                                               type="text" inputMode="decimal"
                                               value={a.einheitspreis || ''}
@@ -1133,10 +1124,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                               onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; aktualisiereAngebot(m.id, a.id, 'einheitspreis', v); speicherAngebot({ ...a, einheitspreis: v }) }}
                                               onFocus={e => e.target.select()}
                                               placeholder="0,00"
-                                              style={{ padding: '5px 8px', border: isBest ? '1.5px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 13, textAlign: 'right' as const, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : '#1a2a3a', background: 'transparent' }}
+                                              style={{ padding: '5px 8px', border: isBest ? '1.5px solid #4caf50' : '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 13, textAlign: 'right' as const, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : 'var(--bf-text)', background: 'transparent' }}
                                             />
-                                            <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: isBest ? 700 : 600, color: isBest ? '#2e7d32' : '#1a2a3a', textAlign: 'right' as const }}>
-                                              {isBest && '🏆 '}€ {fmt(gp)}
+                                            <div style={{ padding: '5px 8px', fontSize: 13, fontWeight: isBest ? 700 : 600, color: isBest ? '#2e7d32' : 'var(--bf-text)', textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' }}>
+                                              € {fmt(gp)}
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                               {isBest && ep > 0 && (
@@ -1149,8 +1140,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                               )}
                                             </div>
                                             <div>
-                                              <input value={a.url || ''} onChange={e => aktualisiereAngebot(m.id, a.id, 'url', e.target.value)} onBlur={() => speicherAngebot(a)} placeholder="https://..." style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' as const }} />
-                                              {a.url && <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#1a2a3a', display: 'block', marginTop: 2 }}>🔗 öffnen</a>}
+                                              <input value={a.url || ''} onChange={e => aktualisiereAngebot(m.id, a.id, 'url', e.target.value)} onBlur={() => speicherAngebot(a)} placeholder="https://..." style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' as const }} />
+                                              {a.url && <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: 'var(--bf-text)', display: 'block', marginTop: 2 }}>öffnen</a>}
                                             </div>
                                             <button onClick={() => loescheAngebot(m.id, a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
                                           </div>
@@ -1158,7 +1149,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                       })}
                                       {bestPreis !== null && (
                                         <div style={{ marginTop: 8, padding: '8px 12px', background: '#e8f5e9', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                          <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>🏆 Günstigster Preis: € {fmt(bestPreis)} / {m.einheit}</span>
+                                          <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>Günstigster Preis: € {fmt(bestPreis)} / {m.einheit}</span>
                                           <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>Gesamt: € {fmt(bestPreis * menge)}</span>
                                         </div>
                                       )}
@@ -1171,9 +1162,9 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                           )
                         })}
                         {/* Materialien Total */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 12, paddingTop: 10, borderTop: '2px solid #e8e2d9' }}>
-                          <span style={{ fontSize: 13, color: '#666' }}>Materialkosten gesamt:</span>
-                          <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2a3a' }}>€ {fmt(materialien.reduce((s, m) => s + (parseFloat(m.menge)||0)*(parseFloat(m.einheitspreis)||0), 0))}</span>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 12, paddingTop: 10, borderTop: '2px solid var(--bf-border)' }}>
+                          <span style={{ fontSize: 13, color: 'var(--bf-text-soft)' }}>Materialkosten gesamt:</span>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>€ {fmt(materialien.reduce((s, m) => s + (parseFloat(m.menge)||0)*(parseFloat(m.einheitspreis)||0), 0))}</span>
                         </div>
                       </>
                     )}
@@ -1197,20 +1188,19 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
           {/* Top bar */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#1a2a3a' }}>
-                💰 Materialpreisliste
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: 'var(--bf-text)' }}>
+                Materialpreisliste
               </div>
-              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Preisvergleich über alle Materialien und Lieferanten</div>
+              <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>Preisvergleich über alle Materialien und Lieferanten</div>
             </div>
             <button style={btnPrimary} onClick={fuegePreislisteMaterialHinzu}>+ Material hinzufügen</button>
           </div>
 
           {preislisteLaden ? (
-            <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>Lade...</div>
+            <div style={{ textAlign: 'center', padding: 40, color: 'var(--bf-text-muted)' }}>Lade...</div>
           ) : preisliste.length === 0 ? (
-            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e8e2d9', padding: 40, textAlign: 'center', color: '#aaa' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>💰</div>
-              <div style={{ fontWeight: 600, marginBottom: 6, color: '#888' }}>Noch keine Materialien</div>
+            <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 40, textAlign: 'center', color: 'var(--bf-text-muted)' }}>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--bf-text-muted)' }}>Noch keine Materialien</div>
               <div style={{ fontSize: 12 }}>Fügen Sie Materialien hinzu, um Preise zu vergleichen</div>
               <button style={{ ...btnPrimary, marginTop: 16 }} onClick={fuegePreislisteMaterialHinzu}>+ Material hinzufügen</button>
             </div>
@@ -1223,12 +1213,12 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                 const bestPreis = preise.length > 0 ? Math.min(...preise) : null
 
                 return (
-                  <div key={p.id} style={{ background: 'white', borderRadius: 12, border: '1px solid #e8e2d9', overflow: 'hidden' }}>
+                  <div key={p.id} style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', overflow: 'hidden' }}>
                     {/* Material-Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f8f6f2', borderBottom: isExpanded ? '1px solid #e8e2d9' : 'none', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'var(--bf-soft)', borderBottom: isExpanded ? '1px solid var(--bf-border)' : 'none', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => setPreislisteExpanded(prev => ({ ...prev, [p.id]: !isExpanded }))}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#999', padding: 0 }}>
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--bf-text-muted)', padding: 0 }}>
                         {isExpanded ? '▼' : '▶'}
                       </button>
                       <input
@@ -1258,7 +1248,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         onChange={e => aktualisierePreislisteMaterial(p.id, 'notiz', e.target.value)}
                         onBlur={() => speicherPreislisteMaterial(p)}
                         placeholder="Notiz..."
-                        style={{ ...inputSm, flex: 3, minWidth: 120, fontSize: 12, color: '#888' }}
+                        style={{ ...inputSm, flex: 3, minWidth: 120, fontSize: 12, color: 'var(--bf-text-muted)' }}
                       />
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <input
@@ -1273,19 +1263,19 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                           disabled={kiSuche[p.id]?.laden}
                           style={{ background: '#2563eb', border: 'none', cursor: 'pointer', color: 'white', fontSize: 12, padding: '5px 10px', borderRadius: 8, whiteSpace: 'nowrap' as const, fontWeight: 600 }}
                           title="KI sucht Preise im Internet">
-                          {kiSuche[p.id]?.laden ? '⏳...' : '🔍'}
+                          {kiSuche[p.id]?.laden ? 'Sucht...' : 'Suchen'}
                         </button>
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginTop: 4, alignItems: 'center' }}>
                         {(() => { const sq = encodeURIComponent((kiSuchBegriff[p.id] ?? p.bezeichnung ?? '').trim()); return [
-                          { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
-                          { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
-                          { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
-                          { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
-                          { name: '🏗️ Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
-                          { name: '🔵 Geizhals', url: `https://geizhals.at/?fs=${sq}&hloc=at` },
-                          { name: '📦 Amazon', url: `https://www.amazon.de/s?k=${sq}` },
-                          ...eigeneShops.map(s => ({ name: `⭐ ${s.name}`, url: s.urlMuster.replace('{suche}', sq), eigen: true, idx: eigeneShops.indexOf(s) })),
+                          { name: 'Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
+                          { name: 'OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
+                          { name: 'Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
+                          { name: 'Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
+                          { name: 'Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
+                          { name: 'Geizhals', url: `https://geizhals.at/?fs=${sq}&hloc=at` },
+                          { name: 'Amazon', url: `https://www.amazon.de/s?k=${sq}` },
+                          ...eigeneShops.map(s => ({ name: s.name, url: s.urlMuster.replace('{suche}', sq), eigen: true, idx: eigeneShops.indexOf(s) })),
                         ]; })().map((s: any) => (
                           <span key={s.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
                             <a href={s.url} target="_blank" rel="noopener noreferrer"
@@ -1302,11 +1292,11 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                       </div>
                       {shopFormOffen && (
                         <div style={{ display: 'flex', gap: 4, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' as const }}>
-                          <input value={neuerShopName} onChange={e => setNeuerShopName(e.target.value)} placeholder="Shop-Name" style={{ padding: '4px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, width: 100 }} />
-                          <input value={neuerShopUrl} onChange={e => setNeuerShopUrl(e.target.value)} placeholder="Such-URL mit {suche}" style={{ padding: '4px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, flex: 1, minWidth: 200 }}
+                          <input value={neuerShopName} onChange={e => setNeuerShopName(e.target.value)} placeholder="Shop-Name" style={{ padding: '4px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 11, width: 100 }} />
+                          <input value={neuerShopUrl} onChange={e => setNeuerShopUrl(e.target.value)} placeholder="Such-URL mit {suche}" style={{ padding: '4px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 11, flex: 1, minWidth: 200 }}
                             onKeyDown={e => e.key === 'Enter' && shopSpeichern()} />
-                          <button onClick={shopSpeichern} style={{ padding: '4px 10px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>Speichern</button>
-                          <span style={{ fontSize: 9, color: '#888' }}>Tipp: URL mit {'{suche}'} als Platzhalter, z.B. https://shop.at/search?q={'{suche}'}</span>
+                          <button onClick={shopSpeichern} style={{ ...btnPrimary, padding: '4px 10px', fontSize: 11 }}>Speichern</button>
+                          <span style={{ fontSize: 9, color: 'var(--bf-text-muted)' }}>Tipp: URL mit {'{suche}'} als Platzhalter, z.B. https://shop.at/search?q={'{suche}'}</span>
                         </div>
                       )}
                       <button
@@ -1323,9 +1313,9 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         {angeboteListe.length > 0 && (
                           <>
                             {/* Tabellen-Header */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '180px 110px 110px 110px 70px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid #e8e2d9', marginBottom: 6 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '180px 110px 110px 110px 70px 1fr 30px', gap: 8, padding: '6px 8px', borderBottom: '2px solid var(--bf-border)', marginBottom: 6 }}>
                               {['Lieferant', 'Art.-Nr.', 'EP (€)', 'GP (€)', 'Diff.', 'Link', ''].map((h, i) => (
-                                <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
+                                <div key={i} style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>{h}</div>
                               ))}
                             </div>
                             {angeboteListe.map((a: any) => {
@@ -1338,8 +1328,8 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                 <div key={a.id} style={{
                                   display: 'grid', gridTemplateColumns: '180px 110px 110px 110px 70px 1fr 30px', gap: 8,
                                   padding: '6px 8px', borderRadius: 8, marginBottom: 4, alignItems: 'center',
-                                  background: isBest ? '#f0faf4' : 'white',
-                                  border: isBest ? '1.5px solid #4caf50' : '1px solid #ede8e0',
+                                  background: isBest ? '#f0faf4' : 'var(--bf-card)',
+                                  border: isBest ? '1.5px solid #4caf50' : '1px solid var(--bf-border)',
                                 }}>
                                   <div style={{ position: 'relative' }}>
                                     <input
@@ -1348,7 +1338,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                       onChange={e => aktualisierePreislisteAngebot(p.id, a.id, 'lieferant', e.target.value)}
                                       onBlur={() => speicherPreislisteAngebot(a)}
                                       placeholder="Lieferant..."
-                                      style={{ width: '100%', padding: '5px 8px', border: isBest ? '1px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const, background: 'transparent', fontWeight: isBest ? 700 : 400 }}
+                                      style={{ width: '100%', padding: '5px 8px', border: isBest ? '1px solid #4caf50' : '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' as const, background: 'transparent', fontWeight: isBest ? 700 : 400 }}
                                     />
                                     <datalist id={`pl-lieferant-${a.id}`}>
                                       {['Hornbach', 'OBI', 'Bauhaus', 'Hagebau', 'Lagerhaus', 'Würth', 'Knauf', 'Rigips', 'Mapei', 'Weber', 'Schüco', 'Velux', 'Sika', 'Baumit', 'Geberit', 'Viessmann', 'Grohe', 'Hansgrohe', 'Bosch', 'Siemens'].map(h => <option key={h} value={h} />)}
@@ -1359,7 +1349,7 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                     onChange={e => aktualisierePreislisteAngebot(p.id, a.id, 'artikelnummer', e.target.value)}
                                     onBlur={() => speicherPreislisteAngebot(a)}
                                     placeholder="Art.-Nr."
-                                    style={{ padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 12 }}
+                                    style={{ padding: '5px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 12 }}
                                   />
                                   <input
                                     type="text" inputMode="decimal"
@@ -1368,10 +1358,10 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                     onBlur={e => { const v = parseFloat(e.target.value.replace(',', '.')) || 0; aktualisierePreislisteAngebot(p.id, a.id, 'einheitspreis', v); speicherPreislisteAngebot({ ...a, einheitspreis: v }) }}
                                     onFocus={e => e.target.select()}
                                     placeholder="0,00"
-                                    style={{ padding: '5px 8px', border: isBest ? '1.5px solid #4caf50' : '1px solid #e8e2d9', borderRadius: 6, fontSize: 13, textAlign: 'right' as const, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : '#1a2a3a', background: 'transparent' }}
+                                    style={{ padding: '5px 8px', border: isBest ? '1.5px solid #4caf50' : '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 13, textAlign: 'right' as const, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : 'var(--bf-text)', background: 'transparent' }}
                                   />
                                   {/* GP = Menge × EP */}
-                                  <div style={{ textAlign: 'right' as const, fontSize: 13, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : '#555', padding: '5px 8px' }}>
+                                  <div style={{ textAlign: 'right' as const, fontSize: 13, fontWeight: isBest ? 700 : 400, color: isBest ? '#2e7d32' : 'var(--bf-text-soft)', padding: '5px 8px', fontVariantNumeric: 'tabular-nums' }}>
                                     {menge > 0 && ep > 0 ? `€ ${fmt(gp)}` : '—'}
                                   </div>
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1390,9 +1380,9 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                                       onChange={e => aktualisierePreislisteAngebot(p.id, a.id, 'url', e.target.value)}
                                       onBlur={() => speicherPreislisteAngebot(a)}
                                       placeholder="https://..."
-                                      style={{ width: '100%', padding: '5px 8px', border: '1px solid #e8e2d9', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' as const }}
+                                      style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--bf-input-border)', borderRadius: 6, fontSize: 11, boxSizing: 'border-box' as const }}
                                     />
-                                    {a.url && <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#1a2a3a', display: 'block', marginTop: 2 }}>🔗 öffnen</a>}
+                                    {a.url && <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: 'var(--bf-text)', display: 'block', marginTop: 2 }}>öffnen</a>}
                                   </div>
                                   <button onClick={() => loeschePreislisteAngebot(p.id, a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e57373', fontSize: 16, padding: 0 }}>✕</button>
                                 </div>
@@ -1405,41 +1395,41 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         {kiSuche[p.id]?.ergebnisse?.length > 0 && (
                           <div style={{ marginTop: 14, background: '#eff6ff', borderRadius: 10, padding: '10px 14px', border: '1px solid #bfdbfe' }}>
                             <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                              🤖 KI-Suchergebnisse — klick auf ➕ um als Angebot zu übernehmen
+                              KI-Suchergebnisse — klick auf „übernehmen" um als Angebot zu speichern
                             </div>
                             {kiSuche[p.id].ergebnisse.map((e: any, i: number) => (
                               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < kiSuche[p.id].ergebnisse.length - 1 ? '1px solid #dbeafe' : 'none', flexWrap: 'wrap' as const }}>
                                 <span style={{ flex: 2, minWidth: 120, fontSize: 12, fontWeight: 500, color: '#1e3a5f' }}>{e.titel?.slice(0, 50) || '—'}</span>
                                 <span style={{ fontSize: 11, color: '#64748b', minWidth: 80 }}>{e.shop || '—'}</span>
                                 <span style={{ fontWeight: 700, color: i === 0 ? '#16a34a' : '#374151', fontSize: 13, minWidth: 70 }}>{e.preisNum?.toFixed(2).replace('.', ',')} €</span>
-                                {e.link && <a href={e.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563eb' }}>🔗</a>}
+                                {e.link && <a href={e.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563eb' }}>Link</a>}
                                 <button
                                   onClick={() => kiErgebnisUebernehmen(p, e)}
                                   style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
-                                  ➕ übernehmen
+                                  übernehmen
                                 </button>
                               </div>
                             ))}
                           </div>
                         )}
                         {kiSuche[p.id]?.laden && (
-                          <div style={{ marginTop: 10, textAlign: 'center' as const, color: '#2563eb', fontSize: 13 }}>⏳ KI sucht Preise im Internet...</div>
+                          <div style={{ marginTop: 10, textAlign: 'center' as const, color: '#2563eb', fontSize: 13 }}>KI sucht Preise im Internet...</div>
                         )}
                         {kiSuche[p.id] && !kiSuche[p.id].laden && kiSuche[p.id].ergebnisse.length === 0 && (
                           <div style={{ marginTop: 10 }}>
                             <div style={{ color: '#dc2626', fontSize: 12, marginBottom: 8, whiteSpace: 'pre-line' }}>
                               {kiSuche[p.id].fehler
-                                ? `⚠️ Fehler: ${kiSuche[p.id].fehler}`
+                                ? `Fehler: ${kiSuche[p.id].fehler}`
                                 : 'Automatische Suche ergab keine Ergebnisse. Direkt suchen bei:'}
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
                               {(() => { const sq = encodeURIComponent((kiSuchBegriff[p.id] ?? p.bezeichnung ?? '').trim()); return [
-                                { name: '🟠 Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
-                                { name: '🔴 OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
-                                { name: '🟡 Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
-                                { name: '🟢 Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
-                                { name: '🏗️ Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
-                                { name: '🔵 idealo', url: `https://www.idealo.at/preisvergleich/MainSearchProductCategory.html?q=${sq}` },
+                                { name: 'Hornbach', url: `https://www.hornbach.at/search/?query=${sq}` },
+                                { name: 'OBI', url: `https://www.obi.at/suche?searchTerm=${sq}` },
+                                { name: 'Bauhaus', url: `https://www.bauhaus.at/search?q=${sq}` },
+                                { name: 'Lagerhaus', url: `https://www.lagerhaus.at/search?q=${sq}` },
+                                { name: 'Baustoff-Shop', url: `https://www.baustoff-shop.at/search?q=${sq}` },
+                                { name: 'idealo', url: `https://www.idealo.at/preisvergleich/MainSearchProductCategory.html?q=${sq}` },
                               ]; })().map(s => (
                                 <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
                                   style={{ padding: '5px 10px', background: '#f0f4ff', border: '1px solid #c7d2fe', borderRadius: 6, fontSize: 11, color: '#3730a3', fontWeight: 600, textDecoration: 'none' }}>
@@ -1454,12 +1444,12 @@ export default function KalkulationTab({ objektId }: { objektId: number }) {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, flexWrap: 'wrap', gap: 8 }}>
                           <button
                             onClick={() => fuegePreislisteAngebotHinzu(p.id)}
-                            style={{ padding: '6px 12px', background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                            style={{ ...btnPrimary, padding: '6px 12px', fontSize: 12 }}>
                             + Angebot hinzufügen
                           </button>
                           {bestPreis !== null && (
                             <span style={{ fontSize: 12, background: '#e8f5e9', color: '#2e7d32', fontWeight: 700, padding: '6px 12px', borderRadius: 8 }}>
-                              🏆 Bestes: {fmt(bestPreis)} €/{p.einheit || 'm²'}
+                              Bestes: {fmt(bestPreis)} €/{p.einheit || 'm²'}
                             </span>
                           )}
                         </div>

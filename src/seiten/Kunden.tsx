@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
+import { StatusChip, btnPrimary, btnSecondary } from '../ui/theme'
 
 interface Kunde {
   id: number
@@ -118,43 +119,41 @@ export default function Kunden() {
       {/* Header */}
       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
         <input
-          style={{flex:1, padding:'9px 14px', borderRadius:8, border:'1px solid #e5e0d8', background:'white', fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none'}}
-          placeholder="🔍 Kunden suchen..."
+          style={{flex:1, padding:'9px 14px', borderRadius:8, border:'1px solid var(--bf-input-border)', background:'var(--bf-input-bg)', color:'var(--bf-text)', fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none'}}
+          placeholder="Kunden suchen..."
           value={suche}
           onChange={e => setSuche(e.target.value)}
         />
         <button
-          style={{background:'#1a1a1a', color:'white', border:'none', borderRadius:8, padding:'9px 18px', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}
+          style={{...btnPrimary}}
           onClick={() => { setFormDaten(leerForm); setBearbeitenId(null); setFormOffen(true) }}>
           + Neuer Kunde
         </button>
       </div>
 
       {/* Tabelle */}
-      <div style={{background:'white', borderRadius:10, border:'1px solid #e5e0d8', overflow:'hidden', flex:1, display:'flex', flexDirection:'column'}}>
+      <div style={{background:'var(--bf-card)', borderRadius:10, border:'1px solid var(--bf-border)', overflow:'hidden', flex:1, display:'flex', flexDirection:'column'}}>
         {isMobile ? (
           <div>
             {laden ? (
-              <div style={{padding:40, textAlign:'center', color:'#888'}}>⏳ Lädt...</div>
+              <div style={{padding:40, textAlign:'center', color:'var(--bf-text-muted)'}}>Lädt...</div>
             ) : gefilterteKunden.length === 0 ? (
-              <div style={{padding:40, textAlign:'center', color:'#888'}}>
-                {kunden.length === 0 ? '👥 Noch keine Kunden — erstelle deinen ersten!' : '🔍 Keine Ergebnisse'}
+              <div style={{padding:40, textAlign:'center', color:'var(--bf-text-muted)'}}>
+                {kunden.length === 0 ? 'Noch keine Kunden — erstelle deinen ersten!' : 'Keine Ergebnisse'}
               </div>
             ) : (
               gefilterteKunden.map(k => (
                 <div key={k.id}
-                  style={{padding:'12px 16px', borderBottom:'1px solid #f0ede8', cursor:'pointer', background: ausgewaehlt?.id === k.id ? '#fdf8f0' : k.id%2===0 ? '#fafaf9' : 'white'}}
+                  style={{padding:'12px 16px', borderBottom:'1px solid var(--bf-divider)', cursor:'pointer', background: ausgewaehlt?.id === k.id ? 'rgba(200,169,110,0.12)' : k.id%2===0 ? 'var(--bf-soft)' : 'var(--bf-card)'}}
                   onClick={() => setAusgewaehlt(ausgewaehlt?.id === k.id ? null : k)}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4}}>
-                    <div style={{fontWeight:500, fontSize:13, color:'#1a1a1a'}}>{k.vorname} {k.nachname}</div>
-                    <span style={{fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:4, background: k.typ === 'Privat' ? '#dbeafe' : '#f0f0ff', color: k.typ === 'Privat' ? '#1e40af' : '#4040cc'}}>
-                      {k.typ === 'Privat' ? '👤' : '🏢'} {k.typ}
-                    </span>
+                    <div style={{fontWeight:500, fontSize:13, color:'var(--bf-text)'}}>{k.vorname} {k.nachname}</div>
+                    <StatusChip status={k.typ} />
                   </div>
-                  {k.firma && <div style={{fontSize:11, color:'#888', marginBottom:2}}>{k.firma}</div>}
+                  {k.firma && <div style={{fontSize:11, color:'var(--bf-text-muted)', marginBottom:2}}>{k.firma}</div>}
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <div style={{fontSize:11, color:'#888'}}>{k.kundennummer}{k.ort ? ` · ${k.ort}` : ''}</div>
-                    <div style={{fontSize:11, color:'#888'}}>{k.email || '—'}</div>
+                    <div style={{fontSize:11, color:'var(--bf-text-muted)'}}>{k.kundennummer}{k.ort ? ` · ${k.ort}` : ''}</div>
+                    <div style={{fontSize:11, color:'var(--bf-text-muted)'}}>{k.email || '—'}</div>
                   </div>
                 </div>
               ))
@@ -164,43 +163,41 @@ export default function Kunden() {
         <div style={{overflowX:'auto'}}>
         <table style={{width:'100%', borderCollapse:'collapse'}}>
           <thead>
-            <tr style={{background:'#faf8f5'}}>
+            <tr style={{background:'var(--bf-thead)'}}>
               {['Kd.-Nr.', 'Name / Firma', 'UID / FN', 'Ort', 'Typ', 'Email'].map(h => (
-                <th key={h} style={{padding:'9px 14px', textAlign:'left', fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#888', fontWeight:700, borderBottom:'1px solid #e5e0d8'}}>{h}</th>
+                <th key={h} style={{padding:'9px 14px', textAlign:'left', fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:700, borderBottom:'1px solid var(--bf-border)'}}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {laden ? (
-              <tr><td colSpan={6} style={{padding:40, textAlign:'center', color:'#888'}}>⏳ Lädt...</td></tr>
+              <tr><td colSpan={6} style={{padding:40, textAlign:'center', color:'var(--bf-text-muted)'}}>Lädt...</td></tr>
             ) : gefilterteKunden.length === 0 ? (
-              <tr><td colSpan={6} style={{padding:40, textAlign:'center', color:'#888'}}>
-                {kunden.length === 0 ? '👥 Noch keine Kunden — erstelle deinen ersten!' : '🔍 Keine Ergebnisse'}
+              <tr><td colSpan={6} style={{padding:40, textAlign:'center', color:'var(--bf-text-muted)'}}>
+                {kunden.length === 0 ? 'Noch keine Kunden — erstelle deinen ersten!' : 'Keine Ergebnisse'}
               </td></tr>
             ) : (
               gefilterteKunden.map(k => (
                 <tr key={k.id}
-                  style={{borderBottom:'1px solid #f0ede8', cursor:'pointer', background: ausgewaehlt?.id === k.id ? '#fdf8f0' : 'transparent'}}
+                  style={{borderBottom:'1px solid var(--bf-divider)', cursor:'pointer', background: ausgewaehlt?.id === k.id ? 'rgba(200,169,110,0.12)' : 'transparent'}}
                   onClick={() => setAusgewaehlt(ausgewaehlt?.id === k.id ? null : k)}
-                  onMouseEnter={e => { if (ausgewaehlt?.id !== k.id) e.currentTarget.style.background = '#faf8f5' }}
+                  onMouseEnter={e => { if (ausgewaehlt?.id !== k.id) e.currentTarget.style.background = 'var(--bf-hover)' }}
                   onMouseLeave={e => { if (ausgewaehlt?.id !== k.id) e.currentTarget.style.background = 'transparent' }}>
-                  <td style={{padding:'10px 14px', fontFamily:'Syne, sans-serif', fontSize:10, color:'#888', fontWeight:700}}>{k.kundennummer}</td>
+                  <td style={{padding:'10px 14px', fontFamily:'Syne, sans-serif', fontSize:10, color:'var(--bf-text-muted)', fontWeight:700}}>{k.kundennummer}</td>
                   <td style={{padding:'10px 14px'}}>
-                    <div style={{fontWeight:500, fontSize:13, color:'#1a1a1a'}}>{k.vorname} {k.nachname}</div>
-                    {k.firma && <div style={{fontSize:11, color:'#888'}}>{k.firma}</div>}
+                    <div style={{fontWeight:500, fontSize:13, color:'var(--bf-text)'}}>{k.vorname} {k.nachname}</div>
+                    {k.firma && <div style={{fontSize:11, color:'var(--bf-text-muted)'}}>{k.firma}</div>}
                   </td>
                   <td style={{padding:'10px 14px'}}>
-                    {k.uid && <div style={{fontSize:11, color:'#555'}}>UID: {k.uid}</div>}
-                    {k.firmennummer && <div style={{fontSize:11, color:'#555'}}>FN: {k.firmennummer}</div>}
-                    {!k.uid && !k.firmennummer && <span style={{color:'#ccc'}}>—</span>}
+                    {k.uid && <div style={{fontSize:11, color:'var(--bf-text-soft)'}}>UID: {k.uid}</div>}
+                    {k.firmennummer && <div style={{fontSize:11, color:'var(--bf-text-soft)'}}>FN: {k.firmennummer}</div>}
+                    {!k.uid && !k.firmennummer && <span style={{color:'var(--bf-text-muted)'}}>—</span>}
                   </td>
-                  <td style={{padding:'10px 14px', fontSize:12, color:'#888'}}>{k.ort || '—'}</td>
+                  <td style={{padding:'10px 14px', fontSize:12, color:'var(--bf-text-muted)'}}>{k.ort || '—'}</td>
                   <td style={{padding:'10px 14px'}}>
-                    <span style={{fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:4, background: k.typ === 'Privat' ? '#dbeafe' : '#f0f0ff', color: k.typ === 'Privat' ? '#1e40af' : '#4040cc'}}>
-                      {k.typ === 'Privat' ? '👤' : '🏢'} {k.typ}
-                    </span>
+                    <StatusChip status={k.typ} />
                   </td>
-                  <td style={{padding:'10px 14px', fontSize:12, color:'#888'}}>{k.email || '—'}</td>
+                  <td style={{padding:'10px 14px', fontSize:12, color:'var(--bf-text-muted)'}}>{k.email || '—'}</td>
                 </tr>
               ))
             )}
@@ -211,18 +208,18 @@ export default function Kunden() {
 
         {/* Aktionsleiste */}
         {ausgewaehlt && (
-          <div style={{padding:'10px 16px', borderTop:'2px solid #c8a96e', background:'white', display:'flex', alignItems:'center', gap:8}}>
-            <span style={{fontSize:13, fontWeight:600, color:'#1a1a1a'}}>{ausgewaehlt.vorname} {ausgewaehlt.nachname}</span>
-            {ausgewaehlt.firma && <span style={{fontSize:11, color:'#888'}}>{ausgewaehlt.firma}</span>}
-            <span style={{fontSize:10, color:'#888', background:'#f0ede8', padding:'2px 8px', borderRadius:4, marginRight:8}}>{ausgewaehlt.kundennummer}</span>
-            <button style={{padding:'6px 12px', borderRadius:6, border:'none', background:'#1a1a1a', color:'white', fontFamily:'DM Sans, sans-serif', fontSize:11, fontWeight:500, cursor:'pointer'}}
+          <div style={{padding:'10px 16px', borderTop:'2px solid #c8a96e', background:'var(--bf-card)', display:'flex', alignItems:'center', gap:8}}>
+            <span style={{fontSize:13, fontWeight:600, color:'var(--bf-text)'}}>{ausgewaehlt.vorname} {ausgewaehlt.nachname}</span>
+            {ausgewaehlt.firma && <span style={{fontSize:11, color:'var(--bf-text-muted)'}}>{ausgewaehlt.firma}</span>}
+            <span style={{fontSize:10, color:'var(--bf-text-muted)', background:'var(--bf-soft)', padding:'2px 8px', borderRadius:4, marginRight:8}}>{ausgewaehlt.kundennummer}</span>
+            <button style={{...btnPrimary, padding:'6px 12px', fontSize:11}}
               onClick={() => kundenBearbeiten(ausgewaehlt)}>
-              ✏️ Bearbeiten
+              Bearbeiten
             </button>
             <div style={{flex:1}}></div>
-            <button style={{padding:'6px 12px', borderRadius:6, border:'1px solid #fde8e6', background:'white', color:'#c0392b', fontFamily:'DM Sans, sans-serif', fontSize:11, cursor:'pointer'}}
+            <button style={{...btnSecondary, padding:'6px 12px', fontSize:11, color:'#ef4444', borderColor:'rgba(239,68,68,0.35)'}}
               onClick={() => kundenLoeschen(ausgewaehlt.id)}>
-              🗑️ Löschen
+              Löschen
             </button>
           </div>
         )}
@@ -231,18 +228,18 @@ export default function Kunden() {
       {/* MODAL */}
       {formOffen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100}}>
-          <div style={{background:'white', borderRadius:14, padding:28, width:540, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.2)'}}>
-            <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, marginBottom:20, color:'#1a1a1a'}}>
-              {bearbeitenId ? '✏️ Kunde bearbeiten' : '👥 Neuer Kunde'}
+          <div style={{background:'var(--bf-card)', borderRadius:14, padding:28, width:540, maxHeight:'90vh', overflowY:'auto', boxShadow:'var(--bf-shadow)'}}>
+            <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, marginBottom:20, color:'var(--bf-text)'}}>
+              {bearbeitenId ? 'Kunde bearbeiten' : 'Neuer Kunde'}
             </div>
 
             {/* Typ Toggle */}
-            <div style={{display:'flex', background:'#f0ede8', borderRadius:8, padding:3, marginBottom:16}}>
+            <div style={{display:'flex', background:'var(--bf-soft)', borderRadius:8, padding:3, marginBottom:16}}>
               {['Privat', 'Geschäftlich'].map(t => (
                 <button key={t}
-                  style={{flex:1, padding:'7px', borderRadius:6, border:'none', background: fd.typ === t ? 'white' : 'transparent', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:500, cursor:'pointer', color: fd.typ === t ? '#1a1a1a' : '#888'}}
+                  style={{flex:1, padding:'7px', borderRadius:6, border:'none', background: fd.typ === t ? 'var(--bf-card)' : 'transparent', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:500, cursor:'pointer', color: fd.typ === t ? 'var(--bf-text)' : 'var(--bf-text-muted)'}}
                   onClick={() => setFormDaten({...fd, typ: t, ...(t === 'Privat' ? { nameAufRechnung: true } : {})})}>
-                  {t === 'Privat' ? '👤' : '🏢'} {t}
+                  {t}
                 </button>
               ))}
             </div>
@@ -263,8 +260,8 @@ export default function Kunden() {
 
             {/* Geschäftlich Felder */}
             {fd.typ === 'Geschäftlich' && (
-              <div style={{background:'#f5f3ef', borderRadius:10, padding:14, marginBottom:12}}>
-                <div style={{fontSize:11, fontWeight:700, color:'#888', textTransform:'uppercase', letterSpacing:0.8, marginBottom:10}}>🏢 Firmendaten</div>
+              <div style={{background:'var(--bf-soft)', borderRadius:10, padding:14, marginBottom:12}}>
+                <div style={{fontSize:11, fontWeight:700, color:'var(--bf-text-muted)', textTransform:'uppercase', letterSpacing:0.8, marginBottom:10}}>Firmendaten</div>
                 <div style={{display:'grid', gridTemplateColumns:'1fr', gap:10}}>
                   <div>
                     <label style={labelStyle}>Firmenname</label>
@@ -283,7 +280,7 @@ export default function Kunden() {
                         value={fd.firmennummer} onChange={e => setFormDaten({...fd, firmennummer: e.target.value})} />
                     </div>
                   </div>
-                  <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13, color:'#555', marginTop:2}}>
+                  <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13, color:'var(--bf-text-soft)', marginTop:2}}>
                     <input type="checkbox" checked={fd.nameAufRechnung}
                       onChange={e => setFormDaten({...fd, nameAufRechnung: e.target.checked})}
                       style={{width:16, height:16, accentColor:'#c8a96e', cursor:'pointer'}} />
@@ -338,12 +335,12 @@ export default function Kunden() {
             {/* Buttons */}
             <div style={{display:'flex', gap:10}}>
               <button
-                style={{flex:1, padding:12, background:'#1a1a1a', color:'white', border:'none', borderRadius:9, fontFamily:'Syne, sans-serif', fontSize:14, fontWeight:700, cursor:'pointer'}}
+                style={{...btnPrimary, flex:1, padding:12, fontSize:14}}
                 onClick={kundenSpeichern}>
-                ✅ {bearbeitenId ? 'Änderungen speichern' : 'Kunde speichern'}
+                {bearbeitenId ? 'Änderungen speichern' : 'Kunde speichern'}
               </button>
               <button
-                style={{padding:12, background:'#f0ede8', color:'#888', border:'none', borderRadius:9, cursor:'pointer'}}
+                style={{...btnSecondary, padding:12}}
                 onClick={() => { setFormOffen(false); setBearbeitenId(null) }}>
                 Abbrechen
               </button>
@@ -357,11 +354,12 @@ export default function Kunden() {
 
 const labelStyle: React.CSSProperties = {
   display:'block', fontSize:11, textTransform:'uppercase',
-  letterSpacing:0.8, color:'#888', fontWeight:600, marginBottom:5
+  letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:600, marginBottom:5
 }
 
 const inputStyle: React.CSSProperties = {
-  width:'100%', padding:'9px 12px', border:'1px solid #e5e0d8',
+  width:'100%', padding:'9px 12px', border:'1px solid var(--bf-input-border)',
+  background:'var(--bf-input-bg)', color:'var(--bf-text)',
   borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none',
   boxSizing:'border-box'
 }

@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
+import { StatusChip, btnPrimary, btnSecondary } from '../ui/theme'
 
 const GOLD = '#c8a96e'
 const KATEGORIEN = [
   'Bürobedarf', 'Fahrtkosten', 'Miete & Betrieb',
   'Werkzeug & Material', 'Kommunikation', 'Verpflegung', 'Versicherung', 'Sonstiges'
 ]
-const KAT_ICONS: Record<string, string> = {
-  'Bürobedarf': '📎', 'Fahrtkosten': '🚗', 'Miete & Betrieb': '🏢',
-  'Werkzeug & Material': '🔧', 'Kommunikation': '📱', 'Verpflegung': '🍽️',
-  'Versicherung': '🛡️', 'Sonstiges': '📁'
-}
 const KAT_FARBEN: Record<string, { bg: string; text: string }> = {
   'Bürobedarf':         { bg: '#dbeafe', text: '#1e40af' },
   'Fahrtkosten':        { bg: '#d1fae5', text: '#065f46' },
@@ -19,8 +15,16 @@ const KAT_FARBEN: Record<string, { bg: string; text: string }> = {
   'Kommunikation':      { bg: '#e0f2fe', text: '#0369a1' },
   'Verpflegung':        { bg: '#fce7f3', text: '#9d174d' },
   'Versicherung':       { bg: '#fef9c3', text: '#854d0e' },
-  'Sonstiges':          { bg: '#f0f0f0', text: '#555' },
+  'Sonstiges':          { bg: 'var(--bf-soft)', text: 'var(--bf-text-soft)' },
 }
+
+// Kleine SVG-Icons (ersetzen die früheren Emojis, nur Optik)
+const IconDokument = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+)
+const IconBild = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+)
 
 interface Beleg {
   id: number
@@ -53,11 +57,12 @@ const emptyForm = () => ({
 
 const labelStyle: React.CSSProperties = {
   fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const,
-  letterSpacing: 0.8, color: '#888', marginBottom: 5, display: 'block'
+  letterSpacing: 0.8, color: 'var(--bf-text-muted)', marginBottom: 5, display: 'block'
 }
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 12px', borderRadius: 9, fontSize: 13,
-  border: '1.5px solid #e5e0d8', background: 'white', outline: 'none',
+  border: '1.5px solid var(--bf-input-border)', background: 'var(--bf-input-bg)',
+  color: 'var(--bf-text)', outline: 'none',
   fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const
 }
 
@@ -191,7 +196,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
           if (i === 0 && datei) fd.append('datei', datei) // Datei nur beim ersten Eintrag
           await api.post('/belege', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
         }
-        zeigeToast(`✅ ${jahre} AfA-Einträge erstellt (je € ${jahresBetrag.toFixed(2)}/Jahr)`)
+        zeigeToast(`${jahre} AfA-Einträge erstellt (je € ${jahresBetrag.toFixed(2)}/Jahr)`)
       } else {
         const fd = new FormData()
         Object.entries(form).forEach(([k, v]) => {
@@ -312,9 +317,9 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
       const res = await api.post(`/guv/von-beleg/${b.id}`, {})
       setBelege(prev => prev.map(x => x.id === b.id ? { ...x, in_guv: true } : x))
       if (res.data?.aktualisiert || aktualisieren) {
-        zeigeToast(`🔄 G&V-Betrag für "${b.beschreibung || 'Beleg'}" aktualisiert!`)
+        zeigeToast(`G&V-Betrag für "${b.beschreibung || 'Beleg'}" aktualisiert!`)
       } else {
-        zeigeToast(`✅ "${b.beschreibung || 'Beleg'}" wurde zur G&V übertragen!`)
+        zeigeToast(`"${b.beschreibung || 'Beleg'}" wurde zur G&V übertragen!`)
       }
     } catch (e: any) {
       zeigeToast(e?.response?.data?.fehler || 'Fehler beim Übertragen', false)
@@ -340,7 +345,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
     <div style={{ display: 'flex', gap: 4 }}>
       <button onClick={() => b.datei_typ && bildOeffnen(b)} title="Datei anzeigen"
         disabled={!b.datei_typ}
-        style={{ width: size, height: size, borderRadius: 8, border: '1px solid #e5e0d8', background: b.datei_typ ? '#fdf8f0' : '#fafafa', cursor: b.datei_typ ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', color: b.datei_typ ? GOLD : '#ccc', opacity: b.datei_typ ? 1 : 0.5 }}>
+        style={{ width: size, height: size, borderRadius: 8, border: '1px solid var(--bf-border)', background: b.datei_typ ? 'var(--bf-soft)' : 'var(--bf-card)', cursor: b.datei_typ ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', color: b.datei_typ ? GOLD : 'var(--bf-text-muted)', opacity: b.datei_typ ? 1 : 0.5 }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
       <button
@@ -350,7 +355,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
         style={{
           width: size, height: size, borderRadius: 8,
           border: b.in_guv ? '1px solid #a7f3d0' : `1px solid ${GOLD}44`,
-          background: b.in_guv ? '#d1fae5' : '#fdf8f0',
+          background: b.in_guv ? '#d1fae5' : 'var(--bf-soft)',
           cursor: b.in_guv ? 'default' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: b.in_guv ? '#059669' : GOLD,
@@ -361,11 +366,11 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
         }
       </button>
       <button onClick={() => oeffnen(b)} title="Bearbeiten"
-        style={{ width: size, height: size, borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555' }}>
+        style={{ width: size, height: size, borderRadius: 8, border: '1px solid var(--bf-border)', background: 'var(--bf-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bf-text-soft)' }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
       <button onClick={() => loeschen(b.id)} title="Löschen"
-        style={{ width: size, height: size, borderRadius: 8, border: '1px solid #fde8e6', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c0392b' }}>
+        style={{ width: size, height: size, borderRadius: 8, border: '1px solid rgba(239,68,68,0.35)', background: 'var(--bf-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       </button>
     </div>
@@ -396,11 +401,11 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
         <div style={{ marginBottom: 12 }}>
           {/* Zeile 1: Titel + Add-Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <div style={{ flex: 1, fontFamily: 'Syne, sans-serif', fontSize: 13, color: '#888' }}>
+            <div style={{ flex: 1, fontFamily: 'Syne, sans-serif', fontSize: 13, color: 'var(--bf-text-muted)' }}>
               {belege.length} Belege
             </div>
             <button onClick={() => oeffnen()}
-              style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, padding: '9px 16px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              style={{ ...btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Neu
             </button>
@@ -408,35 +413,35 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
           {/* Zeile 2: Filter */}
           <div style={{ display: 'flex', gap: 6 }}>
             <select value={filterMonat} onChange={e => setFilterMonat(e.target.value)}
-              style={{ flex: 1, fontSize: 12, padding: '7px 8px', borderRadius: 8, border: `1.5px solid ${filterMonat !== 'Alle' ? '#6366f1' : '#e5e0d8'}`, background: filterMonat !== 'Alle' ? '#f0f0ff' : 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+              style={{ flex: 1, fontSize: 12, padding: '7px 8px', borderRadius: 8, border: `1.5px solid ${filterMonat !== 'Alle' ? '#6366f1' : 'var(--bf-input-border)'}`, background: 'var(--bf-input-bg)', color: 'var(--bf-text-soft)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
               <option value="Alle">Alle Monate</option>
               {monate.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
             <select value={filterKat} onChange={e => setFilterKat(e.target.value)}
-              style={{ flex: 1, fontSize: 12, padding: '7px 8px', borderRadius: 8, border: `1.5px solid ${filterKat !== 'Alle' ? '#6366f1' : '#e5e0d8'}`, background: filterKat !== 'Alle' ? '#f0f0ff' : 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+              style={{ flex: 1, fontSize: 12, padding: '7px 8px', borderRadius: 8, border: `1.5px solid ${filterKat !== 'Alle' ? '#6366f1' : 'var(--bf-input-border)'}`, background: 'var(--bf-input-bg)', color: 'var(--bf-text-soft)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
               <option value="Alle">Alle Kategorien</option>
-              {KATEGORIEN.map(k => <option key={k} value={k}>{KAT_ICONS[k]} {k}</option>)}
+              {KATEGORIEN.map(k => <option key={k} value={k}>{k}</option>)}
             </select>
           </div>
         </div>
       ) : (
         /* Desktop Header */
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, fontFamily: 'Syne, sans-serif', fontSize: 13, color: '#888' }}>
+          <div style={{ flex: 1, fontFamily: 'Syne, sans-serif', fontSize: 13, color: 'var(--bf-text-muted)' }}>
             {belege.length} Belege gespeichert
           </div>
           <select value={filterMonat} onChange={e => setFilterMonat(e.target.value)}
-            style={{ fontSize: 12, padding: '7px 10px', borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+            style={{ fontSize: 12, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', color: 'var(--bf-text-soft)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
             <option value="Alle">Alle Monate</option>
             {monate.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
           <select value={filterKat} onChange={e => setFilterKat(e.target.value)}
-            style={{ fontSize: 12, padding: '7px 10px', borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', color: '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+            style={{ fontSize: 12, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', color: 'var(--bf-text-soft)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
             <option value="Alle">Alle Kategorien</option>
-            {KATEGORIEN.map(k => <option key={k} value={k}>{KAT_ICONS[k]} {k}</option>)}
+            {KATEGORIEN.map(k => <option key={k} value={k}>{k}</option>)}
           </select>
           <button onClick={() => oeffnen()}
-            style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, padding: '9px 18px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+            style={{ ...btnPrimary, display: 'flex', alignItems: 'center', gap: 7 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Beleg hinzufügen
           </button>
@@ -448,13 +453,13 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
         /* Mobile: kompakte Stat-Leiste */
         <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
           {[
-            { label: 'Gesamt', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + effBetrag(b), 0))}`, color: '#ef4444', bg: '#fff1f1' },
-            { label: 'Dieser Monat', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + effBetrag(b), 0))}`, color: '#6366f1', bg: '#f5f3ff' },
-            { label: 'Belege', value: String(belege.length), color: '#10b981', bg: '#f0fdf4' },
+            { label: 'Gesamt', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe').reduce((s, b) => s + effBetrag(b), 0))}`, color: '#ef4444' },
+            { label: 'Dieser Monat', value: `−€ ${fmt(belege.filter(b => b.typ === 'ausgabe' && b.datum?.startsWith(new Date().toISOString().substring(0, 7))).reduce((s, b) => s + effBetrag(b), 0))}`, color: '#6366f1' },
+            { label: 'Belege', value: String(belege.length), color: '#10b981' },
           ].map((s, i) => (
-            <div key={i} style={{ background: s.bg, borderRadius: 10, padding: '8px 12px', border: `1px solid ${s.color}22`, flexShrink: 0 }}>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{s.label}</div>
+            <div key={i} style={{ background: 'var(--bf-card)', borderRadius: 10, padding: '8px 12px', border: `1px solid ${s.color}22`, flexShrink: 0 }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 1 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -467,29 +472,27 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
             { label: 'Belege gesamt', value: String(belege.length), color: '#10b981' },
             { label: 'Aktiver Filter', value: (filterKat !== 'Alle' || filterMonat !== 'Alle') ? `${gefilterlt.length} Belege · −€ ${fmt(summeAusgaben)}` : '—', color: GOLD },
           ].map((s, i) => (
-            <div key={i} style={{ background: 'white', borderRadius: 10, padding: '12px 16px', border: '1px solid #e5e0d8' }}>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{s.label}</div>
+            <div key={i} style={{ background: 'var(--bf-card)', borderRadius: 10, padding: '12px 16px', border: '1px solid var(--bf-border)', boxShadow: 'var(--bf-shadow)' }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
         </div>
       )}
 
       {/* ── Tabelle (Desktop) / Karten (Mobile) ──────────────────────────────── */}
-      <div style={{ background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', flex: 1, overflow: 'auto' }}>
+      <div style={{ background: 'var(--bf-card)', borderRadius: 10, border: '1px solid var(--bf-border)', flex: 1, overflow: 'auto' }}>
         {laden ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
-            <div style={{ color: '#aaa', fontSize: 14 }}>Lädt...</div>
+            <div style={{ color: 'var(--bf-text-muted)', fontSize: 14 }}>Lädt...</div>
           </div>
         ) : gefilterlt.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
-            <div style={{ textAlign: 'center', color: '#888' }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📂</div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 700, marginBottom: 8, color: '#1a1a1a' }}>
+            <div style={{ textAlign: 'center', color: 'var(--bf-text-muted)' }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 700, marginBottom: 8, color: 'var(--bf-text)' }}>
                 Noch keine Belege
               </div>
-              <button onClick={() => oeffnen()}
-                style={{ background: GOLD, color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '10px 24px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              <button onClick={() => oeffnen()} style={{ ...btnPrimary }}>
                 + Ersten Beleg hinzufügen
               </button>
             </div>
@@ -502,34 +505,34 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
               const istLetzte = idx === gefilterlt.length - 1
               return (
                 <div key={b.id}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderBottom: istLetzte ? 'none' : '1px solid #f5f2ee', cursor: 'pointer', background: 'white', transition: 'background 0.1s' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderBottom: istLetzte ? 'none' : '1px solid var(--bf-divider)', cursor: 'pointer', background: 'var(--bf-card)', transition: 'background 0.1s' }}
                   onClick={() => detailOeffnen(b)}
-                  onTouchStart={e => (e.currentTarget.style.background = '#faf8f5')}
-                  onTouchEnd={e => (e.currentTarget.style.background = 'white')}>
+                  onTouchStart={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
+                  onTouchEnd={e => (e.currentTarget.style.background = 'var(--bf-card)')}>
 
                   {/* Kategorie-Icon Kreis */}
                   <div style={{
                     width: 38, height: 38, borderRadius: 10, flexShrink: 0,
                     background: farben.bg, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: 18,
+                    justifyContent: 'center', color: farben.text,
                   }}>
-                    {KAT_ICONS[b.kategorie || 'Sonstiges']}
+                    <IconDokument size={16} />
                   </div>
 
                   {/* Mitte: Titel + Meta */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
                       {b.beschreibung || b.lieferant || b.dateiname || '—'}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                       {b.lieferant && b.beschreibung && (
-                        <span style={{ fontSize: 11, color: '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 90 }}>
+                        <span style={{ fontSize: 11, color: 'var(--bf-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 90 }}>
                           {b.lieferant}
                         </span>
                       )}
-                      {b.lieferant && b.beschreibung && b.datum && <span style={{ color: '#ddd', fontSize: 11 }}>·</span>}
+                      {b.lieferant && b.beschreibung && b.datum && <span style={{ color: 'var(--bf-text-muted)', fontSize: 11 }}>·</span>}
                       {b.datum && (
-                        <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 11, color: 'var(--bf-text-muted)', whiteSpace: 'nowrap' }}>
                           {new Date(b.datum).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit' })}
                         </span>
                       )}
@@ -541,12 +544,12 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                   <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                     {b.betrag != null && (
                       <div>
-                        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800,
+                        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
                           color: b.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
                           {b.typ === 'einnahme' ? '+' : '−'}&nbsp;€&nbsp;{fmt(effBetrag(b))}
                         </div>
                         {(b.buero_anteil ?? 100) < 100 && (
-                          <div style={{ fontSize: 10, color: '#bbb', textDecoration: 'line-through', textAlign: 'right' }}>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', textDecoration: 'line-through', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                             € {fmt(Number(b.betrag))}
                           </div>
                         )}
@@ -555,14 +558,14 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                     <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
                       {/* G&V Button */}
                       <button onClick={() => guvUebertragen(b)} disabled={!!b.in_guv} title={b.in_guv ? 'In G&V' : 'Zu G&V'}
-                        style={{ width: 26, height: 26, borderRadius: 6, border: b.in_guv ? '1px solid #a7f3d0' : `1px solid ${GOLD}55`, background: b.in_guv ? '#d1fae5' : '#fdf8f0', cursor: b.in_guv ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: b.in_guv ? '#059669' : GOLD }}>
+                        style={{ width: 26, height: 26, borderRadius: 6, border: b.in_guv ? '1px solid #a7f3d0' : `1px solid ${GOLD}55`, background: b.in_guv ? '#d1fae5' : 'var(--bf-soft)', cursor: b.in_guv ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: b.in_guv ? '#059669' : GOLD }}>
                         {b.in_guv
                           ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                           : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>}
                       </button>
                       {/* Edit Button */}
                       <button onClick={() => oeffnen(b)} title="Bearbeiten"
-                        style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #e5e0d8', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
+                        style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid var(--bf-border)', background: 'var(--bf-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bf-text-muted)' }}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       </button>
                     </div>
@@ -575,9 +578,9 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
           /* ── Desktop: Tabelle ─────────────────────────────────────────────── */
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#faf8f5' }}>
+              <tr style={{ background: 'var(--bf-thead)' }}>
                 {['', 'Art', 'Beschreibung', 'Kategorie', 'Datum', 'Lieferant / Nr.', 'Betrag', 'Aktionen'].map(h => (
-                  <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.8, color: '#888', fontWeight: 700, borderBottom: '1px solid #e5e0d8' }}>{h}</th>
+                  <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--bf-text-muted)', fontWeight: 700, borderBottom: '1px solid var(--bf-border)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -585,60 +588,56 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
               {gefilterlt.map(b => {
                 const farben = KAT_FARBEN[b.kategorie || 'Sonstiges'] || KAT_FARBEN['Sonstiges']
                 return (
-                  <tr key={b.id} style={{ borderBottom: '1px solid #f0ede8', cursor: 'pointer' }}
+                  <tr key={b.id} style={{ borderBottom: '1px solid var(--bf-divider)', cursor: 'pointer' }}
                     onClick={() => detailOeffnen(b)}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     {/* Icon */}
                     <td style={{ padding: '10px 14px', width: 48 }}>
                       <div onClick={() => b.datei_typ && bildOeffnen(b)}
-                        style={{ width: 36, height: 36, borderRadius: 8, background: b.datei_typ ? '#fdf8f0' : '#f8f8f8', border: `1px solid ${b.datei_typ ? GOLD + '33' : '#eee'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: b.datei_typ ? 'pointer' : 'default', fontSize: 17 }}>
-                        {b.datei_typ?.startsWith('image/') ? '🖼️' : b.datei_typ === 'application/pdf' ? '📄' : KAT_ICONS[b.kategorie || 'Sonstiges']}
+                        style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bf-soft)', border: `1px solid ${b.datei_typ ? GOLD + '33' : 'var(--bf-divider)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: b.datei_typ ? 'pointer' : 'default', color: b.datei_typ ? GOLD : 'var(--bf-text-muted)' }}>
+                        {b.datei_typ?.startsWith('image/') ? <IconBild size={15} /> : <IconDokument size={15} />}
                       </div>
                     </td>
                     {/* Typ: Einnahme / Ausgabe */}
                     <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 20,
-                        background: b.typ === 'einnahme' ? '#d1fae5' : '#fee2e2',
-                        color:      b.typ === 'einnahme' ? '#065f46' : '#991b1b' }}>
-                        {b.typ === 'einnahme' ? '↑ Einnahme' : '↓ Ausgabe'}
-                      </span>
+                      <StatusChip status={b.typ === 'einnahme' ? 'Einnahme' : 'Ausgabe'} />
                     </td>
                     {/* Beschreibung */}
                     <td style={{ padding: '10px 14px', maxWidth: 220 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {b.beschreibung || b.dateiname || '—'}
                       </div>
                       {b.mwst != null && Number(b.mwst) > 0 && (
-                        <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>MwSt: € {fmt(Number(b.mwst))}</div>
+                        <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 2 }}>MwSt: € {fmt(Number(b.mwst))}</div>
                       )}
                     </td>
                     {/* Kategorie */}
                     <td style={{ padding: '10px 14px' }}>
                       <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: farben.bg, color: farben.text, whiteSpace: 'nowrap' }}>
-                        {KAT_ICONS[b.kategorie || 'Sonstiges']} {b.kategorie}
+                        {b.kategorie}
                       </span>
                     </td>
                     {/* Datum */}
-                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#888', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--bf-text-muted)', whiteSpace: 'nowrap' }}>
                       {b.datum ? new Date(b.datum).toLocaleDateString('de-AT') : '—'}
                     </td>
                     {/* Lieferant + Rechnungsnr */}
                     <td style={{ padding: '10px 14px', maxWidth: 160 }}>
-                      {b.lieferant && <div style={{ fontSize: 12, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.lieferant}</div>}
+                      {b.lieferant && <div style={{ fontSize: 12, color: 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.lieferant}</div>}
                       {b.rechnungsnummer && (
-                        <span style={{ background: '#f0f4ff', color: '#6366f1', border: '1px solid #6366f122', borderRadius: 6, padding: '1px 7px', fontWeight: 700, fontSize: 11 }}>
+                        <span style={{ background: 'var(--bf-soft)', color: '#6366f1', border: '1px solid #6366f122', borderRadius: 6, padding: '1px 7px', fontWeight: 700, fontSize: 11 }}>
                           #{b.rechnungsnummer}
                         </span>
                       )}
-                      {!b.lieferant && !b.rechnungsnummer && <span style={{ color: '#ccc' }}>—</span>}
+                      {!b.lieferant && !b.rechnungsnummer && <span style={{ color: 'var(--bf-text-muted)' }}>—</span>}
                     </td>
                     {/* Betrag */}
-                    <td style={{ padding: '10px 14px', fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap',
+                    <td style={{ padding: '10px 14px', fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
                       color: b.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
                       {b.betrag != null ? `${b.typ === 'einnahme' ? '+' : '−'} € ${fmt(effBetrag(b))}` : '—'}
                       {(b.buero_anteil ?? 100) < 100 && b.betrag != null && (
-                        <div style={{ fontSize: 10, color: '#bbb', textDecoration: 'line-through', fontWeight: 400 }}>
+                        <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', textDecoration: 'line-through', fontWeight: 400, fontVariantNumeric: 'tabular-nums' }}>
                           € {fmt(Number(b.betrag))}
                         </div>
                       )}
@@ -662,15 +661,15 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             width: isMobile ? '95vw' : 540, maxHeight: '90vh', overflowY: 'auto',
-            background: 'white', borderRadius: 14, zIndex: 200,
-            boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+            background: 'var(--bf-card)', borderRadius: 14, zIndex: 200,
+            boxShadow: 'var(--bf-shadow)',
           }}>
             {/* Modal-Header */}
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e0d8', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, flex: 1, color: '#1a1a1a' }}>
-                {editBeleg ? '✏️ Beleg bearbeiten' : '🧾 Neuer Beleg'}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--bf-border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, flex: 1, color: 'var(--bf-text)' }}>
+                {editBeleg ? 'Beleg bearbeiten' : 'Neuer Beleg'}
               </div>
-              <button onClick={() => setFormOffen(false)} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>✕</button>
+              <button onClick={() => setFormOffen(false)} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--bf-text-muted)' }}>✕</button>
             </div>
 
             <div style={{ padding: 24 }}>
@@ -681,16 +680,14 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                   {!dateiVorschau ? (
                     <div style={{ display: 'flex', gap: 10 }}>
                       <div onClick={() => cameraRef.current?.click()}
-                        style={{ flex: 1, border: `2px dashed ${GOLD}88`, borderRadius: 12, padding: '18px 12px', textAlign: 'center', cursor: 'pointer', background: '#fdfaf5' }}>
-                        <div style={{ fontSize: 26, marginBottom: 5 }}>📷</div>
+                        style={{ flex: 1, border: `2px dashed ${GOLD}88`, borderRadius: 12, padding: '18px 12px', textAlign: 'center', cursor: 'pointer', background: 'var(--bf-soft)' }}>
                         <div style={{ fontSize: 12, color: GOLD, fontWeight: 600 }}>Kamera</div>
                         <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
                           onChange={e => onDatei(e.target.files?.[0] || null)} />
                       </div>
                       <div onClick={() => fileRef.current?.click()}
-                        style={{ flex: 1, border: '2px dashed #d1d5db', borderRadius: 12, padding: '18px 12px', textAlign: 'center', cursor: 'pointer', background: '#fafafa' }}>
-                        <div style={{ fontSize: 26, marginBottom: 5 }}>📎</div>
-                        <div style={{ fontSize: 12, color: '#888', fontWeight: 600 }}>Datei / PDF</div>
+                        style={{ flex: 1, border: '2px dashed var(--bf-border)', borderRadius: 12, padding: '18px 12px', textAlign: 'center', cursor: 'pointer', background: 'var(--bf-soft)' }}>
+                        <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', fontWeight: 600 }}>Datei / PDF</div>
                         <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{ display: 'none' }}
                           onChange={e => onDatei(e.target.files?.[0] || null)} />
                       </div>
@@ -698,7 +695,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                   ) : (
                     <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: `1px solid ${GOLD}44` }}>
                       {dateiVorschau === 'pdf'
-                        ? <div style={{ padding: 20, textAlign: 'center', background: '#fdf8f0', fontSize: 32 }}>📄<br/><span style={{ fontSize: 12, color: '#888' }}>{datei?.name}</span></div>
+                        ? <div style={{ padding: 20, textAlign: 'center', background: 'var(--bf-soft)' }}><div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bf-text-soft)', marginBottom: 4 }}>PDF</div><span style={{ fontSize: 12, color: 'var(--bf-text-muted)' }}>{datei?.name}</span></div>
                         : <img src={dateiVorschau} alt="Vorschau" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
                       }
                       <button onClick={() => { setDatei(null); setDateiVorschau(null) }}
@@ -710,13 +707,13 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                   {dateiVorschau && (
                     <button onClick={kiAuslesen} disabled={kiLaden} style={{
                       marginTop: 10, width: '100%', padding: '11px', borderRadius: 10, border: 'none',
-                      background: kiLaden ? '#e5e0d8' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                      color: kiLaden ? '#aaa' : 'white',
+                      background: kiLaden ? 'var(--bf-soft)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      color: kiLaden ? 'var(--bf-text-muted)' : 'white',
                       fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, cursor: kiLaden ? 'not-allowed' : 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                       boxShadow: kiLaden ? 'none' : '0 4px 16px rgba(99,102,241,0.3)',
                     }}>
-                      {kiLaden ? '⏳ KI liest Beleg aus...' : '🤖 KI automatisch auslesen'}
+                      {kiLaden ? 'KI liest Beleg aus...' : 'KI automatisch auslesen'}
                     </button>
                   )}
                 </div>
@@ -736,23 +733,23 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                         fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800,
                         border: form.typ === t
                           ? `2px solid ${t === 'einnahme' ? '#059669' : '#ef4444'}`
-                          : '2px solid #e5e0d8',
+                          : '2px solid var(--bf-border)',
                         background: form.typ === t
                           ? (t === 'einnahme' ? '#d1fae5' : '#fee2e2')
-                          : 'white',
+                          : 'var(--bf-card)',
                         color: form.typ === t
                           ? (t === 'einnahme' ? '#065f46' : '#991b1b')
-                          : '#999',
+                          : 'var(--bf-text-muted)',
                         transition: 'all 0.15s',
                       }}>
                       {t === 'ausgabe' ? '↓ Ausgabe' : '↑ Einnahme'}
                     </button>
                   ))}
                 </div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 5 }}>
+                <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 5 }}>
                   {form.typ === 'ausgabe'
-                    ? '💸 Ausgabe: z.B. Einkauf, Rechnung, Betriebskosten'
-                    : '💰 Einnahme: z.B. Bareinnahme, erhaltene Zahlung'}
+                    ? 'Ausgabe: z.B. Einkauf, Rechnung, Betriebskosten'
+                    : 'Einnahme: z.B. Bareinnahme, erhaltene Zahlung'}
                 </div>
               </div>
 
@@ -775,8 +772,8 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
                 <div>
                   <label style={labelStyle}>Kategorie</label>
-                  <select style={{ ...inputStyle, background: 'white' }} value={form.kategorie} onChange={e => setForm({...form, kategorie: e.target.value})}>
-                    {KATEGORIEN.map(k => <option key={k} value={k}>{KAT_ICONS[k]} {k}</option>)}
+                  <select style={{ ...inputStyle, background: 'var(--bf-input-bg)' }} value={form.kategorie} onChange={e => setForm({...form, kategorie: e.target.value})}>
+                    {KATEGORIEN.map(k => <option key={k} value={k}>{k}</option>)}
                   </select>
                 </div>
                 <div>
@@ -788,7 +785,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
               <div style={{ marginBottom: 14 }}>
                 <label style={labelStyle}>
                   Rechnungsnummer / Belegnummer
-                  <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 400, color: '#aaa', textTransform: 'none', letterSpacing: 0 }}>
+                  <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 400, color: 'var(--bf-text-muted)', textTransform: 'none', letterSpacing: 0 }}>
                     (verhindert Doppelerfassung)
                   </span>
                 </label>
@@ -805,18 +802,18 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
 
               {/* Abschreibung */}
               {!editBeleg && (
-                <div style={{ marginBottom: 14, background: form.abschreibung ? '#fdf8f0' : '#fafafa', borderRadius: 10, padding: '12px 14px', border: `1.5px solid ${form.abschreibung ? '#c8a96e' : '#e5e0d8'}`, transition: 'all 0.2s' }}>
+                <div style={{ marginBottom: 14, background: 'var(--bf-soft)', borderRadius: 10, padding: '12px 14px', border: `1.5px solid ${form.abschreibung ? '#c8a96e' : 'var(--bf-border)'}`, transition: 'all 0.2s' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setForm({...form, abschreibung: !form.abschreibung})}>
                     <div style={{
-                      width: 20, height: 20, borderRadius: 5, border: `2px solid ${form.abschreibung ? '#c8a96e' : '#ccc'}`,
-                      background: form.abschreibung ? '#c8a96e' : 'white',
+                      width: 20, height: 20, borderRadius: 5, border: `2px solid ${form.abschreibung ? '#c8a96e' : 'var(--bf-border)'}`,
+                      background: form.abschreibung ? '#c8a96e' : 'var(--bf-input-bg)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s'
                     }}>
                       {form.abschreibung && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                     </div>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>📉 Abschreibung (AfA)</div>
-                      <div style={{ fontSize: 11, color: '#888' }}>Betrag auf mehrere Jahre aufteilen</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bf-text)' }}>Abschreibung (AfA)</div>
+                      <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>Betrag auf mehrere Jahre aufteilen</div>
                     </div>
                   </div>
                   {form.abschreibung && (
@@ -827,15 +824,15 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                           onChange={e => setForm({...form, abschreibungJahre: e.target.value})} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 2 }}>
-                        <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Je Jahr</div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: '#c8a96e', fontFamily: 'Syne, sans-serif' }}>
+                        <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 4 }}>Je Jahr</div>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: '#c8a96e', fontFamily: 'Syne, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
                           € {form.betrag && form.abschreibungJahre
                             ? (parseFloat(form.betrag) / parseInt(form.abschreibungJahre)).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                             : '0,00'}
                         </div>
                       </div>
-                      <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#aaa', background: 'white', borderRadius: 8, padding: '8px 10px', border: '1px solid #e5e0d8' }}>
-                        📅 Erstellt {form.abschreibungJahre || '?'} Belege: {
+                      <div style={{ gridColumn: '1 / -1', fontSize: 11, color: 'var(--bf-text-muted)', background: 'var(--bf-card)', borderRadius: 8, padding: '8px 10px', border: '1px solid var(--bf-border)' }}>
+                        Erstellt {form.abschreibungJahre || '?'} Belege: {
                           Array.from({ length: Math.min(parseInt(form.abschreibungJahre) || 0, 5) }, (_, i) =>
                             new Date(form.datum).getFullYear() + i
                           ).join(', ')
@@ -864,7 +861,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                     : `${a}% Büroanteil – ${p}% Privatnutzung`
                 }
                 return (
-                  <div style={{ marginBottom: 14, background: anteil < 100 ? '#f0f7ff' : '#fafafa', borderRadius: 10, padding: '12px 14px', border: `1.5px solid ${anteil < 100 ? '#6366f144' : '#e5e0d8'}`, transition: 'all 0.2s' }}>
+                  <div style={{ marginBottom: 14, background: 'var(--bf-soft)', borderRadius: 10, padding: '12px 14px', border: `1.5px solid ${anteil < 100 ? '#6366f144' : 'var(--bf-border)'}`, transition: 'all 0.2s' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
                       onClick={() => {
                         const neuerAnteil = anteil < 100 ? 100 : 50
@@ -874,15 +871,15 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                         setForm({...form, buero_anteil: String(neuerAnteil), notiz: neueNotiz})
                       }}>
                       <div style={{
-                        width: 20, height: 20, borderRadius: 5, border: `2px solid ${anteil < 100 ? '#6366f1' : '#ccc'}`,
-                        background: anteil < 100 ? '#6366f1' : 'white',
+                        width: 20, height: 20, borderRadius: 5, border: `2px solid ${anteil < 100 ? '#6366f1' : 'var(--bf-border)'}`,
+                        background: anteil < 100 ? '#6366f1' : 'var(--bf-input-bg)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s'
                       }}>
                         {anteil < 100 && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                       </div>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>🏢 Teilweise privat (Büro/Privat-Aufteilung)</div>
-                        <div style={{ fontSize: 11, color: '#888' }}>z.B. Internet 50% Büro / 50% privat</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bf-text)' }}>Teilweise privat (Büro/Privat-Aufteilung)</div>
+                        <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>z.B. Internet 50% Büro / 50% privat</div>
                       </div>
                     </div>
                     {anteil < 100 && (
@@ -901,7 +898,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                             <button key={p} type="button"
                               onClick={() => setForm({...form, buero_anteil: String(p),
                                 notiz: istAutoNotiz(form.notiz) ? genNotiz(p) : form.notiz})}
-                              style={{ padding: '3px 7px', borderRadius: 6, border: anteil === p ? '2px solid #6366f1' : '1px solid #e5e0d8', background: anteil === p ? '#ede9fe' : 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: anteil === p ? '#4f46e5' : '#888' }}>
+                              style={{ padding: '3px 7px', borderRadius: 6, border: anteil === p ? '2px solid #6366f1' : '1px solid var(--bf-border)', background: anteil === p ? '#ede9fe' : 'var(--bf-card)', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: anteil === p ? '#4f46e5' : 'var(--bf-text-muted)' }}>
                               {p}%
                             </button>
                           ))}
@@ -909,12 +906,12 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                         {/* Rechner-Box */}
                         <div style={{ background: '#ede9fe', borderRadius: 10, padding: '10px 14px', fontSize: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                           <div>
-                            <div style={{ fontSize: 10, color: '#7c3aed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>🏢 Büroanteil ({anteil}%)</div>
+                            <div style={{ fontSize: 10, color: '#7c3aed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Büroanteil ({anteil}%)</div>
                             <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#4f46e5' }}>€ {bueroEur}</div>
                             <div style={{ fontSize: 10, color: '#a5b4fc', marginTop: 1 }}>wird zur G&V übertragen</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: 10, color: '#9333ea', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>🏠 Privatanteil ({privat}%)</div>
+                            <div style={{ fontSize: 10, color: '#9333ea', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Privatanteil ({privat}%)</div>
                             <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#9333ea' }}>€ {privatEur}</div>
                             <div style={{ fontSize: 10, color: '#d8b4fe', marginTop: 1 }}>wird nicht übertragen</div>
                           </div>
@@ -932,12 +929,12 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
 
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setFormOffen(false)}
-                  style={{ flex: 1, padding: '12px', borderRadius: 8, border: '1.5px solid #e5e0d8', background: 'white', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                  style={{ ...btnSecondary, flex: 1, padding: '12px' }}>
                   Abbrechen
                 </button>
                 <button onClick={speichern} disabled={speichernLaden}
-                  style={{ flex: 2, padding: '12px', borderRadius: 8, border: 'none', background: '#1a1a1a', color: 'white', fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
-                  {speichernLaden ? '⏳ Speichert...' : editBeleg ? '💾 Speichern' : '✅ Beleg hinzufügen'}
+                  style={{ ...btnPrimary, flex: 2, padding: '12px', fontSize: 14, fontWeight: 800 }}>
+                  {speichernLaden ? 'Speichert...' : editBeleg ? 'Speichern' : 'Beleg hinzufügen'}
                 </button>
               </div>
             </div>
@@ -952,73 +949,65 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             width: isMobile ? '95vw' : 680, maxHeight: '90vh', overflowY: 'auto',
-            background: 'white', borderRadius: 16, zIndex: 250,
-            boxShadow: '0 24px 80px rgba(0,0,0,0.3)',
+            background: 'var(--bf-card)', borderRadius: 16, zIndex: 250,
+            boxShadow: 'var(--bf-shadow)',
             fontFamily: 'DM Sans, sans-serif',
           }}>
             {/* Header */}
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0ece4', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--bf-divider)', display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 10, flexShrink: 0,
                 background: detailBeleg.typ === 'einnahme' ? '#d1fae5' : '#fee2e2',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: detailBeleg.typ === 'einnahme' ? '#059669' : '#ef4444'
               }}>
-                {KAT_ICONS[detailBeleg.kategorie || 'Sonstiges']}
+                <IconDokument size={20} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {detailBeleg.beschreibung || detailBeleg.lieferant || detailBeleg.dateiname || 'Beleg'}
                 </div>
-                <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>
                   {detailBeleg.datum ? new Date(detailBeleg.datum).toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: detailBeleg.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: detailBeleg.typ === 'einnahme' ? '#059669' : '#ef4444' }}>
                   {detailBeleg.typ === 'einnahme' ? '+' : '−'} € {fmt(effBetrag(detailBeleg))}
                 </div>
                 {(detailBeleg.buero_anteil ?? 100) < 100 && detailBeleg.betrag != null && (
-                  <div style={{ fontSize: 11, color: '#bbb', textDecoration: 'line-through', marginTop: -2 }}>
+                  <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', textDecoration: 'line-through', marginTop: -2, fontVariantNumeric: 'tabular-nums' }}>
                     € {fmt(Number(detailBeleg.betrag))} (gesamt)
                   </div>
                 )}
-                <span style={{
-                  fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 20,
-                  background: detailBeleg.typ === 'einnahme' ? '#d1fae5' : '#fee2e2',
-                  color: detailBeleg.typ === 'einnahme' ? '#065f46' : '#991b1b'
-                }}>
-                  {detailBeleg.typ === 'einnahme' ? '↑ Einnahme' : '↓ Ausgabe'}
-                </span>
+                <StatusChip status={detailBeleg.typ === 'einnahme' ? 'Einnahme' : 'Ausgabe'} />
               </div>
-              <button onClick={detailSchliessen} style={{ background: '#f5f5f5', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: '#555', flexShrink: 0 }}>✕</button>
+              <button onClick={detailSchliessen} style={{ background: 'var(--bf-soft)', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, color: 'var(--bf-text-soft)', flexShrink: 0 }}>✕</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : detailDateiUrl ? '1fr 1fr' : '1fr', gap: 0 }}>
               {/* Infos Links */}
-              <div style={{ padding: '20px 24px', borderRight: detailDateiUrl && !isMobile ? '1px solid #f0ece4' : 'none' }}>
+              <div style={{ padding: '20px 24px', borderRight: detailDateiUrl && !isMobile ? '1px solid var(--bf-divider)' : 'none' }}>
 
                 {/* Info-Zeilen */}
                 {[
-                  { icon: '🏪', label: 'Lieferant', value: detailBeleg.lieferant },
-                  { icon: '📂', label: 'Kategorie', value: detailBeleg.kategorie },
-                  { icon: '📅', label: 'Datum', value: detailBeleg.datum ? new Date(detailBeleg.datum).toLocaleDateString('de-AT') : null },
-                  { icon: '#️⃣', label: 'Rechnungsnr.', value: detailBeleg.rechnungsnummer },
-                  { icon: '💶', label: 'MwSt', value: detailBeleg.mwst ? `€ ${fmt(Number(detailBeleg.mwst))}` : null },
-                  { icon: '📝', label: 'Notiz', value: detailBeleg.notiz },
+                  { label: 'Lieferant', value: detailBeleg.lieferant },
+                  { label: 'Kategorie', value: detailBeleg.kategorie },
+                  { label: 'Datum', value: detailBeleg.datum ? new Date(detailBeleg.datum).toLocaleDateString('de-AT') : null },
+                  { label: 'Rechnungsnr.', value: detailBeleg.rechnungsnummer },
+                  { label: 'MwSt', value: detailBeleg.mwst ? `€ ${fmt(Number(detailBeleg.mwst))}` : null },
+                  { label: 'Notiz', value: detailBeleg.notiz },
                 ].map(row => row.value ? (
-                  <div key={row.label} style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{row.icon}</span>
-                    <div>
-                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#aaa', fontWeight: 700, marginBottom: 2 }}>{row.label}</div>
-                      <div style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 500 }}>{row.value}</div>
-                    </div>
+                  <div key={row.label} style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bf-text-muted)', fontWeight: 700, marginBottom: 2 }}>{row.label}</div>
+                    <div style={{ fontSize: 13, color: 'var(--bf-text)', fontWeight: 500 }}>{row.value}</div>
                   </div>
                 ) : null)}
 
                 {/* Büro/Privat Aufteilung */}
                 {detailBeleg.typ === 'ausgabe' && detailBeleg.buero_anteil != null && detailBeleg.buero_anteil < 100 && (
                   <div style={{ marginBottom: 14, background: '#ede9fe', borderRadius: 10, padding: '10px 14px', border: '1px solid #c4b5fd' }}>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7c3aed', fontWeight: 700, marginBottom: 4 }}>🏢 Büro/Privat-Aufteilung</div>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7c3aed', fontWeight: 700, marginBottom: 4 }}>Büro/Privat-Aufteilung</div>
                     <div style={{ fontSize: 13, color: '#4f46e5', fontWeight: 700 }}>
                       {detailBeleg.buero_anteil}% Büroanteil → € {fmt(Number(detailBeleg.betrag || 0) * detailBeleg.buero_anteil / 100)} verrechnet
                     </div>
@@ -1029,18 +1018,18 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
                 )}
 
                 {/* G&V Status */}
-                <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 10, background: detailBeleg.in_guv ? '#d1fae5' : '#fdf8f0', border: `1px solid ${detailBeleg.in_guv ? '#a7f3d0' : GOLD + '44'}` }}>
+                <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 10, background: detailBeleg.in_guv ? '#d1fae5' : 'var(--bf-soft)', border: `1px solid ${detailBeleg.in_guv ? '#a7f3d0' : GOLD + '44'}` }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: detailBeleg.in_guv ? '#059669' : GOLD }}>
-                    {detailBeleg.in_guv ? '✅ In G&V übertragen' : '⏳ Noch nicht in G&V'}
+                    {detailBeleg.in_guv ? 'In G&V übertragen' : 'Noch nicht in G&V'}
                   </div>
                   {!detailBeleg.in_guv && (
-                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>Klicke auf ↓ um zur G&V zu übertragen</div>
+                    <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 3 }}>Klicke auf ↓ um zur G&V zu übertragen</div>
                   )}
                   {detailBeleg.in_guv && detailBeleg.typ === 'ausgabe' && (detailBeleg.buero_anteil ?? 100) < 100 && (
                     <button
                       onClick={() => { guvUebertragen(detailBeleg, true); detailSchliessen(); }}
                       style={{ marginTop: 8, width: '100%', padding: '7px 10px', borderRadius: 8, border: '1.5px solid #6d28d9', background: '#ede9fe', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#6d28d9' }}>
-                      🔄 G&V-Betrag aktualisieren ({detailBeleg.buero_anteil ?? 100}% = € {((detailBeleg.betrag ?? 0) * (detailBeleg.buero_anteil ?? 100) / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      G&V-Betrag aktualisieren ({detailBeleg.buero_anteil ?? 100}% = € {((detailBeleg.betrag ?? 0) * (detailBeleg.buero_anteil ?? 100) / 100).toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                     </button>
                   )}
                 </div>
@@ -1049,42 +1038,42 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
               {/* Datei Vorschau Rechts */}
               {detailDateiUrl && (
                 <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#aaa', fontWeight: 700 }}>📎 Beleg-Datei</div>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bf-text-muted)', fontWeight: 700 }}>Beleg-Datei</div>
                   {detailBeleg.datei_typ === 'application/pdf' ? (
-                    <embed src={detailDateiUrl} type="application/pdf" style={{ width: '100%', height: 260, borderRadius: 10, border: '1px solid #e5e0d8' }} />
+                    <embed src={detailDateiUrl} type="application/pdf" style={{ width: '100%', height: 260, borderRadius: 10, border: '1px solid var(--bf-border)' }} />
                   ) : (
-                    <img src={detailDateiUrl} alt="Beleg" style={{ width: '100%', maxHeight: 280, objectFit: 'contain', borderRadius: 10, border: '1px solid #e5e0d8', background: '#faf8f5', cursor: 'zoom-in' }}
+                    <img src={detailDateiUrl} alt="Beleg" style={{ width: '100%', maxHeight: 280, objectFit: 'contain', borderRadius: 10, border: '1px solid var(--bf-border)', background: 'var(--bf-soft)', cursor: 'zoom-in' }}
                       onClick={() => setBildModal({ url: detailDateiUrl!, typ: detailBeleg.datei_typ!, name: detailBeleg.dateiname || 'Beleg' })} />
                   )}
                   <button onClick={() => setBildModal({ url: detailDateiUrl!, typ: detailBeleg.datei_typ!, name: detailBeleg.dateiname || 'Beleg' })}
-                    style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 8, padding: '8px', fontSize: 12, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
-                    🔍 Vollbild anzeigen
+                    style={{ background: 'var(--bf-soft)', border: `1px solid ${GOLD}44`, borderRadius: 8, padding: '8px', fontSize: 12, color: GOLD, fontWeight: 700, cursor: 'pointer' }}>
+                    Vollbild anzeigen
                   </button>
                 </div>
               )}
             </div>
 
             {/* Footer Aktionen */}
-            <div style={{ padding: '14px 24px', borderTop: '1px solid #f0ece4', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ padding: '14px 24px', borderTop: '1px solid var(--bf-divider)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={() => { detailSchliessen(); oeffnen(detailBeleg); }}
-                style={{ flex: 1, padding: '10px', borderRadius: 9, border: '1.5px solid #e5e0d8', background: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#555' }}>
-                ✏️ Bearbeiten
+                style={{ ...btnSecondary, flex: 1, padding: '10px' }}>
+                Bearbeiten
               </button>
               {!detailBeleg.in_guv && (
                 <button onClick={() => { guvUebertragen(detailBeleg); detailSchliessen(); }}
-                  style={{ flex: 1, padding: '10px', borderRadius: 9, border: `1.5px solid ${GOLD}66`, background: '#fdf8f0', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: GOLD }}>
+                  style={{ flex: 1, padding: '10px', borderRadius: 9, border: `1.5px solid ${GOLD}66`, background: 'var(--bf-soft)', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: GOLD }}>
                   ↓ Zu G&V übertragen
                 </button>
               )}
               {detailBeleg.in_guv && detailBeleg.typ === 'ausgabe' && (detailBeleg.buero_anteil ?? 100) < 100 && (
                 <button onClick={() => { guvUebertragen(detailBeleg, true); detailSchliessen(); }}
                   style={{ flex: 1, padding: '10px', borderRadius: 9, border: '1.5px solid #6d28d9', background: '#ede9fe', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#6d28d9' }}>
-                  🔄 G&V aktualisieren
+                  G&V aktualisieren
                 </button>
               )}
-              <button onClick={() => { detailSchliessen(); loeschen(detailBeleg.id); }}
-                style={{ padding: '10px 16px', borderRadius: 9, border: '1.5px solid #fde8e6', background: 'white', fontSize: 13, cursor: 'pointer', color: '#c0392b' }}>
-                🗑
+              <button onClick={() => { detailSchliessen(); loeschen(detailBeleg.id); }} title="Löschen"
+                style={{ ...btnSecondary, padding: '10px 16px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
               </button>
             </div>
           </div>
@@ -1097,26 +1086,24 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1500 }} onClick={() => setConfirmModal(null)} />
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-            background: 'white', borderRadius: 20, width: '90%', maxWidth: 380,
+            background: 'var(--bf-card)', borderRadius: 20, width: '90%', maxWidth: 380,
             boxShadow: '0 32px 80px rgba(0,0,0,0.35)', zIndex: 1501,
             fontFamily: 'DM Sans, sans-serif', overflow: 'hidden',
           }}>
             <div style={{ padding: '28px 24px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 44, marginBottom: 10 }}>🗑️</div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a2a3a', marginBottom: 8 }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 8 }}>
                 Wirklich löschen?
               </div>
-              <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 13, color: 'var(--bf-text-muted)', lineHeight: 1.6 }}>
                 {confirmModal.text}
               </div>
-              <div style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>
+              <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 6 }}>
                 Diese Aktion kann nicht rückgängig gemacht werden.
               </div>
             </div>
             <div style={{ padding: '12px 20px 22px', display: 'flex', gap: 10 }}>
               <button onClick={() => setConfirmModal(null)} style={{
-                flex: 1, padding: '12px', borderRadius: 10, border: '1.5px solid #e5e0d8',
-                background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555',
+                ...btnSecondary, flex: 1, padding: '12px', borderRadius: 10,
               }}>Abbrechen</button>
               <button onClick={confirmModal.onJa} style={{
                 flex: 1, padding: '12px', borderRadius: 10, border: 'none',
@@ -1131,9 +1118,8 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
       {/* ── LADE-INDIKATOR ───────────────────────────────────────────────────── */}
       {dateiLaden && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 299, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: '28px 36px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: '#1a1a1a' }}>Datei wird geladen...</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 16, padding: '28px 36px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, color: 'var(--bf-text)' }}>Datei wird geladen...</div>
           </div>
         </div>
       )}
@@ -1148,7 +1134,7 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
             onClick={e => e.stopPropagation()}>
             {/* Dateiname */}
             <div style={{ flex: 1, color: '#e8e8e8', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {bildModal.typ === 'application/pdf' ? '📄' : '🖼️'} {bildModal.name}
+              {bildModal.name}
             </div>
 
             {/* Drucken */}

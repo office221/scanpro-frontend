@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import api from '../services/api'
+import { StatusChip, btnPrimary, btnSecondary } from '../ui/theme'
 
 interface Position {
   typ: string
@@ -251,7 +252,7 @@ export default function Angebote() {
       // Vorlagenliste aktualisieren
       const res = await api.get('/vorlagen')
       setVorlagen(res.data)
-      alert('✅ Als Vorlage gespeichert!')
+      alert('Als Vorlage gespeichert!')
     } catch { alert('Vorlage konnte nicht gespeichert werden') }
     setKiVorlageLaden(p => ({ ...p, [idx]: false }))
   }
@@ -277,7 +278,7 @@ export default function Angebote() {
       setAbschlusstextVorlagen(res.data)
       setVorlagenNameOffen(false)
       setVorlagenNameText('')
-      alert('✅ Als Abschlusstext-Vorlage gespeichert!')
+      alert('Als Abschlusstext-Vorlage gespeichert!')
     } catch { alert('Fehler beim Speichern der Vorlage') }
     setKiAbschlussVorlageLaden(false)
   }
@@ -347,7 +348,7 @@ export default function Angebote() {
         positionen: posRes.data
       })
       await statusAendern(angebot.id, 'Angenommen')
-      alert('✅ Rechnung wurde erstellt!')
+      alert('Rechnung wurde erstellt!')
       angeboteLaden()
     } catch (e: any) {
       alert('Fehler: ' + e.message)
@@ -424,7 +425,7 @@ export default function Angebote() {
       case 'Angenommen': return { bg: '#d1f5e0', text: '#2d6a4f' }
       case 'Abgelehnt': return { bg: '#fde8e6', text: '#c0392b' }
       case 'Gesendet': return { bg: '#dbeafe', text: '#1e40af' }
-      default: return { bg: '#f0f0f0', text: '#666' }
+      default: return { bg: 'var(--bf-soft)', text: 'var(--bf-text-soft)' }
     }
   }
 
@@ -432,22 +433,21 @@ export default function Angebote() {
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
 
       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
-        <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'#888'}}>Alle Angebote</div>
+        <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'var(--bf-text-muted)'}}>Alle Angebote</div>
         <button
-          style={{background:'#1a1a1a', color:'white', border:'none', borderRadius:8, padding:'9px 18px', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}
+          style={btnPrimary}
           onClick={() => { formLeeren(); setFormOffen(true); if (isMobile) setVollbild(true) }}>
           + Neues Angebot
         </button>
       </div>
 
-      <div style={{background:'white', borderRadius:10, border:'1px solid #e5e0d8', flex:1, overflow:'auto'}}>
+      <div style={{background:'var(--bf-card)', borderRadius:10, border:'1px solid var(--bf-border)', flex:1, overflow:'auto'}}>
         {angebote.length === 0 ? (
           <div style={{display:'flex', alignItems:'center', justifyContent:'center', height:'100%'}}>
-            <div style={{textAlign:'center', color:'#888'}}>
-              <div style={{fontSize:48, marginBottom:16}}>📄</div>
-              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:700, marginBottom:8, color:'#1a1a1a'}}>Noch keine Angebote</div>
+            <div style={{textAlign:'center', color:'var(--bf-text-muted)'}}>
+              <div style={{fontFamily:'Syne, sans-serif', fontSize:16, fontWeight:700, marginBottom:8, color:'var(--bf-text)'}}>Noch keine Angebote</div>
               <button
-                style={{background:'#c8a96e', color:'#0a0a0a', border:'none', borderRadius:8, padding:'10px 24px', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, cursor:'pointer'}}
+                style={{...btnPrimary, padding:'10px 24px'}}
                 onClick={() => setFormOffen(true)}>
                 + Erstes Angebot erstellen
               </button>
@@ -456,21 +456,20 @@ export default function Angebote() {
         ) : isMobile ? (
           <div>
             {angebote.map((a: any) => {
-              const farben = statusFarbe(a.status)
               const kunde = kunden.find(k => k.id === a.kundeId)
               const kundenName = kunde ? `${kunde.vorname} ${kunde.nachname}` : '—'
               const datumStr = a.datum ? new Date(a.datum).toLocaleDateString('de-AT') : '—'
               const gueltigBisStr = a.gueltigBis ? new Date(a.gueltigBis).toLocaleDateString('de-AT') : '—'
               return (
-                <div key={a.id} style={{padding:'12px 16px', borderBottom:'1px solid #f0ede8', background: a.id%2===0 ? '#fafaf9' : 'white'}}>
+                <div key={a.id} style={{padding:'12px 16px', borderBottom:'1px solid var(--bf-divider)', background: a.id%2===0 ? 'var(--bf-soft)' : 'var(--bf-card)'}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6}}>
                     <div style={{fontFamily:'Syne, sans-serif', fontWeight:700, fontSize:13}}>{a.nummer}</div>
-                    <span style={{fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:4, background: farben.bg, color: farben.text}}>{a.status}</span>
+                    <StatusChip status={a.status} />
                   </div>
-                  <div style={{fontSize:13, color:'#1a1a1a', marginBottom:4}}>{kundenName}</div>
+                  <div style={{fontSize:13, color:'var(--bf-text)', marginBottom:4}}>{kundenName}</div>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <div style={{fontSize:11, color:'#888'}}>{datumStr} · bis {gueltigBisStr}</div>
-                    <div style={{fontSize:12, color:'#888'}}>{a.projektName || '—'}</div>
+                    <div style={{fontSize:11, color:'var(--bf-text-muted)'}}>{datumStr} · bis {gueltigBisStr}</div>
+                    <div style={{fontSize:12, color:'var(--bf-text-muted)'}}>{a.projektName || '—'}</div>
                   </div>
                   <div style={{marginTop:8, display:'flex', gap:8}}>
                     <button title="PDF öffnen" onClick={() => pdfOeffnen(a.id)}
@@ -478,12 +477,12 @@ export default function Angebote() {
                       PDF
                     </button>
                     <button title="Bearbeiten" onClick={() => angebotBearbeiten(a)}
-                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #e5e0d8', background:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#555', fontSize:12}}>
-                      ✏️
+                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid var(--bf-border)', background:'var(--bf-card)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--bf-text-soft)', fontSize:12}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
                     <button title="Löschen" onClick={() => angebotLoeschen(a.id)}
-                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid #fde8e6', background:'white', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#c0392b', fontSize:12}}>
-                      🗑
+                      style={{minHeight:40, padding:'0 12px', borderRadius:8, border:'1px solid rgba(239,68,68,0.35)', background:'var(--bf-card)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#ef4444', fontSize:12}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                     </button>
                   </div>
                 </div>
@@ -494,9 +493,9 @@ export default function Angebote() {
           <div style={{overflowX:'auto'}}>
           <table style={{width:'100%', borderCollapse:'collapse'}}>
             <thead>
-              <tr style={{background:'#faf8f5'}}>
+              <tr style={{background:'var(--bf-thead)'}}>
                 {['Nummer', 'Kunde', 'Projekt', 'Gültig bis', 'Status', 'Aktionen'].map(h => (
-                  <th key={h} style={{padding:'9px 14px', textAlign:'left', fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#888', fontWeight:700, borderBottom:'1px solid #e5e0d8'}}>{h}</th>
+                  <th key={h} style={{padding:'9px 14px', textAlign:'left', fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:700, borderBottom:'1px solid var(--bf-border)'}}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -504,15 +503,15 @@ export default function Angebote() {
               {angebote.map((a: any) => {
                 const farben = statusFarbe(a.status)
                 return (
-                  <tr key={a.id} style={{borderBottom:'1px solid #f0ede8'}}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                  <tr key={a.id} style={{borderBottom:'1px solid var(--bf-divider)'}}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <td style={{padding:'10px 14px', fontFamily:'Syne, sans-serif', fontSize:11, fontWeight:700, color:'#888'}}>{a.nummer}</td>
-                    <td style={{padding:'10px 14px', fontSize:12, color:'#1a1a1a'}}>
+                    <td style={{padding:'10px 14px', fontFamily:'Syne, sans-serif', fontSize:11, fontWeight:700, color:'var(--bf-text-muted)'}}>{a.nummer}</td>
+                    <td style={{padding:'10px 14px', fontSize:12, color:'var(--bf-text)'}}>
                       {kunden.find(k => k.id === a.kundeId)?.vorname} {kunden.find(k => k.id === a.kundeId)?.nachname}
                     </td>
-                    <td style={{padding:'10px 14px', fontSize:12, color:'#888'}}>{a.projektName || '—'}</td>
-                    <td style={{padding:'10px 14px', fontSize:12, color:'#888'}}>
+                    <td style={{padding:'10px 14px', fontSize:12, color:'var(--bf-text-muted)'}}>{a.projektName || '—'}</td>
+                    <td style={{padding:'10px 14px', fontSize:12, color:'var(--bf-text-muted)'}}>
                       {a.gueltigBis ? new Date(a.gueltigBis).toLocaleDateString('de-AT') : '—'}
                     </td>
                     <td style={{padding:'10px 14px'}}>
@@ -541,11 +540,11 @@ export default function Angebote() {
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </button>
                         <button title="Bearbeiten" onClick={() => angebotBearbeiten(a)}
-                          style={{width:32,height:32,borderRadius:8,border:'1px solid #e5e0d8',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#555'}}>
+                          style={{width:32,height:32,borderRadius:8,border:'1px solid var(--bf-border)',background:'var(--bf-card)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--bf-text-soft)'}}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button title="Löschen" onClick={() => angebotLoeschen(a.id)}
-                          style={{width:32,height:32,borderRadius:8,border:'1px solid #fde8e6',background:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#c0392b'}}>
+                          style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.35)',background:'var(--bf-card)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#ef4444'}}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                         </button>
                       </div>
@@ -562,26 +561,26 @@ export default function Angebote() {
       {formOffen && ReactDOM.createPortal((
         <>
           {!vollbild && <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:9999}} onClick={() => { setFormOffen(false); setModalPos(null); formLeeren() }} />}
-          <div style={{position:'fixed', zIndex:10000, background:'white', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : modalSize.w, height: vollbild ? '100vh' : modalSize.h, minWidth: vollbild ? undefined : 560, left: vollbild ? 0 : (modalPos ? modalPos.x : Math.max(0, (window.innerWidth - modalSize.w) / 2)), top: vollbild ? 0 : (modalPos ? modalPos.y : Math.max(20, (window.innerHeight - modalSize.h) / 2)), boxShadow: vollbild ? 'none' : '0 24px 60px rgba(0,0,0,0.3)', overflow:'hidden', display:'flex', flexDirection:'column'}}>
+          <div style={{position:'fixed', zIndex:10000, background:'var(--bf-card)', borderRadius: vollbild ? 0 : 14, width: vollbild ? '100vw' : modalSize.w, height: vollbild ? '100vh' : modalSize.h, minWidth: vollbild ? undefined : 560, left: vollbild ? 0 : (modalPos ? modalPos.x : Math.max(0, (window.innerWidth - modalSize.w) / 2)), top: vollbild ? 0 : (modalPos ? modalPos.y : Math.max(20, (window.innerHeight - modalSize.h) / 2)), boxShadow: vollbild ? 'none' : 'var(--bf-shadow)', overflow:'hidden', display:'flex', flexDirection:'column'}}>
 
-            <div style={{padding:'20px 24px', borderBottom:'1px solid #e5e0d8', display:'flex', alignItems:'center', gap:12}}>
+            <div style={{padding:'20px 24px', borderBottom:'1px solid var(--bf-border)', display:'flex', alignItems:'center', gap:12}}>
               <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, flex:1, cursor: vollbild ? 'default' : 'move', userSelect:'none'}} onMouseDown={onMoveDrag}>
-                {bearbeitenId ? '✏️ Angebot bearbeiten' : '📄 Neues Angebot'}
+                {bearbeitenId ? 'Angebot bearbeiten' : 'Neues Angebot'}
               </div>
               <button onMouseDown={e => e.stopPropagation()} onClick={() => { setVollbild(v => !v); setModalPos(null) }}
                 title={vollbild ? 'Verkleinern' : 'Vollbild'}
-                style={{background:'transparent', border:'none', fontSize:16, cursor:'pointer', color:'#888'}}>
+                style={{background:'transparent', border:'none', fontSize:16, cursor:'pointer', color:'var(--bf-text-muted)'}}>
                 {vollbild ? '⊡' : '⛶'}
               </button>
               <button onMouseDown={e => e.stopPropagation()} onClick={() => { setFormOffen(false); setModalPos(null); formLeeren() }}
-                style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#888'}}>✕</button>
+                style={{background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'var(--bf-text-muted)'}}>✕</button>
             </div>
 
             <div style={{flex:1, overflowY:'auto', overflowX:'hidden'}}>
             <div style={{padding:24}}>
               <div style={{marginBottom:16}}>
                 <label style={labelStyle}>Kunde *</label>
-                <select style={{...inputStyle, background:'white'}}
+                <select style={inputStyle}
                   value={selectedKunde || ''}
                   onChange={e => setSelectedKunde(Number(e.target.value))}>
                   <option value="">Kunde auswählen...</option>
@@ -616,7 +615,7 @@ export default function Angebote() {
                 </div>
                 <div style={{gridColumn:'1 / -1'}}>
                   <label style={labelStyle}>Zahlungsbedingungen im PDF</label>
-                  <select style={{...inputStyle, background:'white'}}
+                  <select style={inputStyle}
                     value={zahlungsModus}
                     onChange={e => setZahlungsModus(e.target.value)}>
                     <option value="standard">Standard – Angebot gültig bis [Datum]</option>
@@ -636,13 +635,13 @@ export default function Angebote() {
                 </div>
               </div>
 
-              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'#f5f3ef', borderRadius:8}}>
+              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'var(--bf-soft)', borderRadius:8}}>
                 <input type="checkbox" checked={istKleinunternehmer}
                   onChange={e => setIstKleinunternehmer(e.target.checked)}
                   style={{width:16, height:16, cursor:'pointer'}} />
                 <div>
                   <div style={{fontSize:13, fontWeight:500}}>§6 Kleinunternehmer</div>
-                  <div style={{fontSize:11, color:'#888'}}>Keine MwSt. — Pflichttext wird automatisch hinzugefügt</div>
+                  <div style={{fontSize:11, color:'var(--bf-text-muted)'}}>Keine MwSt. — Pflichttext wird automatisch hinzugefügt</div>
                 </div>
               </div>
 
@@ -650,7 +649,7 @@ export default function Angebote() {
                 <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:10}}>Positionen</div>
                 <div style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, marginBottom:4}}>
                   {['', 'Beschreibung', 'Menge', 'Einheit', '€ Preis', ''].map((h, i) => (
-                    <div key={i} style={{fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'#aaa', fontWeight:700}}>{h}</div>
+                    <div key={i} style={{fontSize:9, textTransform:'uppercase', letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:700}}>{h}</div>
                   ))}
                 </div>
                 {positionen.map((pos, idx) => (
@@ -659,19 +658,19 @@ export default function Angebote() {
                     <div key={idx} style={{display:'grid', gridTemplateColumns:'22px 1fr 32px', gap:8, marginBottom:6, alignItems:'center'}}>
                       <div style={{display:'flex', flexDirection:'column', gap:2}}>
                         <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
-                          style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
+                          style={{background: idx === 0 ? 'var(--bf-soft)' : 'var(--bf-divider)', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▲</button>
                         <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
-                          style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
+                          style={{background: idx === positionen.length - 1 ? 'var(--bf-soft)' : 'var(--bf-divider)', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
                       <textarea
-                        style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'#f5f3ef', borderColor:'#e5e0d8', color:'#3a2e1e'}}
+                        style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'var(--bf-soft)', borderColor:'var(--bf-input-border)', color:'var(--bf-text)'}}
                         placeholder="Zwischentitel / Abschnittsbezeichnung..."
                         rows={1}
                         value={pos.beschreibung}
                         onChange={e => { positionAendern(idx, 'beschreibung', e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
                         onFocus={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} />
                       <button onClick={() => positionLoeschen(idx)}
-                        style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
+                        style={{background:'transparent', border:'1px solid rgba(239,68,68,0.35)', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#ef4444', fontSize:14}}>✕</button>
                     </div>
                   ) : (
                     /* ── Normale / Eventualposition ── */
@@ -679,9 +678,9 @@ export default function Angebote() {
                     <div style={{display:'grid', gridTemplateColumns:'22px 1fr 80px 100px 100px 32px', gap:8, alignItems:'center'}}>
                       <div style={{display:'flex', flexDirection:'column', gap:2}}>
                         <button onClick={() => positionVerschieben(idx, 'hoch')} disabled={idx === 0} title="Nach oben"
-                          style={{background: idx === 0 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▲</button>
+                          style={{background: idx === 0 ? 'var(--bf-soft)' : 'var(--bf-divider)', border:'none', borderRadius:4, height:17, cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▲</button>
                         <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
-                          style={{background: idx === positionen.length - 1 ? '#f5f3ef' : '#f0ede8', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? '#ccc' : '#666', fontSize:9, lineHeight:1, padding:0}}>▼</button>
+                          style={{background: idx === positionen.length - 1 ? 'var(--bf-soft)' : 'var(--bf-divider)', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
                       <div style={{position:'relative'}}>
                         <RichEditor
@@ -703,15 +702,15 @@ export default function Angebote() {
                           vorlageLaden={!!kiVorlageLaden[idx]}
                         />
                         {autocomplete && autocomplete.idx === idx && (
-                          <div style={{position:'absolute', top:'100%', left:0, right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:300, overflow:'hidden', marginTop:2}}>
+                          <div style={{position:'absolute', top:'100%', left:0, right:0, background:'var(--bf-card)', border:'1px solid var(--bf-border)', borderRadius:8, boxShadow:'var(--bf-shadow)', zIndex:300, overflow:'hidden', marginTop:2}}>
                             {autocomplete.items.map((v, i) => (
                               <div key={i} onMouseDown={() => vorlageEinfuegen(idx, v)}
-                                style={{padding:'7px 12px', cursor:'pointer', borderBottom: i < autocomplete.items.length-1 ? '1px solid #f0ede8' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
-                                onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                                style={{padding:'7px 12px', cursor:'pointer', borderBottom: i < autocomplete.items.length-1 ? '1px solid var(--bf-divider)' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                 <div>
-                                  <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a'}}>{v.name}</div>
-                                  {v.beschreibung && <div style={{fontSize:11, color:'#888', marginTop:1}}>{v.beschreibung}</div>}
+                                  <div style={{fontSize:12, fontWeight:600, color:'var(--bf-text)'}}>{v.name}</div>
+                                  {v.beschreibung && <div style={{fontSize:11, color:'var(--bf-text-muted)', marginTop:1}}>{v.beschreibung}</div>}
                                 </div>
                                 <div style={{fontSize:11, color:'#c8a96e', fontWeight:600, whiteSpace:'nowrap'}}>
                                   {parseFloat(v.einzelpreis) > 0 ? `€ ${parseFloat(v.einzelpreis).toFixed(2)}` : ''} {v.einheit}
@@ -726,7 +725,7 @@ export default function Angebote() {
                         defaultValue={pos.menge || ''}
                         onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
                         onBlur={e => positionAendern(idx, 'menge', parseFloat(e.target.value.replace(',', '.')) || 0)} />
-                      <select style={{...inputStyle, background:'white'}}
+                      <select style={inputStyle}
                         value={pos.einheit}
                         onChange={e => positionAendern(idx, 'einheit', e.target.value)}>
                         {['PA', 'M2', 'M3', 'LFM', 'STD', 'OBJ'].map(e => (
@@ -739,12 +738,12 @@ export default function Angebote() {
                         onFocus={e => { const t = e.target; setTimeout(() => t.select(), 10) }}
                         onBlur={e => positionAendern(idx, 'einzelpreis', parseFloat(e.target.value.replace(',', '.')) || 0)} />
                       <button onClick={() => positionLoeschen(idx)}
-                        style={{background:'#fde8e6', border:'none', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#c0392b', fontSize:14}}>✕</button>
+                        style={{background:'transparent', border:'1px solid rgba(239,68,68,0.35)', borderRadius:6, width:32, height:36, cursor:'pointer', color:'#ef4444', fontSize:14}}>✕</button>
                     </div>{/* Ende Grid */}
 
                     {/* ── KI-Vorschlagsbox – volle Breite UNTER der Zeile ── */}
                     {kiVorschlag[idx] && (
-                      <div style={{marginTop:6, background:'white', border:'1.5px solid #a78bfa', borderRadius:10, overflow:'hidden', boxShadow:'0 4px 16px rgba(124,58,237,0.12)'}}>
+                      <div style={{marginTop:6, background:'var(--bf-card)', border:'1.5px solid #a78bfa', borderRadius:10, overflow:'hidden', boxShadow:'0 4px 16px rgba(124,58,237,0.12)'}}>
                         <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(135deg,#7c3aed,#6366f1)', padding:'6px 12px'}}>
                           <div style={{display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:700, color:'white', textTransform:'uppercase', letterSpacing:0.8}}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.4L19 9l-5.2 2.6L12 17l-1.8-5.4L5 9l5.2-1.6L12 2z" fill="rgba(255,255,255,0.95)"/></svg>
@@ -753,22 +752,22 @@ export default function Angebote() {
                           <button onMouseDown={e => { e.preventDefault(); setKiVorschlag(p => { const n={...p}; delete n[idx]; return n }); setKiHinweis(p => { const n={...p}; delete n[idx]; return n }) }}
                             style={{background:'rgba(255,255,255,0.2)', border:'none', borderRadius:4, width:20, height:20, cursor:'pointer', color:'white', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center'}}>✕</button>
                         </div>
-                        <div style={{padding:'10px 12px', fontSize:13, color:'#1a2a3a', lineHeight:1.7, borderBottom:'1px solid #ede9fe', fontWeight:400, whiteSpace:'pre-wrap'}}>
+                        <div style={{padding:'10px 12px', fontSize:13, color:'var(--bf-text)', lineHeight:1.7, borderBottom:'1px solid #ede9fe', fontWeight:400, whiteSpace:'pre-wrap'}}>
                           {kiVorschlag[idx]}
                         </div>
-                        <div style={{display:'flex', gap:6, padding:'8px 10px', background:'#faf9ff', alignItems:'center', flexWrap:'wrap'}}>
+                        <div style={{display:'flex', gap:6, padding:'8px 10px', background:'var(--bf-soft)', alignItems:'center', flexWrap:'wrap'}}>
                           <input type="text" value={kiHinweis[idx] || ''}
                             onChange={e => setKiHinweis(p => ({ ...p, [idx]: e.target.value }))}
                             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); kiTextVerbessern(idx) } }}
                             placeholder='"kürzer", "formeller", "mit Garantie"...'
-                            style={{flex:1, border:'1px solid #e5e0d8', borderRadius:6, padding:'5px 9px', fontSize:11, fontFamily:'DM Sans, sans-serif', outline:'none', background:'white', minWidth:120}} />
+                            style={{flex:1, border:'1px solid var(--bf-input-border)', borderRadius:6, padding:'5px 9px', fontSize:11, fontFamily:'DM Sans, sans-serif', outline:'none', background:'var(--bf-input-bg)', color:'var(--bf-text)', minWidth:120}} />
                           <button onMouseDown={e => { e.preventDefault(); kiTextVerbessern(idx) }} disabled={!!kiVerbLaden[idx]}
-                            style={{background: kiVerbLaden[idx] ? '#e5e0d8' : '#6366f1', color:'white', border:'none', borderRadius:6, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
-                            {kiVerbLaden[idx] ? '⏳' : '🔄 Neu'}
+                            style={{background: kiVerbLaden[idx] ? 'var(--bf-border)' : '#6366f1', color:'white', border:'none', borderRadius:6, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
+                            {kiVerbLaden[idx] ? '…' : 'Neu'}
                           </button>
                           <button onMouseDown={e => { e.preventDefault(); kiVorschlagAlsVorlage(idx) }} disabled={!!kiVorlageLaden[idx]}
-                            style={{background: kiVorlageLaden[idx] ? '#e5e0d8' : '#1a2a3a', color:'white', border:'none', borderRadius:6, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
-                            {kiVorlageLaden[idx] ? '⏳' : '📁 Vorlage'}
+                            style={{background: kiVorlageLaden[idx] ? 'var(--bf-border)' : '#1a2a3a', color:'white', border:'none', borderRadius:6, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
+                            {kiVorlageLaden[idx] ? '…' : 'Vorlage'}
                           </button>
                           <button onMouseDown={e => { e.preventDefault(); kiVorschlagUebernehmen(idx) }}
                             style={{background:'linear-gradient(135deg,#10b981,#059669)', color:'white', border:'none', borderRadius:6, padding:'5px 14px', fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', boxShadow:'0 2px 6px rgba(16,185,129,0.35)'}}>
@@ -784,7 +783,7 @@ export default function Angebote() {
                         checked={pos.typ === 'Eventualposition'}
                         onChange={e => positionAendern(idx, 'typ', e.target.checked ? 'Eventualposition' : 'Normal')}
                         style={{width:14, height:14, accentColor:'#f59e0b', cursor:'pointer'}} />
-                      <span style={{fontSize:11, fontWeight: pos.typ === 'Eventualposition' ? 700 : 400, color: pos.typ === 'Eventualposition' ? '#b45309' : '#aaa'}}>
+                      <span style={{fontSize:11, fontWeight: pos.typ === 'Eventualposition' ? 700 : 400, color: pos.typ === 'Eventualposition' ? '#b45309' : 'var(--bf-text-muted)'}}>
                         Eventualposition – Preis sichtbar, nicht in Gesamtsumme
                       </span>
                     </label>
@@ -801,17 +800,17 @@ export default function Angebote() {
                     {vorlagenPickerOffen && (
                       <>
                         <div style={{position:'fixed', inset:0, zIndex:199}} onClick={() => setVorlagenPickerOffen(false)} />
-                        <div style={{position:'absolute', bottom:'100%', left:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.15)', zIndex:200, minWidth:280, maxHeight:220, overflowY:'auto', marginBottom:4}}>
+                        <div style={{position:'absolute', bottom:'100%', left:0, background:'var(--bf-card)', border:'1px solid var(--bf-border)', borderRadius:8, boxShadow:'var(--bf-shadow)', zIndex:200, minWidth:280, maxHeight:220, overflowY:'auto', marginBottom:4}}>
                           {vorlagen.length === 0
-                            ? <div style={{padding:'12px 16px', fontSize:12, color:'#888', textAlign:'center'}}>Noch keine Vorlagen gespeichert.</div>
+                            ? <div style={{padding:'12px 16px', fontSize:12, color:'var(--bf-text-muted)', textAlign:'center'}}>Noch keine Vorlagen gespeichert.</div>
                             : vorlagen.map((v, i) => (
                                 <div key={i} onClick={() => vorlageAlsPositionHinzufuegen(v)}
-                                  style={{padding:'8px 14px', cursor:'pointer', borderBottom: i < vorlagen.length-1 ? '1px solid #f0ede8' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
-                                  onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                                  style={{padding:'8px 14px', cursor:'pointer', borderBottom: i < vorlagen.length-1 ? '1px solid var(--bf-divider)' : 'none', display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}
+                                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                   <div>
-                                    <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a'}}>{v.name}</div>
-                                    {v.beschreibung && <div style={{fontSize:11, color:'#888', marginTop:1}}>{v.beschreibung}</div>}
+                                    <div style={{fontSize:12, fontWeight:600, color:'var(--bf-text)'}}>{v.name}</div>
+                                    {v.beschreibung && <div style={{fontSize:11, color:'var(--bf-text-muted)', marginTop:1}}>{v.beschreibung}</div>}
                                   </div>
                                   <div style={{fontSize:11, color:'#c8a96e', fontWeight:600, whiteSpace:'nowrap'}}>
                                     {parseFloat(v.einzelpreis) > 0 ? `€ ${parseFloat(v.einzelpreis).toFixed(2)}` : ''} {v.einheit}
@@ -824,7 +823,7 @@ export default function Angebote() {
                     )}
                   </div>
                   <button onClick={positionHinzufuegen}
-                    style={{flex:1, padding:'9px', border:'2px dashed #e5e0d8', borderRadius:8, background:'transparent', color:'#888', fontFamily:'DM Sans, sans-serif', fontSize:13, cursor:'pointer'}}>
+                    style={{flex:1, padding:'9px', border:'2px dashed var(--bf-border)', borderRadius:8, background:'transparent', color:'var(--bf-text-muted)', fontFamily:'DM Sans, sans-serif', fontSize:13, cursor:'pointer'}}>
                     + Position hinzufügen
                   </button>
                   <button onClick={() => { setPositionen([...positionen, { typ: 'Text', beschreibung: '', menge: 0, einheit: '', einzelpreis: 0 }]); setFormKey(k => k + 1) }}
@@ -832,14 +831,14 @@ export default function Angebote() {
                     + Textzeile
                   </button>
                   <button onClick={kiTextGenerieren} disabled={kiTextLaden}
-                    style={{padding:'9px 14px', border:'2px dashed #6366f1', borderRadius:8, background: kiTextLaden ? '#f0f0ff' : 'white', color:'#6366f1', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:700, cursor: kiTextLaden ? 'not-allowed' : 'pointer', whiteSpace:'nowrap'}}>
-                    {kiTextLaden ? '⏳ KI denkt...' : '✨ KI-Positionen'}
+                    style={{padding:'9px 14px', border:'2px dashed #6366f1', borderRadius:8, background: kiTextLaden ? 'var(--bf-soft)' : 'var(--bf-card)', color:'#6366f1', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:700, cursor: kiTextLaden ? 'not-allowed' : 'pointer', whiteSpace:'nowrap'}}>
+                    {kiTextLaden ? 'KI denkt...' : 'KI-Positionen'}
                   </button>
                 </div>
               </div>
 
-              <div style={{background:'#f5f3ef', borderRadius:10, padding:16, marginBottom:20}}>
-                <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'#888'}}>
+              <div style={{background:'var(--bf-soft)', borderRadius:10, padding:16, marginBottom:20}}>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'var(--bf-text-muted)'}}>
                   <span>Zwischensumme</span><span>€ {zwischensumme.toFixed(2)}</span>
                 </div>
                 {rabattProzent > 0 && (
@@ -849,14 +848,14 @@ export default function Angebote() {
                   </div>
                 )}
                 {!istKleinunternehmer && (
-                  <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'#888'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:6, color:'var(--bf-text-muted)'}}>
                     <span>MwSt. 20%</span><span>€ {mwst.toFixed(2)}</span>
                   </div>
                 )}
                 {istKleinunternehmer && (
                   <div style={{fontSize:11, color:'#c8a96e', marginBottom:6}}>§6 UStG — keine MwSt.</div>
                 )}
-                <div style={{display:'flex', justifyContent:'space-between', fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, borderTop:'1px solid #e5e0d8', paddingTop:10}}>
+                <div style={{display:'flex', justifyContent:'space-between', fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:800, borderTop:'1px solid var(--bf-border)', paddingTop:10}}>
                   <span>Gesamt</span><span>€ {gesamt.toFixed(2)}</span>
                 </div>
               </div>
@@ -864,20 +863,20 @@ export default function Angebote() {
               {/* SONDERANGEBOT & RABATT */}
               <div style={{marginBottom:20}}>
                 {/* Sonderangebot Toggle */}
-                <label style={{display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:10, background: sonderangebot ? '#fff1f1' : '#f9f6f1', border: sonderangebot ? '1.5px solid #dc2626' : '1.5px solid #e5e0d8', cursor:'pointer', marginBottom:12, userSelect:'none'}}>
+                <label style={{display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:10, background: sonderangebot ? 'rgba(220,38,38,0.08)' : 'var(--bf-soft)', border: sonderangebot ? '1.5px solid #dc2626' : '1.5px solid var(--bf-border)', cursor:'pointer', marginBottom:12, userSelect:'none'}}>
                   <input type="checkbox" checked={sonderangebot} onChange={e => setSonderangebot(e.target.checked)}
                     style={{width:16, height:16, accentColor:'#dc2626', cursor:'pointer'}} />
                   <div>
-                    <div style={{fontSize:13, fontWeight:700, color: sonderangebot ? '#dc2626' : '#555'}}>
-                      🏷️ Sonderangebot – "SONDERANGEBOT" Badge im PDF anzeigen
+                    <div style={{fontSize:13, fontWeight:700, color: sonderangebot ? '#dc2626' : 'var(--bf-text-soft)'}}>
+                      Sonderangebot – "SONDERANGEBOT" Badge im PDF anzeigen
                     </div>
-                    <div style={{fontSize:11, color:'#aaa', marginTop:1}}>Hebt das Angebot als zeitlich limitiertes Sonderangebot hervor</div>
+                    <div style={{fontSize:11, color:'var(--bf-text-muted)', marginTop:1}}>Hebt das Angebot als zeitlich limitiertes Sonderangebot hervor</div>
                   </div>
                 </label>
 
                 {/* Rabatt Sektion */}
                 <div style={{background:'#fdf8f0', border:'1px solid #e8d9b8', borderRadius:10, padding:16}}>
-                  <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:12, color:'#92400e'}}>🏷️ Rabatt</div>
+                  <div style={{fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700, marginBottom:12, color:'#92400e'}}>Rabatt</div>
                   <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
                     <div>
                       <label style={labelStyle}>Rabatt in %</label>
@@ -886,7 +885,7 @@ export default function Angebote() {
                           value={rabattProzent || ''}
                           placeholder="0"
                           onChange={e => setRabattProzent(parseFloat(e.target.value) || 0)} />
-                        <span style={{fontSize:13, color:'#888', flexShrink:0}}>%</span>
+                        <span style={{fontSize:13, color:'var(--bf-text-muted)', flexShrink:0}}>%</span>
                       </div>
                     </div>
                     <div>
@@ -897,8 +896,8 @@ export default function Angebote() {
                     </div>
                   </div>
                   {rabattProzent > 0 && (
-                    <div style={{marginTop:10, display:'flex', justifyContent:'space-between', padding:'8px 12px', background:'white', borderRadius:8, border:'1px solid #e8d9b8'}}>
-                      <span style={{fontSize:12, color:'#888'}}>{rabattBeschreibung || 'Rabatt'} ({rabattProzent}%)</span>
+                    <div style={{marginTop:10, display:'flex', justifyContent:'space-between', padding:'8px 12px', background:'var(--bf-card)', borderRadius:8, border:'1px solid #e8d9b8'}}>
+                      <span style={{fontSize:12, color:'var(--bf-text-muted)'}}>{rabattBeschreibung || 'Rabatt'} ({rabattProzent}%)</span>
                       <span style={{fontSize:14, fontWeight:800, color:'#c0392b'}}>− € {rabattBetrag.toFixed(2)}</span>
                     </div>
                   )}
@@ -906,7 +905,7 @@ export default function Angebote() {
                   <div style={{display:'flex', gap:6, marginTop:10, flexWrap:'wrap'}}>
                     {[5, 10, 15, 20, 25, 30].map(p => (
                       <button key={p} onClick={() => setRabattProzent(rabattProzent === p ? 0 : p)}
-                        style={{padding:'4px 12px', borderRadius:20, border:'none', background: rabattProzent === p ? '#c0392b' : '#f0ede8', color: rabattProzent === p ? 'white' : '#555', fontSize:12, fontWeight:700, cursor:'pointer'}}>
+                        style={{padding:'4px 12px', borderRadius:20, border:'none', background: rabattProzent === p ? '#c0392b' : 'var(--bf-soft)', color: rabattProzent === p ? 'white' : 'var(--bf-text-soft)', fontSize:12, fontWeight:700, cursor:'pointer'}}>
                         {p}%
                       </button>
                     ))}
@@ -927,16 +926,16 @@ export default function Angebote() {
                     {atPickerOffen && (
                       <>
                         <div style={{position:'fixed', inset:0, zIndex:199}} onClick={() => setAtPickerOffen(false)} />
-                        <div style={{position:'absolute', bottom:'100%', right:0, background:'white', border:'1px solid #e5e0d8', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.15)', zIndex:200, minWidth:300, maxHeight:220, overflowY:'auto', marginBottom:4}}>
+                        <div style={{position:'absolute', bottom:'100%', right:0, background:'var(--bf-card)', border:'1px solid var(--bf-border)', borderRadius:8, boxShadow:'var(--bf-shadow)', zIndex:200, minWidth:300, maxHeight:220, overflowY:'auto', marginBottom:4}}>
                           {abschlusstextVorlagen.length === 0
-                            ? <div style={{padding:'12px 16px', fontSize:12, color:'#888', textAlign:'center'}}>Keine Abschlusstexte gespeichert.<br/><span style={{fontSize:11}}>Erstelle welche unter Vorlagen → Abschlusstexte</span></div>
+                            ? <div style={{padding:'12px 16px', fontSize:12, color:'var(--bf-text-muted)', textAlign:'center'}}>Keine Abschlusstexte gespeichert.<br/><span style={{fontSize:11}}>Erstelle welche unter Vorlagen → Abschlusstexte</span></div>
                             : abschlusstextVorlagen.map((t, i) => (
                                 <div key={i} onClick={() => { setAbschlusstext(t.text); setAtPickerOffen(false) }}
-                                  style={{padding:'10px 14px', cursor:'pointer', borderBottom: i < abschlusstextVorlagen.length-1 ? '1px solid #f0ede8' : 'none'}}
-                                  onMouseEnter={e => (e.currentTarget.style.background = '#faf8f5')}
+                                  style={{padding:'10px 14px', cursor:'pointer', borderBottom: i < abschlusstextVorlagen.length-1 ? '1px solid var(--bf-divider)' : 'none'}}
+                                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bf-hover)')}
                                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                  <div style={{fontSize:12, fontWeight:600, color:'#1a1a1a', marginBottom:2}}>{t.name}</div>
-                                  <div style={{fontSize:11, color:'#888', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{t.text}</div>
+                                  <div style={{fontSize:12, fontWeight:600, color:'var(--bf-text)', marginBottom:2}}>{t.name}</div>
+                                  <div style={{fontSize:11, color:'var(--bf-text-muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{t.text}</div>
                                 </div>
                               ))
                           }
@@ -959,21 +958,21 @@ export default function Angebote() {
                       disabled={kiAbschlussVorlageLaden}
                       title="Als Abschlusstext-Vorlage speichern"
                       style={{background:'#fef9e7', border:'1px solid #fde68a', borderRadius:5, padding:'2px 10px', fontSize:10, fontWeight:700, color:'#92400e', cursor:'pointer', lineHeight:'18px'}}>
-                      {kiAbschlussVorlageLaden ? '⏳' : '📁 Als Vorlage'}
+                      {kiAbschlussVorlageLaden ? '…' : 'Als Vorlage'}
                     </button>
                     <button
                       onMouseDown={e => { e.preventDefault(); kiAbschlusstextVerbessern() }}
                       disabled={kiAbschlussVerbLaden}
                       title="Text bautechnisch verbessern"
                       style={{background: kiAbschlussVerbLaden ? '#f0f0ff' : '#ede9fe', border:'1px solid #c4b5fd', borderRadius:5, padding:'2px 10px', fontSize:10, fontWeight:700, color:'#6366f1', cursor: kiAbschlussVerbLaden ? 'not-allowed' : 'pointer', lineHeight:'18px'}}>
-                      {kiAbschlussVerbLaden ? '⏳ KI...' : '✨ KI verbessern'}
+                      {kiAbschlussVerbLaden ? 'KI...' : 'KI verbessern'}
                     </button>
                   </div>
                 )}
 
                 {/* ── KI-Vorschlagsbox Abschlusstext ── */}
                 {kiAbschlussVorschlag && (
-                  <div style={{marginTop:5, background:'white', border:'1.5px solid #a78bfa', borderRadius:10, overflow:'hidden', boxShadow:'0 4px 16px rgba(124,58,237,0.12)'}}>
+                  <div style={{marginTop:5, background:'var(--bf-card)', border:'1.5px solid #a78bfa', borderRadius:10, overflow:'hidden', boxShadow:'0 4px 16px rgba(124,58,237,0.12)'}}>
                     <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(135deg,#7c3aed,#6366f1)', padding:'5px 10px'}}>
                       <div style={{display:'flex', alignItems:'center', gap:5, fontSize:10, fontWeight:700, color:'white', textTransform:'uppercase', letterSpacing:0.8}}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.4L19 9l-5.2 2.6L12 17l-1.8-5.4L5 9l5.2-1.6L12 2z" fill="rgba(255,255,255,0.95)"/></svg>
@@ -982,22 +981,22 @@ export default function Angebote() {
                       <button onMouseDown={e => { e.preventDefault(); setKiAbschlussVorschlag(''); setKiAbschlussHinweis('') }}
                         style={{background:'rgba(255,255,255,0.2)', border:'none', borderRadius:4, width:18, height:18, cursor:'pointer', color:'white', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center'}}>✕</button>
                     </div>
-                    <div style={{padding:'7px 10px', fontSize:12, color:'#1a2a3a', lineHeight:1.65, maxHeight:90, overflowY:'auto', borderBottom:'1px solid #ede9fe', fontWeight:400, whiteSpace:'pre-wrap'}}>
+                    <div style={{padding:'7px 10px', fontSize:12, color:'var(--bf-text)', lineHeight:1.65, maxHeight:90, overflowY:'auto', borderBottom:'1px solid #ede9fe', fontWeight:400, whiteSpace:'pre-wrap'}}>
                       {kiAbschlussVorschlag}
                     </div>
-                    <div style={{display:'flex', gap:5, padding:'5px 7px', background:'#faf9ff', alignItems:'center'}}>
+                    <div style={{display:'flex', gap:5, padding:'5px 7px', background:'var(--bf-soft)', alignItems:'center'}}>
                       <input type="text" value={kiAbschlussHinweis}
                         onChange={e => setKiAbschlussHinweis(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); kiAbschlusstextVerbessern() } }}
                         placeholder='"kürzer", "formeller", "mit Garantie"...'
-                        style={{flex:1, border:'1px solid #e5e0d8', borderRadius:5, padding:'3px 7px', fontSize:10, fontFamily:'DM Sans, sans-serif', outline:'none', background:'white', minWidth:0}} />
+                        style={{flex:1, border:'1px solid var(--bf-input-border)', borderRadius:5, padding:'3px 7px', fontSize:10, fontFamily:'DM Sans, sans-serif', outline:'none', background:'var(--bf-input-bg)', color:'var(--bf-text)', minWidth:0}} />
                       <button onMouseDown={e => { e.preventDefault(); kiAbschlusstextVerbessern() }} disabled={kiAbschlussVerbLaden}
-                        style={{background: kiAbschlussVerbLaden ? '#e5e0d8' : '#6366f1', color:'white', border:'none', borderRadius:5, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
-                        {kiAbschlussVerbLaden ? '⏳' : '🔄'}
+                        style={{background: kiAbschlussVerbLaden ? 'var(--bf-border)' : '#6366f1', color:'white', border:'none', borderRadius:5, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
+                        {kiAbschlussVerbLaden ? '…' : 'Neu'}
                       </button>
                       <button onMouseDown={e => { e.preventDefault(); setVorlagenNameText(kiAbschlussVorschlag.substring(0,50)); setVorlagenNameOffen(true) }} disabled={kiAbschlussVorlageLaden}
-                        style={{background: kiAbschlussVorlageLaden ? '#e5e0d8' : '#1a2a3a', color:'white', border:'none', borderRadius:5, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
-                        {kiAbschlussVorlageLaden ? '⏳' : '📁'}
+                        style={{background: kiAbschlussVorlageLaden ? 'var(--bf-border)' : '#1a2a3a', color:'white', border:'none', borderRadius:5, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap'}}>
+                        {kiAbschlussVorlageLaden ? '…' : 'Vorlage'}
                       </button>
                       <button onMouseDown={e => { e.preventDefault(); setAbschlusstext(kiAbschlussVorschlag); setKiAbschlussVorschlag('') }}
                         style={{background:'linear-gradient(135deg,#10b981,#059669)', color:'white', border:'none', borderRadius:5, padding:'3px 10px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', boxShadow:'0 2px 5px rgba(16,185,129,0.35)'}}>
@@ -1010,8 +1009,8 @@ export default function Angebote() {
                 {/* ── Vorlagen-Name Dialog ── */}
                 {vorlagenNameOffen && (
                   <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:999, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                    <div style={{background:'white', borderRadius:12, padding:24, width:360, boxShadow:'0 16px 48px rgba(0,0,0,0.2)'}}>
-                      <div style={{fontFamily:'Syne, sans-serif', fontSize:15, fontWeight:700, marginBottom:14}}>📁 Vorlage benennen</div>
+                    <div style={{background:'var(--bf-card)', borderRadius:12, padding:24, width:360, boxShadow:'0 16px 48px rgba(0,0,0,0.2)'}}>
+                      <div style={{fontFamily:'Syne, sans-serif', fontSize:15, fontWeight:700, marginBottom:14}}>Vorlage benennen</div>
                       <input
                         autoFocus
                         type="text"
@@ -1023,13 +1022,13 @@ export default function Angebote() {
                       />
                       <div style={{display:'flex', gap:8}}>
                         <button onClick={() => { setVorlagenNameOffen(false); setVorlagenNameText('') }}
-                          style={{flex:1, padding:10, border:'1px solid #e5e0d8', borderRadius:7, background:'white', cursor:'pointer', fontSize:13}}>
+                          style={{...btnSecondary, flex:1, padding:10, fontSize:13}}>
                           Abbrechen
                         </button>
                         <button onClick={() => abschlusstextAlsVorlage(kiAbschlussVorschlag || abschlusstext, vorlagenNameText)}
                           disabled={!vorlagenNameText.trim() || kiAbschlussVorlageLaden}
-                          style={{flex:2, padding:10, border:'none', borderRadius:7, background: !vorlagenNameText.trim() ? '#e5e0d8' : '#1a2a3a', color: !vorlagenNameText.trim() ? '#aaa' : 'white', cursor:'pointer', fontFamily:'Syne, sans-serif', fontSize:13, fontWeight:700}}>
-                          {kiAbschlussVorlageLaden ? '⏳ Speichern...' : '💾 Speichern'}
+                          style={{...btnPrimary, flex:2, padding:10, fontSize:13, opacity: !vorlagenNameText.trim() ? 0.55 : 1}}>
+                          {kiAbschlussVorlageLaden ? 'Speichern...' : 'Speichern'}
                         </button>
                       </div>
                     </div>
@@ -1038,7 +1037,7 @@ export default function Angebote() {
 
                 {abschlusstext && !kiAbschlussVorschlag && (
                   <button onClick={() => setAbschlusstext('')}
-                    style={{marginTop:4, background:'none', border:'none', color:'#aaa', fontSize:11, cursor:'pointer', padding:'2px 0'}}>
+                    style={{marginTop:4, background:'none', border:'none', color:'var(--bf-text-muted)', fontSize:11, cursor:'pointer', padding:'2px 0'}}>
                     ✕ Text entfernen
                   </button>
                 )}
@@ -1046,12 +1045,12 @@ export default function Angebote() {
 
               <div style={{display:'flex', gap:10}}>
                 <button
-                  style={{flex:1, padding:13, background:'#1a1a1a', color:'white', border:'none', borderRadius:9, fontFamily:'Syne, sans-serif', fontSize:14, fontWeight:700, cursor:'pointer'}}
+                  style={{...btnPrimary, flex:1, padding:13, fontSize:14}}
                   onClick={speichern} disabled={laden}>
-                  {laden ? '⏳ Wird gespeichert...' : bearbeitenId ? '✅ Änderungen speichern' : '✅ Angebot speichern'}
+                  {laden ? 'Wird gespeichert...' : bearbeitenId ? 'Änderungen speichern' : 'Angebot speichern'}
                 </button>
                 <button
-                  style={{padding:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:9, cursor:'pointer'}}
+                  style={{...btnSecondary, padding:13}}
                   onClick={() => { setFormOffen(false); setModalPos(null); formLeeren() }}>
                   Abbrechen
                 </button>
@@ -1080,13 +1079,13 @@ export default function Angebote() {
 
 const labelStyle: React.CSSProperties = {
   display:'block', fontSize:11, textTransform:'uppercase',
-  letterSpacing:0.8, color:'#888', fontWeight:600, marginBottom:5
+  letterSpacing:0.8, color:'var(--bf-text-muted)', fontWeight:600, marginBottom:5
 }
 
 const inputStyle: React.CSSProperties = {
-  width:'100%', padding:'9px 12px', border:'1px solid #e5e0d8',
+  width:'100%', padding:'9px 12px', border:'1px solid var(--bf-input-border)',
   borderRadius:7, fontFamily:'DM Sans, sans-serif', fontSize:13, outline:'none',
-  boxSizing: 'border-box'
+  boxSizing: 'border-box', background:'var(--bf-input-bg)', color:'var(--bf-text)'
 }
 
 // ── RichEditor – contentEditable mit Formatierungsleiste ─────────────────────
@@ -1131,14 +1130,14 @@ function RichEditor({ value, onChange, onBlur, placeholder, formKey, onKiClick, 
   ]
 
   return (
-    <div style={{ border: '1px solid #e5e0d8', borderRadius: 7, overflow: 'hidden', background: 'white', position: 'relative' }}
+    <div style={{ border: '1px solid var(--bf-input-border)', borderRadius: 7, overflow: 'hidden', background: 'var(--bf-input-bg)', position: 'relative' }}
       onFocus={() => setToolbar(true)}
       onBlur={() => { setToolbar(false); onBlur?.() }}>
 
       {/* Formatierungs-Toolbar */}
       <div style={{
         display: 'flex', gap: 2, padding: '3px 6px',
-        background: '#f8f6f2', borderBottom: toolbar ? '1px solid #e5e0d8' : '1px solid transparent',
+        background: 'var(--bf-soft)', borderBottom: toolbar ? '1px solid var(--bf-border)' : '1px solid transparent',
         transition: 'border-color 0.15s'
       }}>
         {[
@@ -1146,14 +1145,14 @@ function RichEditor({ value, onChange, onBlur, placeholder, formKey, onKiClick, 
           { label: <i>I</i>, cmd: 'italic', title: 'Kursiv (Strg+I)' },
         ].map((b, i) => (
           <button key={i} onMouseDown={e => { e.preventDefault(); fmt(b.cmd) }} title={b.title}
-            style={{ background: 'white', border: '1px solid #e5e0d8', borderRadius: 4, width: 24, height: 22, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333' }}>
+            style={{ background: 'var(--bf-card)', border: '1px solid var(--bf-border)', borderRadius: 4, width: 24, height: 22, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bf-text)' }}>
             {b.label}
           </button>
         ))}
-        <div style={{ width: 1, background: '#e5e0d8', margin: '2px 2px' }} />
+        <div style={{ width: 1, background: 'var(--bf-divider)', margin: '2px 2px' }} />
         {SIZES.map(s => (
           <button key={s.val} onMouseDown={e => { e.preventDefault(); fmt('fontSize', s.val) }} title={s.title}
-            style={{ background: 'white', border: '1px solid #e5e0d8', borderRadius: 4, width: 24, height: 22, fontSize: s.val === '1' ? 9 : s.val === '3' ? 11 : 13, fontWeight: 600, cursor: 'pointer', color: '#333' }}>
+            style={{ background: 'var(--bf-card)', border: '1px solid var(--bf-border)', borderRadius: 4, width: 24, height: 22, fontSize: s.val === '1' ? 9 : s.val === '3' ? 11 : 13, fontWeight: 600, cursor: 'pointer', color: 'var(--bf-text)' }}>
             {s.label}
           </button>
         ))}
@@ -1199,7 +1198,7 @@ function RichEditor({ value, onChange, onBlur, placeholder, formKey, onKiClick, 
                 letterSpacing: 0.3,
               }}>
               {vorlageLaden ? (
-                <span style={{ fontSize: 11 }}>⏳</span>
+                <span style={{ fontSize: 11 }}>…</span>
               ) : (
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                   <defs>
@@ -1236,7 +1235,7 @@ function RichEditor({ value, onChange, onBlur, placeholder, formKey, onKiClick, 
                 letterSpacing: 0.3,
               }}>
               {kiLaden ? (
-                <span style={{ fontSize: 11 }}>⏳</span>
+                <span style={{ fontSize: 11 }}>…</span>
               ) : (
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                   <defs>
@@ -1259,7 +1258,7 @@ function RichEditor({ value, onChange, onBlur, placeholder, formKey, onKiClick, 
       <style>{`
         [data-placeholder]:empty::before {
           content: attr(data-placeholder);
-          color: #bbb;
+          color: var(--bf-text-muted);
           pointer-events: none;
         }
       `}</style>

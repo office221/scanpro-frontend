@@ -218,6 +218,22 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     },
   }
 
+  // Design-Tokens für alle Unterseiten (CSS-Variablen, folgen dem Hell/Dunkel-Modus)
+  const bfVars = {
+    '--bf-card':         D ? '#161b27'                : '#ffffff',
+    '--bf-soft':         D ? 'rgba(255,255,255,0.05)' : '#f5f3ef',
+    '--bf-thead':        D ? 'rgba(255,255,255,0.03)' : '#faf9f7',
+    '--bf-border':       D ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)',
+    '--bf-divider':      D ? 'rgba(255,255,255,0.06)' : '#f0ede8',
+    '--bf-text':         D ? '#f1f5f9'                : '#1a1a1a',
+    '--bf-text-soft':    D ? '#94a3b8'                : '#555555',
+    '--bf-text-muted':   D ? '#64748b'                : '#888888',
+    '--bf-input-bg':     D ? 'rgba(0,0,0,0.25)'       : '#ffffff',
+    '--bf-input-border': D ? 'rgba(255,255,255,0.12)' : '#e5e0d8',
+    '--bf-hover':        D ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+    '--bf-shadow':       D ? '0 8px 32px rgba(0,0,0,0.3)' : '0 4px 24px rgba(0,0,0,0.07)',
+  } as React.CSSProperties
+
   const statusChip = (status: string) => {
     const s = (theme.statusCfg as any)[status] || (theme.statusCfg as any)['Entwurf']
     return (
@@ -385,18 +401,23 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const gruss  = stunde < 12 ? 'Guten Morgen' : stunde < 18 ? 'Guten Tag' : 'Guten Abend'
 
   // ── Stat cards ──────────────────────────────────────────────────────────
+  const statIcon = (name: string, color: string) => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      {NAV_ICONS[name]}
+    </svg>
+  )
   const STAT_CARDS = [
-    { label: 'Kunden',     value: stats.kunden,      sub: 'Gesamt',         icon: '👥', color: '#6366f1', bg: 'rgba(99,102,241,0.12)',   nav: 'Kunden',     alarm: false },
-    { label: 'Rechnungen', value: stats.rechnungen,   sub: 'Gesamt',         icon: '🧾', color: '#10b981', bg: 'rgba(16,185,129,0.12)',   nav: 'Rechnungen', alarm: false },
-    { label: 'Überfällig', value: stats.ueberfaellig, sub: stats.ueberfaellig > 0 ? 'Sofort handeln!' : 'Alles ok!', icon: '⚠️', color: stats.ueberfaellig > 0 ? '#ef4444' : '#10b981', bg: stats.ueberfaellig > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)', nav: 'Rechnungen', alarm: stats.ueberfaellig > 0 },
-    { label: 'Offen',      value: stats.offenGesamt,  sub: 'Nicht bezahlt',  icon: '🕐', color: stats.offenGesamt > 0 ? '#f59e0b' : '#10b981', bg: stats.offenGesamt > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)', nav: 'Rechnungen', alarm: stats.offenGesamt > 0 },
-    { label: 'Angebote',   value: stats.angebote,     sub: 'Aktiv',          icon: '📄', color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)',  nav: 'Angebote',   alarm: false },
+    { label: 'Kunden',     value: stats.kunden,      sub: 'Gesamt',         iconName: 'Kunden',     color: '#6366f1', bg: 'rgba(99,102,241,0.12)',   nav: 'Kunden',     alarm: false },
+    { label: 'Rechnungen', value: stats.rechnungen,   sub: 'Gesamt',         iconName: 'Rechnungen', color: '#10b981', bg: 'rgba(16,185,129,0.12)',   nav: 'Rechnungen', alarm: false },
+    { label: 'Überfällig', value: stats.ueberfaellig, sub: stats.ueberfaellig > 0 ? 'Sofort handeln!' : 'Alles ok!', iconName: 'Stunden', color: stats.ueberfaellig > 0 ? '#ef4444' : '#10b981', bg: stats.ueberfaellig > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)', nav: 'Rechnungen', alarm: stats.ueberfaellig > 0 },
+    { label: 'Offen',      value: stats.offenGesamt,  sub: 'Nicht bezahlt',  iconName: 'Stunden',    color: stats.offenGesamt > 0 ? '#f59e0b' : '#10b981', bg: stats.offenGesamt > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)', nav: 'Rechnungen', alarm: stats.offenGesamt > 0 },
+    { label: 'Angebote',   value: stats.angebote,     sub: 'Aktiv',          iconName: 'Angebote',   color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)',  nav: 'Angebote',   alarm: false },
   ]
 
   const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'DM Sans, sans-serif', overflow: 'hidden', background: theme.bg, color: theme.text, transition: 'background 0.3s, color 0.3s' }}>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: 'DM Sans, sans-serif', overflow: 'hidden', background: theme.bg, color: theme.text, transition: 'background 0.3s, color 0.3s', ...bfVars }}>
 
       {/* Atmospheric glows */}
       <div style={{ position: 'fixed', top: '-10%', left: '10%', width: '50vw', height: '50vw', borderRadius: '50%', background: theme.glowTop, filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0, transition: 'background 0.3s' }} />
@@ -491,7 +512,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                                           onClick={() => { setAktivNav(`ImmoObj_${o.id}`); if (isMobile) setNavOffen(false) }}
                                           onMouseEnter={e => { if (!oAktiv) (e.currentTarget as HTMLElement).style.background = theme.navHoverBg }}
                                           onMouseLeave={e => { if (!oAktiv) (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-                                          <span style={{ fontSize: 11, flexShrink: 0 }}>🏠</span>
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>{NAV_ICONS['Objekte']}</svg>
                                           <span style={{ fontWeight: oAktiv ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{o.name}</span>
                                         </div>
                                       )
@@ -639,7 +660,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                     {stats.ueberfaellig > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: 'rgba(239,68,68,0.2)', color: D ? '#fca5a5' : '#dc2626' }}>{stats.ueberfaellig} überfällig</span>}
                   </div>
                   {ueberfaelligeListe.length === 0
-                    ? <div style={{ padding: '24px 16px', textAlign: 'center' as const, color: theme.textMuted, fontSize: 12 }}><div style={{ fontSize: 24, marginBottom: 6 }}>✅</div>Keine überfälligen Rechnungen</div>
+                    ? <div style={{ padding: '24px 16px', textAlign: 'center' as const, color: theme.textMuted, fontSize: 12 }}>Keine überfälligen Rechnungen</div>
                     : ueberfaelligeListe.map((r: any, i: number) => {
                         const tage = Math.floor((new Date().getTime() - new Date(r.faelligBis).getTime()) / 86400000)
                         return (
@@ -683,7 +704,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                 <span style={{ fontSize: 11, color: theme.textMuted, letterSpacing: '1.5px', textTransform: 'uppercase' as const, fontWeight: 600 }}>Übersicht</span>
               </div>
               <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 26, fontWeight: 800, margin: '0 0 4px', letterSpacing: -0.5, color: theme.textStrong }}>
-                {gruss}, <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{benutzer.vorname || 'Chef'}</span> 👋
+                {gruss}, <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{benutzer.vorname || 'Chef'}</span>
               </h1>
 
               {/* Stats */}
@@ -694,8 +715,8 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                     onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = theme.cardHoverShadow; el.style.borderColor = theme.cardHoverBorder }}
                     onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = theme.glass.boxShadow as string; el.style.borderColor = (theme.glass.border as string).replace('1px solid ', '') }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${s.color}, transparent)`, opacity: 0.7 }} />
-                    <div style={{ width: 42, height: 42, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, border: `1px solid ${s.color}33`, marginBottom: 16 }}>
-                      {s.icon}
+                    <div style={{ width: 42, height: 42, borderRadius: 12, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${s.color}33`, marginBottom: 16 }}>
+                      {statIcon(s.iconName, s.color)}
                     </div>
                     <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 34, fontWeight: 800, lineHeight: 1, color: s.alarm ? s.color : theme.textStrong, marginBottom: 8 }}>{s.value}</div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{s.label}</div>
@@ -771,8 +792,10 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                                 onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = D ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'; el.style.borderLeftColor = sc.color }}
                                 onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.borderLeftColor = 'transparent' }}
                                 onClick={() => setAktivNav(r.typ === 'Angebot' ? 'Angebote' : 'Rechnungen')}>
-                                <div style={{ width: 40, height: 40, borderRadius: 10, background: sc.bg, border: `1px solid ${sc.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
-                                  {r.typ === 'Rechnung' ? '🧾' : '📄'}
+                                <div style={{ width: 40, height: 40, borderRadius: 10, background: sc.bg, border: `1px solid ${sc.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={sc.color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                    {NAV_ICONS[r.typ === 'Rechnung' ? 'Rechnungen' : 'Angebote']}
+                                  </svg>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ fontSize: 13, fontWeight: 600, color: theme.textStrong, marginBottom: 3 }}>{r.nummer}</div>
@@ -858,7 +881,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                       </div>
                       {kuProzent >= 80 && (
                         <div style={{ fontSize: 10, color: kuFarbe, fontWeight: 600, marginTop: 6 }}>
-                          ⚠️ Grenze im Blick behalten — bei Überschreiten wird USt. fällig
+                          Grenze im Blick behalten — bei Überschreiten wird USt. fällig
                         </div>
                       )}
                     </div>
@@ -899,18 +922,18 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                     <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, marginBottom: 14, color: theme.textStrong }}>Schnellzugriff</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {[
-                        { label: 'Neue Rechnung', icon: '🧾', color: '#6366f1', nav: 'Rechnungen' },
-                        { label: 'Neues Angebot', icon: '📄', color: '#10b981', nav: 'Angebote'   },
-                        { label: 'Neuer Kunde',   icon: '👤', color: '#f59e0b', nav: 'Kunden'     },
-                        { label: 'Einstellungen', icon: '⚙️', color: '#64748b', nav: 'Einstellungen' },
-                        { label: 'Backup jetzt',  icon: '💾', color: '#8b5cf6', nav: '__backup__' },
+                        { label: 'Neue Rechnung', iconName: 'Rechnungen',    color: '#6366f1', nav: 'Rechnungen' },
+                        { label: 'Neues Angebot', iconName: 'Angebote',      color: '#10b981', nav: 'Angebote'   },
+                        { label: 'Neuer Kunde',   iconName: 'Kunden',        color: '#f59e0b', nav: 'Kunden'     },
+                        { label: 'Einstellungen', iconName: 'Einstellungen', color: '#64748b', nav: 'Einstellungen' },
+                        { label: 'Backup jetzt',  iconName: 'BuchDashboard', color: '#8b5cf6', nav: '__backup__' },
                       ].map((item, i) => (
                         <div key={i} onClick={() => item.nav === '__backup__' ? backupJetzt() : setAktivNav(item.nav)}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `1px solid ${theme.schnellBorder}`, background: theme.schnellBg, cursor: 'pointer', transition: 'all 0.15s' }}
                           onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${item.color}11`; el.style.borderColor = `${item.color}44` }}
                           onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = theme.schnellBg; el.style.borderColor = theme.schnellBorder }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <span style={{ fontSize: 17 }}>{item.icon}</span>
+                            {statIcon(item.iconName, item.color)}
                             <span style={{ fontSize: 13, fontWeight: 600, color: theme.schnellText }}>{item.label}</span>
                           </div>
                           <span style={{ color: theme.schnellArrow, fontSize: 18 }}>›</span>
@@ -926,7 +949,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                       borderColor: backupStatus === 'fertig' ? '#10b981' : backupStatus === 'fehler' ? '#ef4444' : '#8b5cf6',
                       background: backupStatus === 'fertig' ? 'rgba(16,185,129,0.08)' : backupStatus === 'fehler' ? 'rgba(239,68,68,0.08)' : 'rgba(139,92,246,0.08)',
                     }}>
-                      <span style={{ fontSize: 18 }}>{backupStatus === 'läuft' ? '⏳' : backupStatus === 'fertig' ? '✅' : '❌'}</span>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: backupStatus === 'läuft' ? '#8b5cf6' : backupStatus === 'fertig' ? '#10b981' : '#ef4444', boxShadow: `0 0 8px ${backupStatus === 'läuft' ? '#8b5cf6' : backupStatus === 'fertig' ? '#10b981' : '#ef4444'}88` }} />
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 700, color: theme.textStrong }}>
                           {backupStatus === 'läuft' ? 'Backup läuft...' : backupStatus === 'fertig' ? 'Backup erfolgreich!' : 'Backup fehlgeschlagen'}

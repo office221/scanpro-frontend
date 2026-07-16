@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import api from '../services/api'
+import { btnPrimary, btnSecondary } from '../ui/theme'
 
 interface Projekt {
   id: number
@@ -30,13 +31,14 @@ interface Kunde {
 }
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', border: '1px solid #e5e0d8',
+  width: '100%', padding: '9px 12px', border: '1px solid var(--bf-input-border)',
   borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-  outline: 'none', boxSizing: 'border-box', background: 'white'
+  outline: 'none', boxSizing: 'border-box', background: 'var(--bf-input-bg)',
+  color: 'var(--bf-text)'
 }
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: 11, textTransform: 'uppercase',
-  letterSpacing: 0.8, color: '#888', fontWeight: 600, marginBottom: 5
+  letterSpacing: 0.8, color: 'var(--bf-text-muted)', fontWeight: 600, marginBottom: 5
 }
 
 export default function Stunden({ onNavigate }: { onNavigate?: (seite: string) => void } = {}) {
@@ -267,11 +269,11 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800 }}>⏱ Stundenliste</div>
-          <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Projekte anlegen · Stunden erfassen · Drucken</div>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: 'var(--bf-text)' }}>Stundenliste</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>Projekte anlegen · Stunden erfassen · Drucken</div>
         </div>
         <button onClick={() => { setBearbeitenProjektId(null); setPName(''); setPKunde(''); setPSatz(''); setPBeschreibung(''); setFormOffen(true) }}
-          style={{ padding: '10px 20px', background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 9, fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+          style={{ ...btnPrimary }}>
           + Neues Projekt
         </button>
       </div>
@@ -280,9 +282,9 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
 
         {/* Projektliste */}
         <div style={{ width: isMobile ? '100%' : 280, flexShrink: 0 }}>
-          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#888', fontWeight: 700, marginBottom: 10 }}>Projekte</div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--bf-text-muted)', fontWeight: 700, marginBottom: 10 }}>Projekte</div>
           {projekte.length === 0 && (
-            <div style={{ padding: 20, textAlign: 'center', color: '#aaa', fontSize: 13, background: 'white', borderRadius: 10, border: '1px solid #f0ede8' }}>
+            <div style={{ padding: 20, textAlign: 'center', color: 'var(--bf-text-muted)', fontSize: 13, background: 'var(--bf-card)', borderRadius: 10, border: '1px solid var(--bf-border)' }}>
               Noch keine Projekte
             </div>
           )}
@@ -291,21 +293,21 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
             const kundenName = p.firma || (p.vorname ? `${p.vorname} ${p.nachname}` : null)
             return (
               <div key={p.id} onClick={() => setAktivProjekt(p)}
-                style={{ padding: '12px 14px', marginBottom: 8, borderRadius: 10, border: `1.5px solid ${aktiv ? '#c8a96e' : '#f0ede8'}`, background: aktiv ? '#fdf8f0' : 'white', cursor: 'pointer', transition: 'all 0.15s' }}>
+                style={{ padding: '12px 14px', marginBottom: 8, borderRadius: 10, border: `1.5px solid ${aktiv ? '#c8a96e' : 'var(--bf-border)'}`, background: aktiv ? 'var(--bf-soft)' : 'var(--bf-card)', cursor: 'pointer', transition: 'all 0.15s' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: aktiv ? '#c8a96e' : '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                    {kundenName && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{kundenName}</div>}
-                    <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: aktiv ? '#c8a96e' : 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                    {kundenName && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 2 }}>{kundenName}</div>}
+                    <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 4 }}>
                       {Number(p.gesamt_stunden).toFixed(2).replace('.', ',')} h
                       {p.stundensatz > 0 && ` · € ${(Number(p.gesamt_stunden) * p.stundensatz).toFixed(2).replace('.', ',')}`}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 4, marginLeft: 8, flexShrink: 0 }}>
                     <button onClick={e => { e.stopPropagation(); projektBearbeiten(p) }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: 4, color: '#888' }} title="Bearbeiten">✏️</button>
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, padding: 4, color: 'var(--bf-text-soft)' }} title="Bearbeiten">Bearbeiten</button>
                     <button onClick={e => { e.stopPropagation(); projektLoeschen(p.id) }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: 4, color: '#888' }} title="Löschen">🗑️</button>
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, padding: 4, color: '#ef4444' }} title="Löschen">Löschen</button>
                   </div>
                 </div>
               </div>
@@ -316,35 +318,34 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
         {/* Einträge */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {!aktivProjekt ? (
-            <div style={{ padding: 40, textAlign: 'center', color: '#aaa', background: 'white', borderRadius: 12, border: '1px solid #f0ede8' }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--bf-text-muted)', background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)' }}>
               <div style={{ fontSize: 14, fontWeight: 600 }}>Projekt auswählen</div>
               <div style={{ fontSize: 12, marginTop: 4 }}>Klicke links auf ein Projekt um Stunden zu sehen</div>
             </div>
           ) : (
-            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #f0ede8', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', overflow: 'hidden' }}>
               {/* Projekt-Header */}
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, background: '#faf8f5' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--bf-divider)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, background: 'var(--bf-soft)' }}>
                 <div>
-                  <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 16 }}>{aktivProjekt.name}</div>
-                  {aktivProjekt.stundensatz > 0 && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Stundensatz: € {Number(aktivProjekt.stundensatz).toFixed(2)}</div>}
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 16, color: 'var(--bf-text)' }}>{aktivProjekt.name}</div>
+                  {aktivProjekt.stundensatz > 0 && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 2 }}>Stundensatz: € {Number(aktivProjekt.stundensatz).toFixed(2)}</div>}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => { setBearbeitenEintragId(null); setEDatum(new Date().toISOString().split('T')[0]); setEBeschreibung(''); setEStunden(''); setEintragFormOffen(true) }}
-                    style={{ padding: '8px 16px', background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
+                    style={{ ...btnPrimary, padding: '8px 16px' }}>
                     + Eintrag
                   </button>
                   <button onClick={drucken}
-                    style={{ padding: '8px 16px', background: '#f0ede8', color: '#555', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                    🖨 Drucken
+                    style={{ ...btnSecondary, padding: '8px 16px' }}>
+                    Drucken
                   </button>
                   <button onClick={pdfSpeichern} disabled={pdfLaden}
-                    style={{ padding: '8px 16px', background: pdfLaden ? '#f0f0f0' : '#e8f5e9', color: pdfLaden ? '#aaa' : '#2e7d32', border: '1px solid #c8e6c9', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: pdfLaden ? 'default' : 'pointer' }}>
-                    {pdfLaden ? '⏳ PDF...' : '💾 PDF'}
+                    style={{ ...btnSecondary, padding: '8px 16px', fontWeight: 700, opacity: pdfLaden ? 0.6 : 1, cursor: pdfLaden ? 'default' : 'pointer' }}>
+                    {pdfLaden ? 'PDF...' : 'PDF'}
                   </button>
                   {onNavigate && (
                     <button onClick={() => { sessionStorage.setItem('stundenProjektId', String(aktivProjekt!.id)); onNavigate('Rechnungen') }}
-                      style={{ padding: '8px 16px', background: '#eef2ff', color: '#6366f1', border: '1px solid #c7d2fe', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      style={{ ...btnSecondary, padding: '8px 16px', fontWeight: 700, color: '#6366f1' }}>
                       → Zu Rechnung
                     </button>
                   )}
@@ -353,31 +354,31 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
 
               {/* Einträge Tabelle */}
               {eintraege.length === 0 ? (
-                <div style={{ padding: 32, textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                <div style={{ padding: 32, textAlign: 'center', color: 'var(--bf-text-muted)', fontSize: 13 }}>
                   Noch keine Einträge — klicke "+ Eintrag"
                 </div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{ background: '#faf8f5' }}>
+                      <tr style={{ background: 'var(--bf-thead)' }}>
                         {['Datum', 'Beschreibung', 'Stunden', aktivProjekt.stundensatz > 0 ? 'Betrag' : '', ''].map((h, i) => h && (
-                          <th key={i} style={{ padding: '9px 14px', textAlign: i >= 2 ? 'right' : 'left', fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.8, color: '#888', fontWeight: 700, borderBottom: '1px solid #e5e0d8', whiteSpace: 'nowrap' }}>{h}</th>
+                          <th key={i} style={{ padding: '9px 14px', textAlign: i >= 2 ? 'right' : 'left', fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--bf-text-muted)', fontWeight: 700, borderBottom: '1px solid var(--bf-border)', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {eintraege.map(e => (
-                        <tr key={e.id} style={{ borderBottom: '1px solid #f5f2ee' }}>
-                          <td style={{ padding: '10px 14px', fontSize: 12, color: '#888', whiteSpace: 'nowrap' }}>{new Date(e.datum).toLocaleDateString('de-AT')}</td>
-                          <td style={{ padding: '10px 14px', fontSize: 13, color: '#1a1a1a' }}>{e.beschreibung || '—'}</td>
-                          <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(e.stunden).toFixed(2).replace('.', ',')} h</td>
+                        <tr key={e.id} style={{ borderBottom: '1px solid var(--bf-divider)' }}>
+                          <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--bf-text-muted)', whiteSpace: 'nowrap' }}>{new Date(e.datum).toLocaleDateString('de-AT')}</td>
+                          <td style={{ padding: '10px 14px', fontSize: 13, color: 'var(--bf-text)' }}>{e.beschreibung || '—'}</td>
+                          <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap', color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>{Number(e.stunden).toFixed(2).replace('.', ',')} h</td>
                           {aktivProjekt.stundensatz > 0 && (
-                            <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>€ {(Number(e.stunden) * aktivProjekt.stundensatz).toFixed(2).replace('.', ',')}</td>
+                            <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap', color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>€ {(Number(e.stunden) * aktivProjekt.stundensatz).toFixed(2).replace('.', ',')}</td>
                           )}
                           <td style={{ padding: '10px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            <button onClick={() => eintragBearbeiten(e)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '2px 6px', color: '#888' }}>✏️</button>
-                            <button onClick={() => eintragLoeschen(e.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '2px 6px', color: '#aaa' }}>✕</button>
+                            <button onClick={() => eintragBearbeiten(e)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, padding: '2px 6px', color: 'var(--bf-text-soft)' }}>Bearbeiten</button>
+                            <button onClick={() => eintragLoeschen(e.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, padding: '2px 6px', color: '#ef4444' }}>Löschen</button>
                           </td>
                         </tr>
                       ))}
@@ -388,15 +389,15 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
 
               {/* Totals */}
               {eintraege.length > 0 && (
-                <div style={{ padding: '14px 20px', borderTop: '2px solid #e5e0d8', display: 'flex', justifyContent: 'flex-end', gap: 32, background: '#faf8f5' }}>
+                <div style={{ padding: '14px 20px', borderTop: '2px solid var(--bf-border)', display: 'flex', justifyContent: 'flex-end', gap: 32, background: 'var(--bf-soft)' }}>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 0.8 }}>Gesamt Stunden</div>
-                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800 }}>{gesamtStunden.toFixed(2).replace('.', ',')} h</div>
+                    <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8 }}>Gesamt Stunden</div>
+                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>{gesamtStunden.toFixed(2).replace('.', ',')} h</div>
                   </div>
                   {gesamtBetrag !== null && (
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 0.8 }}>Gesamt Betrag</div>
-                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: '#c8a96e' }}>€ {gesamtBetrag.toFixed(2).replace('.', ',')}</div>
+                      <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8 }}>Gesamt Betrag</div>
+                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: '#c8a96e', fontVariantNumeric: 'tabular-nums' }}>€ {gesamtBetrag.toFixed(2).replace('.', ',')}</div>
                     </div>
                   )}
                 </div>
@@ -410,10 +411,10 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
       {formOffen && ReactDOM.createPortal((
         <>
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999 }} onClick={() => setFormOffen(false)} />
-          <div style={{ position: 'fixed', zIndex: 10000, background: 'white', borderRadius: isMobile ? 0 : 14, width: isMobile ? '100vw' : 480, left: isMobile ? 0 : '50%', top: isMobile ? 0 : '50%', transform: isMobile ? 'none' : 'translate(-50%,-50%)', height: isMobile ? '100vh' : 'auto', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e0d8', display: 'flex', alignItems: 'center' }}>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, flex: 1 }}>{bearbeitenProjektId ? '✏️ Projekt bearbeiten' : '📁 Neues Projekt'}</div>
-              <button onClick={() => setFormOffen(false)} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>✕</button>
+          <div style={{ position: 'fixed', zIndex: 10000, background: 'var(--bf-card)', borderRadius: isMobile ? 0 : 14, width: isMobile ? '100vw' : 480, left: isMobile ? 0 : '50%', top: isMobile ? 0 : '50%', transform: isMobile ? 'none' : 'translate(-50%,-50%)', height: isMobile ? '100vh' : 'auto', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--bf-border)', display: 'flex', alignItems: 'center' }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, flex: 1, color: 'var(--bf-text)' }}>{bearbeitenProjektId ? 'Projekt bearbeiten' : 'Neues Projekt'}</div>
+              <button onClick={() => setFormOffen(false)} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--bf-text-muted)' }}>✕</button>
             </div>
             <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
               <div style={{ marginBottom: 16 }}>
@@ -436,8 +437,8 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
                 <textarea style={{ ...inputStyle, height: 80, resize: 'vertical' }} value={pBeschreibung} onChange={e => setPBeschreibung(e.target.value)} placeholder="Optionale Beschreibung..." />
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={projektSpeichern} style={{ flex: 1, padding: 13, background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 9, fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>✅ Speichern</button>
-                <button onClick={() => setFormOffen(false)} style={{ padding: 13, background: '#f0ede8', color: '#888', border: 'none', borderRadius: 9, cursor: 'pointer' }}>Abbrechen</button>
+                <button onClick={projektSpeichern} style={{ ...btnPrimary, flex: 1, padding: 13, fontSize: 14 }}>Speichern</button>
+                <button onClick={() => setFormOffen(false)} style={{ ...btnSecondary, padding: 13 }}>Abbrechen</button>
               </div>
             </div>
           </div>
@@ -448,10 +449,10 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
       {eintragFormOffen && ReactDOM.createPortal((
         <>
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999 }} onClick={() => setEintragFormOffen(false)} />
-          <div style={{ position: 'fixed', zIndex: 10000, background: 'white', borderRadius: isMobile ? 0 : 14, width: isMobile ? '100vw' : 420, left: isMobile ? 0 : '50%', top: isMobile ? 0 : '50%', transform: isMobile ? 'none' : 'translate(-50%,-50%)', height: isMobile ? '100vh' : 'auto', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e0d8', display: 'flex', alignItems: 'center' }}>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, flex: 1 }}>{bearbeitenEintragId ? '✏️ Eintrag bearbeiten' : '⏱ Stunden eintragen'}</div>
-              <button onClick={() => setEintragFormOffen(false)} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>✕</button>
+          <div style={{ position: 'fixed', zIndex: 10000, background: 'var(--bf-card)', borderRadius: isMobile ? 0 : 14, width: isMobile ? '100vw' : 420, left: isMobile ? 0 : '50%', top: isMobile ? 0 : '50%', transform: isMobile ? 'none' : 'translate(-50%,-50%)', height: isMobile ? '100vh' : 'auto', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--bf-border)', display: 'flex', alignItems: 'center' }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, flex: 1, color: 'var(--bf-text)' }}>{bearbeitenEintragId ? 'Eintrag bearbeiten' : 'Stunden eintragen'}</div>
+              <button onClick={() => setEintragFormOffen(false)} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--bf-text-muted)' }}>✕</button>
             </div>
             <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
               <div style={{ marginBottom: 16 }}>
@@ -472,8 +473,8 @@ ${p.beschreibung ? `<div style="margin-bottom:20px;padding:12px 16px;background:
                 )}
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={eintragSpeichern} style={{ flex: 1, padding: 13, background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 9, fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>✅ Speichern</button>
-                <button onClick={() => setEintragFormOffen(false)} style={{ padding: 13, background: '#f0ede8', color: '#888', border: 'none', borderRadius: 9, cursor: 'pointer' }}>Abbrechen</button>
+                <button onClick={eintragSpeichern} style={{ ...btnPrimary, flex: 1, padding: 13, fontSize: 14 }}>Speichern</button>
+                <button onClick={() => setEintragFormOffen(false)} style={{ ...btnSecondary, padding: 13 }}>Abbrechen</button>
               </div>
             </div>
           </div>

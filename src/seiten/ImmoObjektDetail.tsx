@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
 import KalkulationTab from './KalkulationTab'
+import { btnPrimary, btnSecondary, ACCENT } from '../ui/theme'
 
-const TYP_FARBEN: Record<string, { bg: string; text: string }> = {
-  Wohnung:      { bg: '#dbeafe', text: '#1e40af' },
-  Haus:         { bg: '#d1f5e0', text: '#2d6a4f' },
-  Gewerbe:      { bg: '#ede9fe', text: '#6d28d9' },
-  Büro:         { bg: '#fef3c7', text: '#92400e' },
-  Garage:       { bg: '#f0f0f0', text: '#555' },
-  Rohdachboden: { bg: '#fce7f3', text: '#9d174d' },
-  Sonstiges:    { bg: '#f0ede8', text: '#888' },
+const btnDanger: React.CSSProperties = { ...btnSecondary, color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)' }
+
+const TYP_FARBEN: Record<string, string> = {
+  Wohnung:      '#3b82f6',
+  Haus:         '#10b981',
+  Gewerbe:      '#8b5cf6',
+  Büro:         '#f59e0b',
+  Garage:       '#94a3b8',
+  Rohdachboden: '#ec4899',
+  Sonstiges:    '#94a3b8',
 }
 const TYP_OPTIONEN = ['Wohnung', 'Haus', 'Gewerbe', 'Büro', 'Garage', 'Rohdachboden', 'Sonstiges']
 const leer = { name: '', typ: 'Wohnung', adresse: '', flaeche: '', zimmer: '', baujahr: '', kaufpreis: '', notizen: '' }
@@ -157,8 +160,8 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
     setSaveLaden(false)
   }
 
-  if (laden) return <div style={{ padding: 40, textAlign: 'center', color: '#333', background: '#fff', minHeight: 300, fontSize: 18 }}>⏳ Lädt Objekt {objektId}...</div>
-  if (!objekt) return <div style={{ padding: 40, textAlign: 'center', color: '#e00', background: '#fff', minHeight: 300, fontSize: 18 }}>❌ Objekt nicht gefunden (ID: {objektId}). Bitte Backend prüfen.</div>
+  if (laden) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--bf-text)', background: 'var(--bf-card)', minHeight: 300, fontSize: 18 }}>Lädt Objekt {objektId}...</div>
+  if (!objekt) return <div style={{ padding: 40, textAlign: 'center', color: '#e00', background: 'var(--bf-card)', minHeight: 300, fontSize: 18 }}>Objekt nicht gefunden (ID: {objektId}). Bitte Backend prüfen.</div>
 
   const aktiverV    = vertraege.find(v => v.status === 'Aktiv')
   const monatEin    = aktiverV ? (parseFloat(aktiverV.mietzins||0) + parseFloat(aktiverV.bk_pauschale||0)) : 0
@@ -222,11 +225,11 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
       <div>
         {/* Fortschritt */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: '#888' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: 'var(--bf-text-muted)' }}>
             <span>{items.filter(c => c.erledigt).length} von {items.length} erledigt</span>
-            <span style={{ fontWeight: 700, color: pct === 100 ? '#10b981' : '#1a2a3a' }}>{pct}%</span>
+            <span style={{ fontWeight: 700, color: pct === 100 ? '#10b981' : 'var(--bf-text)' }}>{pct}%</span>
           </div>
-          <div style={{ height: 6, background: '#f0ede8', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ height: 6, background: 'var(--bf-divider)', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#10b981' : '#6366f1', borderRadius: 99, transition: 'width 0.3s' }} />
           </div>
         </div>
@@ -234,28 +237,28 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
         {/* Items */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
           {items.map(item => (
-            <div key={item.id} style={{ background: item.erledigt ? '#f0fdf4' : 'white', border: `1px solid ${item.erledigt ? '#bbf7d0' : '#e5e0d8'}`, borderRadius: 10, padding: '10px 14px' }}>
+            <div key={item.id} style={{ background: item.erledigt ? 'rgba(16,185,129,0.08)' : 'var(--bf-card)', border: `1px solid ${item.erledigt ? 'rgba(16,185,129,0.35)' : 'var(--bf-border)'}`, borderRadius: 10, padding: '10px 14px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <button onClick={() => toggleErledigt(item)} style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, border: `2px solid ${item.erledigt ? '#10b981' : '#d1d5db'}`, background: item.erledigt ? '#10b981' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                <button onClick={() => toggleErledigt(item)} style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, border: `2px solid ${item.erledigt ? '#10b981' : 'var(--bf-border)'}`, background: item.erledigt ? '#10b981' : 'var(--bf-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
                   {item.erledigt && <span style={{ color: 'white', fontSize: 13, fontWeight: 800 }}>✓</span>}
                 </button>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: item.erledigt ? '#6b7280' : '#1a2a3a', textDecoration: item.erledigt ? 'line-through' : 'none' }}>{item.aufgabe}</div>
-                  {item.notiz && <div style={{ fontSize: 11, color: '#888', marginTop: 3, fontStyle: 'italic' }}>📝 {item.notiz}</div>}
+                  <div style={{ fontSize: 13, fontWeight: 500, color: item.erledigt ? 'var(--bf-text-muted)' : 'var(--bf-text)', textDecoration: item.erledigt ? 'line-through' : 'none' }}>{item.aufgabe}</div>
+                  {item.notiz && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 3, fontStyle: 'italic' }}>{item.notiz}</div>}
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
-                  <button onClick={() => { setNotizOffen(item.id); setNotizText(item.notiz||'') }} title="Notiz" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#aaa', padding: 2 }}>📝</button>
-                  <button onClick={() => loescheAufgabe(item.id)} title="Löschen" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#aaa', padding: 2 }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#aaa')}>🗑</button>
+                  <button onClick={() => { setNotizOffen(item.id); setNotizText(item.notiz||'') }} title="Notiz" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--bf-text-muted)', padding: 2 }}>Notiz</button>
+                  <button onClick={() => loescheAufgabe(item.id)} title="Löschen" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--bf-text-muted)', padding: 2 }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--bf-text-muted)')}>Löschen</button>
                 </div>
               </div>
               {/* Notiz-Eingabe */}
               {notizOffen === item.id && (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0ede8' }}>
-                  <textarea value={notizText} onChange={e => setNotizText(e.target.value)} placeholder="Notiz hinzufügen..." style={{ width: '100%', padding: '6px 10px', border: '1px solid #e5e0d8', borderRadius: 6, fontSize: 12, fontFamily: 'DM Sans, sans-serif', resize: 'none', minHeight: 50, boxSizing: 'border-box' }} />
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--bf-divider)' }}>
+                  <textarea value={notizText} onChange={e => setNotizText(e.target.value)} placeholder="Notiz hinzufügen..." style={{ width: '100%', padding: '6px 10px', border: '1px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', color: 'var(--bf-text)', borderRadius: 6, fontSize: 12, fontFamily: 'DM Sans, sans-serif', resize: 'none', minHeight: 50, boxSizing: 'border-box' }} />
                   <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                    <button onClick={() => setNotizOffen(null)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #e5e0d8', background: 'white', cursor: 'pointer' }}>Abbrechen</button>
-                    <button onClick={() => speichereNotiz(item)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: 'none', background: '#1a1a1a', color: 'white', cursor: 'pointer', fontFamily: 'Syne, sans-serif', fontWeight: 700 }}>Speichern</button>
+                    <button onClick={() => setNotizOffen(null)} style={{ ...btnSecondary, fontSize: 11, padding: '4px 10px', borderRadius: 6 }}>Abbrechen</button>
+                    <button onClick={() => speichereNotiz(item)} style={{ ...btnPrimary, fontSize: 11, padding: '4px 10px', borderRadius: 6 }}>Speichern</button>
                   </div>
                 </div>
               )}
@@ -265,8 +268,8 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
 
         {/* Neue Aufgabe hinzufügen */}
         <div style={{ display: 'flex', gap: 8 }}>
-          <input value={neueAufgabe} onChange={e => setNeueAufgabe(e.target.value)} onKeyDown={e => e.key === 'Enter' && neueAufgabeHinzufuegen(kategorie)} placeholder="+ Eigene Aufgabe hinzufügen..." style={{ flex: 1, padding: '8px 12px', border: '1px dashed #d1d5db', borderRadius: 8, fontSize: 12, fontFamily: 'DM Sans, sans-serif', outline: 'none', background: '#fafafa' }} />
-          <button onClick={() => neueAufgabeHinzufuegen(kategorie)} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: '#1a1a1a', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>+</button>
+          <input value={neueAufgabe} onChange={e => setNeueAufgabe(e.target.value)} onKeyDown={e => e.key === 'Enter' && neueAufgabeHinzufuegen(kategorie)} placeholder="+ Eigene Aufgabe hinzufügen..." style={{ flex: 1, padding: '8px 12px', border: '1px dashed var(--bf-border)', borderRadius: 8, fontSize: 12, fontFamily: 'DM Sans, sans-serif', outline: 'none', background: 'var(--bf-soft)', color: 'var(--bf-text)' }} />
+          <button onClick={() => neueAufgabeHinzufuegen(kategorie)} style={{ ...btnPrimary, padding: '8px 14px', borderRadius: 8 }}>+</button>
         </div>
       </div>
     )
@@ -276,28 +279,30 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
     <div style={{ padding: 24, maxWidth: 960, margin: '0 auto' }}>
 
       {/* ── Header ── */}
-      <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e5e0d8', padding: 20, marginBottom: 16 }}>
+      <div style={{ background: 'var(--bf-card)', borderRadius: 16, border: '1px solid var(--bf-border)', padding: 20, marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 24 }}>🏠</span>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: '#1a2a3a' }}>{objekt.name}</div>
-              <span style={{ background: farbe.bg, color: farbe.text, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{objekt.typ}</span>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: 'var(--bf-text)' }}>{objekt.name}</div>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', color: 'var(--bf-text-soft)', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: farbe, flexShrink: 0 }} />
+                {objekt.typ}
+              </span>
             </div>
-            {objekt.adresse && <div style={{ color: '#888', fontSize: 12 }}>📍 {objekt.adresse}</div>}
+            {objekt.adresse && <div style={{ color: 'var(--bf-text-muted)', fontSize: 12 }}>{objekt.adresse}</div>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* Gesamt-Fortschritt */}
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 3 }}>Projekt-Fortschritt</div>
+              <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginBottom: 3 }}>Projekt-Fortschritt</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 100, height: 8, background: '#f0ede8', borderRadius: 99 }}>
+                <div style={{ width: 100, height: 8, background: 'var(--bf-divider)', borderRadius: 99 }}>
                   <div style={{ height: '100%', width: `${gesamtProgress()}%`, background: gesamtProgress() === 100 ? '#10b981' : '#6366f1', borderRadius: 99, transition: 'width 0.3s' }} />
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: gesamtProgress() === 100 ? '#10b981' : '#1a2a3a' }}>{gesamtProgress()}%</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: gesamtProgress() === 100 ? '#10b981' : 'var(--bf-text)' }}>{gesamtProgress()}%</span>
               </div>
             </div>
-            <button onClick={oeffneEdit} style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 9, padding: '8px 16px', fontFamily: 'Syne, sans-serif', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✏️ Bearbeiten</button>
+            <button onClick={oeffneEdit} style={{ ...btnPrimary, padding: '8px 16px' }}>Bearbeiten</button>
           </div>
         </div>
       </div>
@@ -308,10 +313,10 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
           const kat = TAB_KAT[t.id]
           const pct = kat ? progress(kat) : null
           return (
-            <button key={t.id} onClick={() => setAktTab(t.id)} style={{ padding: '8px 14px', borderRadius: 10, border: `1.5px solid ${aktTab === t.id ? '#1a2a3a' : '#e5e0d8'}`, background: aktTab === t.id ? '#1a2a3a' : 'white', color: aktTab === t.id ? 'white' : '#555', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Syne, sans-serif', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button key={t.id} onClick={() => setAktTab(t.id)} style={{ padding: '8px 14px', borderRadius: 10, border: `1.5px solid ${aktTab === t.id ? ACCENT : 'var(--bf-border)'}`, background: aktTab === t.id ? 'var(--bf-soft)' : 'var(--bf-card)', color: aktTab === t.id ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'Syne, sans-serif', display: 'flex', alignItems: 'center', gap: 6 }}>
               {t.label}
               {pct !== null && (
-                <span style={{ fontSize: 10, fontWeight: 800, padding: '1px 6px', borderRadius: 10, background: pct === 100 ? '#10b981' : aktTab === t.id ? 'rgba(255,255,255,0.2)' : '#f0ede8', color: pct === 100 ? 'white' : aktTab === t.id ? 'white' : '#888' }}>{pct}%</span>
+                <span style={{ fontSize: 10, fontWeight: 800, padding: '1px 6px', borderRadius: 10, background: pct === 100 ? '#10b981' : 'var(--bf-divider)', color: pct === 100 ? 'white' : 'var(--bf-text-muted)' }}>{pct}%</span>
               )}
             </button>
           )
@@ -321,8 +326,8 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
       {/* Gesamtkosten PDF — immer sichtbar */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
         <button onClick={gesamtkostenDrucken} disabled={gesamtLaden}
-          style={{ padding: '6px 16px', borderRadius: 8, border: '1.5px solid #e0ddd8', background: 'white', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: '#555', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {gesamtLaden ? '⏳' : '🖨️'} Gesamtkosten PDF
+          style={{ ...btnSecondary, padding: '6px 16px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6, opacity: gesamtLaden ? 0.6 : 1 }}>
+          {gesamtLaden ? 'Wird erstellt…' : 'Gesamtkosten PDF'}
         </button>
       </div>
 
@@ -334,50 +339,49 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
           {/* Finanz-Karten */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
             {[
-              { label: 'Monatl. Einnahmen', value: `€ ${fmt(monatEin)}`,  color: '#10b981', icon: '💰', sub: 'Miete + BK' },
-              { label: `Jahreseinnahmen`,   value: `€ ${fmt(jahrEin)}`,   color: '#6366f1', icon: '📈', sub: jahr.toString() },
-              { label: 'Betriebskosten',    value: `€ ${fmt(jahrBK)}`,    color: '#f59e0b', icon: '📊', sub: `${bk.length} Positionen` },
-              { label: 'Nettoertrag',       value: `€ ${fmt(netto)}`,     color: netto >= 0 ? '#10b981' : '#ef4444', icon: netto >= 0 ? '✅' : '⚠️', sub: 'Einnahmen − BK' },
+              { label: 'Monatl. Einnahmen', value: `€ ${fmt(monatEin)}`,  color: '#10b981', sub: 'Miete + BK' },
+              { label: `Jahreseinnahmen`,   value: `€ ${fmt(jahrEin)}`,   color: '#6366f1', sub: jahr.toString() },
+              { label: 'Betriebskosten',    value: `€ ${fmt(jahrBK)}`,    color: '#f59e0b', sub: `${bk.length} Positionen` },
+              { label: 'Nettoertrag',       value: `€ ${fmt(netto)}`,     color: netto >= 0 ? '#10b981' : '#ef4444', sub: 'Einnahmen − BK' },
             ].map((s, i) => (
-              <div key={i} style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 16 }}>
-                <div style={{ fontSize: 20, marginBottom: 6 }}>{s.icon}</div>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: s.color, marginBottom: 2 }}>{s.value}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>{s.label}</div>
-                <div style={{ fontSize: 10, color: '#aaa' }}>{s.sub}</div>
+              <div key={i} style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 16 }}>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: s.color, marginBottom: 2, fontVariantNumeric: 'tabular-nums' }}>{s.value}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--bf-text-soft)' }}>{s.label}</div>
+                <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>{s.sub}</div>
               </div>
             ))}
           </div>
 
           {/* Stammdaten Chips */}
-          <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 16, marginBottom: 16 }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1a2a3a' }}>📐 Objekt-Daten</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 16, marginBottom: 16 }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, marginBottom: 12, color: 'var(--bf-text)' }}>Objekt-Daten</div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {objekt.flaeche   && <Chip label={`📐 ${objekt.flaeche} m²`} />}
-              {objekt.zimmer    && <Chip label={`🛏 ${objekt.zimmer} Zimmer`} />}
-              {objekt.baujahr   && <Chip label={`🏗 Baujahr ${objekt.baujahr}`} />}
-              {objekt.kaufpreis && <Chip label={`💶 € ${fmt(parseFloat(objekt.kaufpreis))} Kaufpreis`} />}
-              {!objekt.flaeche && !objekt.zimmer && !objekt.baujahr && !objekt.kaufpreis && <span style={{ color: '#aaa', fontSize: 12 }}>Keine Stammdaten eingetragen — Bearbeiten klicken</span>}
+              {objekt.flaeche   && <Chip label={`${objekt.flaeche} m²`} />}
+              {objekt.zimmer    && <Chip label={`${objekt.zimmer} Zimmer`} />}
+              {objekt.baujahr   && <Chip label={`Baujahr ${objekt.baujahr}`} />}
+              {objekt.kaufpreis && <Chip label={`€ ${fmt(parseFloat(objekt.kaufpreis))} Kaufpreis`} />}
+              {!objekt.flaeche && !objekt.zimmer && !objekt.baujahr && !objekt.kaufpreis && <span style={{ color: 'var(--bf-text-muted)', fontSize: 12 }}>Keine Stammdaten eingetragen — Bearbeiten klicken</span>}
             </div>
           </div>
 
           {/* Aktiver Vertrag */}
-          <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 16, marginBottom: 16 }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1a2a3a' }}>👤 Aktives Mietverhältnis</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 16, marginBottom: 16 }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, marginBottom: 12, color: 'var(--bf-text)' }}>Aktives Mietverhältnis</div>
             {aktiverV ? (
               <div>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: '#1a2a3a', marginBottom: 4 }}>{aktiverV.mieter_vorname} {aktiverV.mieter_nachname}</div>
-                <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>📅 Seit {new Date(aktiverV.mietbeginn).toLocaleDateString('de-AT')}{aktiverV.mietende ? ` bis ${new Date(aktiverV.mietende).toLocaleDateString('de-AT')}` : ' · unbefristet'}</div>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 4 }}>{aktiverV.mieter_vorname} {aktiverV.mieter_nachname}</div>
+                <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 10 }}>Seit {new Date(aktiverV.mietbeginn).toLocaleDateString('de-AT')}{aktiverV.mietende ? ` bis ${new Date(aktiverV.mietende).toLocaleDateString('de-AT')}` : ' · unbefristet'}</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ background: '#d1f5e0', color: '#2d6a4f', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20 }}>Mietzins € {fmt(parseFloat(aktiverV.mietzins))}</span>
-                  {parseFloat(aktiverV.bk_pauschale) > 0 && <span style={{ background: '#fef3c7', color: '#92400e', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20 }}>BK-Pauschale € {fmt(parseFloat(aktiverV.bk_pauschale))}</span>}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', color: 'var(--bf-text-soft)', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />Mietzins € {fmt(parseFloat(aktiverV.mietzins))}</span>
+                  {parseFloat(aktiverV.bk_pauschale) > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', color: 'var(--bf-text-soft)', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />BK-Pauschale € {fmt(parseFloat(aktiverV.bk_pauschale))}</span>}
                 </div>
               </div>
-            ) : <div style={{ color: '#aaa', fontSize: 13 }}>📭 Kein aktiver Mietvertrag</div>}
+            ) : <div style={{ color: 'var(--bf-text-muted)', fontSize: 13 }}>Kein aktiver Mietvertrag</div>}
           </div>
 
           {/* Checklisten-Übersicht */}
-          <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 16 }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, marginBottom: 14, color: '#1a2a3a' }}>✅ Projekt-Checklisten</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 16 }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, marginBottom: 14, color: 'var(--bf-text)' }}>Projekt-Checklisten</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
               {['Stammdaten', 'Finanzen', 'Bau', 'Vermietung', 'Verwaltung'].map(kat => {
                 const items = ckKat(kat)
@@ -385,12 +389,12 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
                 const tabId = kat.toLowerCase()
                 return (
                   <button key={kat} onClick={() => setAktTab(tabId === 'stammdaten' ? 'stammdaten' : tabId === 'finanzen' ? 'finanzen' : tabId === 'bau' ? 'bau' : tabId === 'vermietung' ? 'vermietung' : 'verwaltung')}
-                    style={{ background: pct === 100 ? '#f0fdf4' : '#fafafa', border: `1px solid ${pct === 100 ? '#bbf7d0' : '#e5e0d8'}`, borderRadius: 10, padding: 12, cursor: 'pointer', textAlign: 'left' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a', marginBottom: 6 }}>{kat}</div>
-                    <div style={{ height: 4, background: '#f0ede8', borderRadius: 99, marginBottom: 6 }}>
+                    style={{ background: pct === 100 ? 'rgba(16,185,129,0.08)' : 'var(--bf-soft)', border: `1px solid ${pct === 100 ? 'rgba(16,185,129,0.35)' : 'var(--bf-border)'}`, borderRadius: 10, padding: 12, cursor: 'pointer', textAlign: 'left' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bf-text)', marginBottom: 6 }}>{kat}</div>
+                    <div style={{ height: 4, background: 'var(--bf-divider)', borderRadius: 99, marginBottom: 6 }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#10b981' : '#6366f1', borderRadius: 99 }} />
                     </div>
-                    <div style={{ fontSize: 10, color: '#888' }}>{items.filter(c => c.erledigt).length}/{items.length} erledigt</div>
+                    <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>{items.filter(c => c.erledigt).length}/{items.length} erledigt</div>
                   </button>
                 )
               })}
@@ -401,27 +405,27 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
 
       {/* STAMMDATEN */}
       {aktTab === 'stammdaten' && (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: '#1a2a3a' }}>📋 Stammdaten</div>
-          <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>Grundbuch, Kataster, Baugenehmigungen, Energieausweis</div>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: 'var(--bf-text)' }}>Stammdaten</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 16 }}>Grundbuch, Kataster, Baugenehmigungen, Energieausweis</div>
           {renderCheckliste('Stammdaten')}
         </div>
       )}
 
       {/* FINANZEN */}
       {aktTab === 'finanzen' && (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: '#1a2a3a' }}>💶 Finanzierung & Wirtschaftlichkeit</div>
-          <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>Darlehen, Tilgungsplan, Renditeberechnung, Kaufvertrag</div>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: 'var(--bf-text)' }}>Finanzierung & Wirtschaftlichkeit</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 16 }}>Darlehen, Tilgungsplan, Renditeberechnung, Kaufvertrag</div>
           {renderCheckliste('Finanzen')}
         </div>
       )}
 
       {/* BAU */}
       {aktTab === 'bau' && (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: '#1a2a3a' }}>🔨 Bau & Instandsetzung</div>
-          <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>Gewerke-Planung, Angebote, Abnahmeprotokolle, Mängelmanagement</div>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: 'var(--bf-text)' }}>Bau & Instandsetzung</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 16 }}>Gewerke-Planung, Angebote, Abnahmeprotokolle, Mängelmanagement</div>
           {renderCheckliste('Bau')}
         </div>
       )}
@@ -429,22 +433,22 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
       {/* VERMIETUNG */}
       {aktTab === 'vermietung' && (
         <div>
-          <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20, marginBottom: 16 }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: '#1a2a3a' }}>🏠 Vermietung & Bewirtschaftung</div>
-            <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>Mietverträge, Mieterselbstauskünfte, Kautionskonto, Nebenkostenabrechnung</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20, marginBottom: 16 }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: 'var(--bf-text)' }}>Vermietung & Bewirtschaftung</div>
+            <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 16 }}>Mietverträge, Mieterselbstauskünfte, Kautionskonto, Nebenkostenabrechnung</div>
             {renderCheckliste('Vermietung')}
           </div>
           {/* Vertragshistorie */}
           {vertraege.length > 0 && (
-            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#1a2a3a' }}>📋 Vertragshistorie ({vertraege.length})</div>
+            <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, marginBottom: 12, color: 'var(--bf-text)' }}>Vertragshistorie ({vertraege.length})</div>
               {vertraege.map((v, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < vertraege.length - 1 ? '1px solid #f0ede8' : 'none' }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < vertraege.length - 1 ? '1px solid var(--bf-divider)' : 'none' }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{v.mieter_vorname} {v.mieter_nachname}</div>
-                    <div style={{ fontSize: 11, color: '#888' }}>{new Date(v.mietbeginn).toLocaleDateString('de-AT')} · € {fmt(parseFloat(v.mietzins))}/Monat</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--bf-text)' }}>{v.mieter_vorname} {v.mieter_nachname}</div>
+                    <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>{new Date(v.mietbeginn).toLocaleDateString('de-AT')} · € {fmt(parseFloat(v.mietzins))}/Monat</div>
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: v.status === 'Aktiv' ? '#d1f5e0' : '#fee2e2', color: v.status === 'Aktiv' ? '#2d6a4f' : '#dc2626' }}>{v.status}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', color: 'var(--bf-text-soft)' }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: v.status === 'Aktiv' ? '#10b981' : '#ef4444', flexShrink: 0 }} />{v.status}</span>
                 </div>
               ))}
             </div>
@@ -454,9 +458,9 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
 
       {/* VERWALTUNG */}
       {aktTab === 'verwaltung' && (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: '#1a2a3a' }}>⚙️ Laufende Verwaltung</div>
-          <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>Instandhaltungsrücklagen, Versicherungen, Dienstleisterverträge</div>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, marginBottom: 4, color: 'var(--bf-text)' }}>Laufende Verwaltung</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 16 }}>Instandhaltungsrücklagen, Versicherungen, Dienstleisterverträge</div>
           {renderCheckliste('Verwaltung')}
         </div>
       )}
@@ -488,14 +492,14 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
       {/* ── Edit Modal ── */}
       {editOffen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20 }}>✏️ Objekt bearbeiten</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20, color: 'var(--bf-text)' }}>Objekt bearbeiten</div>
             <div style={{ display: 'grid', gap: 14 }}>
               <div><label style={lS}>Name *</label><input style={iS} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
               <div>
                 <label style={lS}>Typ</label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {TYP_OPTIONEN.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, typ: t }))} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${form.typ === t ? '#1a2a3a' : '#e5e0d8'}`, background: form.typ === t ? '#1a2a3a' : 'white', color: form.typ === t ? 'white' : '#555', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>)}
+                  {TYP_OPTIONEN.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, typ: t }))} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${form.typ === t ? ACCENT : 'var(--bf-border)'}`, background: form.typ === t ? 'var(--bf-soft)' : 'var(--bf-card)', color: form.typ === t ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>)}
                 </div>
               </div>
               <div><label style={lS}>Adresse</label><input style={iS} value={form.adresse} onChange={e => setForm(p => ({ ...p, adresse: e.target.value }))} placeholder="Straße Nr., PLZ Ort" /></div>
@@ -510,9 +514,9 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
               <div><label style={lS}>Notizen</label><textarea style={{ ...iS, resize: 'none', minHeight: 60 } as any} value={form.notizen} onChange={e => setForm(p => ({ ...p, notizen: e.target.value }))} /></div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={() => setEditOffen(false)} style={{ flex: 1, padding: 11, borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', fontSize: 13, cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={speichern} disabled={saveLaden || !form.name.trim()} style={{ flex: 2, padding: 11, borderRadius: 8, border: 'none', background: saveLaden || !form.name.trim() ? '#e5e0d8' : '#1a1a1a', color: saveLaden || !form.name.trim() ? '#aaa' : 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
-                {saveLaden ? '⏳ Speichern...' : '💾 Speichern'}
+              <button onClick={() => setEditOffen(false)} style={{ ...btnSecondary, flex: 1, padding: 11, fontSize: 13 }}>Abbrechen</button>
+              <button onClick={speichern} disabled={saveLaden || !form.name.trim()} style={{ ...btnPrimary, flex: 2, padding: 11, fontSize: 13, opacity: saveLaden || !form.name.trim() ? 0.55 : 1, cursor: saveLaden || !form.name.trim() ? 'not-allowed' : 'pointer' }}>
+                {saveLaden ? 'Speichern...' : 'Speichern'}
               </button>
             </div>
           </div>
@@ -523,11 +527,11 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
 }
 
 function Chip({ label }: { label: string }) {
-  return <div style={{ background: '#f8f9fa', border: '1px solid #e5e0d8', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: '#444' }}>{label}</div>
+  return <div style={{ background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: 'var(--bf-text-soft)' }}>{label}</div>
 }
 
-const lS: React.CSSProperties = { display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: '#888', fontWeight: 600, marginBottom: 5 }
-const iS: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1px solid #e5e0d8', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
+const lS: React.CSSProperties = { display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--bf-text-muted)', fontWeight: 600, marginBottom: 5 }
+const iS: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', color: 'var(--bf-text)', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
 
 function DarlehenTab({ objektId, objektName, darlehen, setDarlehen, darlehenZahlungen, setDarlehenZahlungen }: { objektId: number; objektName: string; darlehen: any[]; setDarlehen: any; darlehenZahlungen: Record<number,any[]>; setDarlehenZahlungen: any }) {
   const [expandedId,  setExpandedId]  = useState<number | null>(null)
@@ -1130,7 +1134,7 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
 <body>
   <div class="header">
     <div class="header-left">
-      <h1>🏦 Darlehen-Übersicht</h1>
+      <h1>Darlehen-Übersicht</h1>
       <p>${objektName}</p>
     </div>
     <div class="header-right">
@@ -1188,12 +1192,12 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
           { path: 'M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', label: 'Monatl. Rate', value: `€ ${fmtD(totalRate)}`, color: '#f59e0b', bg: 'rgba(245,158,11,0.07)' },
           { path: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3', label: 'Abgezahlt', value: `${abgezahltPct.toFixed(1)}%`, color: '#10b981', bg: 'rgba(16,185,129,0.07)' },
         ].map(c => (
-          <div key={c.label} style={{ background: 'white', borderRadius: 12, border: '1px solid #ece8e1', padding: '14px 16px' }}>
+          <div key={c.label} style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: '14px 16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <DarlSvg path={c.path} color={c.color} />
               </div>
-              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, letterSpacing: 0.2 }}>{c.label}</span>
+              <span style={{ fontSize: 11, color: 'var(--bf-text-muted)', fontWeight: 500, letterSpacing: 0.2 }}>{c.label}</span>
             </div>
             <div style={{ fontSize: 16, fontWeight: 700, color: c.color, letterSpacing: -0.3 }}>{c.value}</div>
           </div>
@@ -1202,21 +1206,21 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
 
       {/* Header mit Buttons */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: '#1a2a3a' }}>Darlehen</div>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: 'var(--bf-text)' }}>Darlehen</div>
         <div style={{ display: 'flex', gap: 8 }}>
           {darlehen.length > 0 && (
-            <button onClick={druckeDarlehenPDF} style={{ background: 'white', color: '#6366f1', border: '1.5px solid #6366f1', borderRadius: 9, padding: '9px 16px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              📄 PDF drucken
+            <button onClick={druckeDarlehenPDF} style={{ ...btnSecondary, color: ACCENT, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              PDF drucken
             </button>
           )}
-          <button onClick={oeffneNeu} style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 9, padding: '9px 18px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>+ Darlehen hinzufügen</button>
+          <button onClick={oeffneNeu} style={{ ...btnPrimary, padding: '9px 18px', fontSize: 13 }}>+ Darlehen hinzufügen</button>
         </div>
       </div>
 
       {/* Darlehen Liste */}
       {darlehen.length === 0 ? (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px dashed #d1d5db', padding: 40, textAlign: 'center', color: '#bbb', fontSize: 13 }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 10 }}>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px dashed var(--bf-border)', padding: 40, textAlign: 'center', color: 'var(--bf-text-muted)', fontSize: 13 }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--bf-border)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 10 }}>
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" />
           </svg>
           <div>Noch keine Darlehen erfasst</div>
@@ -1234,49 +1238,49 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
             const zf = zahlungForm[d.id] || {}
 
             return (
-              <div key={d.id} style={{ background: 'white', borderRadius: 14, border: `1.5px solid ${isExpanded ? '#6366f1' : '#e5e0d8'}`, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+              <div key={d.id} style={{ background: 'var(--bf-card)', borderRadius: 14, border: `1.5px solid ${isExpanded ? '#6366f1' : 'var(--bf-border)'}`, overflow: 'hidden', transition: 'border-color 0.2s' }}>
                 {/* Card Header */}
                 <div style={{ padding: '16px 20px', cursor: 'pointer' }} onClick={() => toggleExpand(d.id)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-                        <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#1a2a3a' }}>{d.bezeichnung}</span>
+                        <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: 'var(--bf-text)' }}>{d.bezeichnung}</span>
                         {d.bank && <span style={{ background: '#ede9fe', color: '#6d28d9', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{d.bank}</span>}
-                        {d.vertragsnummer && <span style={{ background: '#f0ede8', color: '#888', fontSize: 10, padding: '2px 8px', borderRadius: 10 }}>#{d.vertragsnummer}</span>}
+                        {d.vertragsnummer && <span style={{ background: 'var(--bf-divider)', color: 'var(--bf-text-muted)', fontSize: 10, padding: '2px 8px', borderRadius: 10 }}>#{d.vertragsnummer}</span>}
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 12, color: '#666', marginBottom: 10 }}>
-                        <span>Darlehenssumme: <strong style={{ color: '#1a2a3a' }}>€ {fmtD(d.darlehenssumme)}</strong></span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 12, color: 'var(--bf-text-soft)', marginBottom: 10 }}>
+                        <span>Darlehenssumme: <strong style={{ color: 'var(--bf-text)' }}>€ {fmtD(d.darlehenssumme)}</strong></span>
                         <span>Restschuld: <strong style={{ color: '#ef4444' }}>€ {fmtD(d.restsumme)}</strong></span>
-                        <span>Rate: <strong style={{ color: '#1a2a3a' }}>€ {fmtD(d.monatlicheRate)}/Monat</strong></span>
+                        <span>Rate: <strong style={{ color: 'var(--bf-text)' }}>€ {fmtD(d.monatlicheRate)}/Monat</strong></span>
                         {n(d.sollzins) > 0 && <span>Sollzins: <strong style={{ color: '#6366f1' }}>{n(d.sollzins).toFixed(3)}%</strong></span>}
                       </div>
                       {/* Progress Bar */}
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 4 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--bf-text-muted)', marginBottom: 4 }}>
                           <span>Abgezahlt: <strong style={{ color: barColor }}>{pct.toFixed(1)}%</strong></span>
                           {payoffDate && <span>Voraussichtl. Abzahlung: <strong>{payoffDate.toLocaleDateString('de-AT', { month: '2-digit', year: 'numeric' })}</strong></span>}
                         </div>
-                        <div style={{ height: 8, background: '#f0ede8', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ height: 8, background: 'var(--bf-divider)', borderRadius: 99, overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 99, transition: 'width 0.4s' }} />
                         </div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                       <button onClick={e => { e.stopPropagation(); druckeEinzelDarlehenPDF(d) }}
-                        style={{ background: '#f0f4ff', color: '#6366f1', border: '1px solid #c7d2fe', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        style={{ ...btnSecondary, color: ACCENT, borderRadius: 7, padding: '6px 10px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8"/></svg>
                         PDF
                       </button>
-                      <button onClick={e => { e.stopPropagation(); oeffneEdit(d) }} style={{ background: '#f0ede8', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>✏️</button>
-                      <button onClick={e => { e.stopPropagation(); loescheDarlehen(d.id) }} style={{ background: '#fee2e2', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>🗑</button>
-                      <div style={{ fontSize: 18, color: '#aaa', marginLeft: 4 }}>{isExpanded ? '▲' : '▼'}</div>
+                      <button onClick={e => { e.stopPropagation(); oeffneEdit(d) }} style={{ ...btnSecondary, borderRadius: 7, padding: '6px 10px', fontSize: 11 }}>Bearbeiten</button>
+                      <button onClick={e => { e.stopPropagation(); loescheDarlehen(d.id) }} style={{ ...btnDanger, borderRadius: 7, padding: '6px 10px', fontSize: 11 }}>Löschen</button>
+                      <div style={{ fontSize: 18, color: 'var(--bf-text-muted)', marginLeft: 4 }}>{isExpanded ? '▲' : '▼'}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div style={{ borderTop: '1px solid #f0ede8', padding: '20px 20px' }}>
+                  <div style={{ borderTop: '1px solid var(--bf-divider)', padding: '20px 20px' }}>
 
                     {/* Vertrag Upload */}
                     <div
@@ -1284,36 +1288,34 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
                       onDragEnter={e => { e.preventDefault(); setDragOver(d.id) }}
                       onDragLeave={() => setDragOver(null)}
                       onDrop={async e => { e.preventDefault(); setDragOver(null); const f = e.dataTransfer.files?.[0]; if (f) await uploadVertragDatei(d.id, f) }}
-                      style={{ marginBottom: 20, border: `2px dashed ${dragOver === d.id ? '#6366f1' : '#e0ddf8'}`, borderRadius: 12, background: dragOver === d.id ? 'rgba(99,102,241,0.06)' : '#fafafe', padding: '14px 18px', transition: 'all 0.15s' }}>
+                      style={{ marginBottom: 20, border: `2px dashed ${dragOver === d.id ? '#6366f1' : 'var(--bf-border)'}`, borderRadius: 12, background: dragOver === d.id ? 'rgba(99,102,241,0.06)' : 'var(--bf-soft)', padding: '14px 18px', transition: 'all 0.15s' }}>
                       {vertragLaden === d.id ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6366f1', fontSize: 12 }}>⏳ Wird hochgeladen…</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6366f1', fontSize: 12 }}>Wird hochgeladen…</div>
                       ) : d.vertragDateiname ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => oeffneVorschau(d.id, d.vertragDateiname)}>
-                            <span style={{ fontSize: 22 }}>📄</span>
                             <div>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: '#1a2a3a' }}>Darlehensvertrag</div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--bf-text)' }}>Darlehensvertrag</div>
                               <div style={{ fontSize: 11, color: '#6366f1', textDecoration: 'underline' }}>{d.vertragDateiname}</div>
-                              <div style={{ fontSize: 10, color: '#aaa' }}>Klicken für Vorschau</div>
+                              <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>Klicken für Vorschau</div>
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => oeffneVorschau(d.id, d.vertragDateiname)} style={{ background: '#f0f4ff', color: '#6366f1', border: '1px solid #c7d2fe', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>👁 Vorschau</button>
-                            <button onClick={() => downloadVertrag(d.id)} style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>↓ Download</button>
-                            <button onClick={() => ladeVertrag(d.id)} style={{ background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>Ersetzen</button>
-                            <button onClick={() => loescheVertrag(d.id)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 7, padding: '6px 9px', fontSize: 11, cursor: 'pointer' }}>✕</button>
+                            <button onClick={() => oeffneVorschau(d.id, d.vertragDateiname)} style={{ ...btnSecondary, color: ACCENT, borderRadius: 7, padding: '6px 12px', fontSize: 11 }}>Vorschau</button>
+                            <button onClick={() => downloadVertrag(d.id)} style={{ ...btnSecondary, color: ACCENT, borderRadius: 7, padding: '6px 12px', fontSize: 11 }}>Download</button>
+                            <button onClick={() => ladeVertrag(d.id)} style={{ ...btnSecondary, borderRadius: 7, padding: '6px 10px', fontSize: 11 }}>Ersetzen</button>
+                            <button onClick={() => loescheVertrag(d.id)} style={{ ...btnDanger, borderRadius: 7, padding: '6px 9px', fontSize: 11 }}>✕</button>
                           </div>
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: 22, opacity: 0.4 }}>📎</span>
                             <div>
-                              <div style={{ fontSize: 12, fontWeight: 600, color: dragOver === d.id ? '#6366f1' : '#666' }}>{dragOver === d.id ? 'Loslassen zum Hochladen' : 'Darlehensvertrag hochladen'}</div>
-                              <div style={{ fontSize: 11, color: '#aaa' }}>Drag & Drop oder Datei suchen · PDF, Word, Bild</div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: dragOver === d.id ? '#6366f1' : 'var(--bf-text-soft)' }}>{dragOver === d.id ? 'Loslassen zum Hochladen' : 'Darlehensvertrag hochladen'}</div>
+                              <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>Drag & Drop oder Datei suchen · PDF, Word, Bild</div>
                             </div>
                           </div>
-                          <button onClick={() => ladeVertrag(d.id)} style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                          <button onClick={() => ladeVertrag(d.id)} style={{ ...btnPrimary, borderRadius: 8, padding: '8px 16px', flexShrink: 0 }}>
                             Datei suchen
                           </button>
                         </div>
@@ -1322,35 +1324,35 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
 
                     {/* Zinsprognose */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
-                      <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '12px 14px' }}>
-                        <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Zinsen bereits gezahlt</div>
+                      <div style={{ background: 'var(--bf-soft)', borderRadius: 10, padding: '12px 14px' }}>
+                        <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Zinsen bereits gezahlt</div>
                         <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#f59e0b' }}>€ {fmtD(gesamtZinsgezahlt)}</div>
                       </div>
-                      <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '12px 14px' }}>
-                        <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Noch anfallende Zinskosten</div>
+                      <div style={{ background: 'var(--bf-soft)', borderRadius: 10, padding: '12px 14px' }}>
+                        <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Noch anfallende Zinskosten</div>
                         <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#ef4444' }}>≈ € {fmtD(restZinskosten)}</div>
                       </div>
                       {d.laufzeitEnde && (
-                        <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '12px 14px' }}>
-                          <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Laufzeit bis</div>
-                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a' }}>{new Date(d.laufzeitEnde).toLocaleDateString('de-AT')}</div>
+                        <div style={{ background: 'var(--bf-soft)', borderRadius: 10, padding: '12px 14px' }}>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Laufzeit bis</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: 'var(--bf-text)' }}>{new Date(d.laufzeitEnde).toLocaleDateString('de-AT')}</div>
                         </div>
                       )}
                       {d.zinsbindungEnde && (
-                        <div style={{ background: '#fff7ed', borderRadius: 10, padding: '12px 14px', border: '1px solid #fed7aa' }}>
-                          <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Zinsbindung bis</div>
+                        <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(245,158,11,0.35)' }}>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>Zinsbindung bis</div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#f59e0b' }}>{new Date(d.zinsbindungEnde).toLocaleDateString('de-AT')}</div>
                         </div>
                       )}
                     </div>
 
                     {/* Zahlung erfassen */}
-                    <div style={{ background: '#f8f9fa', borderRadius: 12, padding: 16, marginBottom: 18 }}>
-                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: '#1a2a3a', marginBottom: 12 }}>+ Zahlung erfassen</div>
+                    <div style={{ background: 'var(--bf-soft)', borderRadius: 12, padding: 16, marginBottom: 18 }}>
+                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 12 }}>+ Zahlung erfassen</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10 }}>
                         <div>
                           <label style={lS}>Monat</label>
-                          <select style={{ ...iS, background: 'white' }} value={zf.monat || ''} onChange={e => zahlungFeld(d.id, 'monat', e.target.value)}>
+                          <select style={{ ...iS, background: 'var(--bf-input-bg)' }} value={zf.monat || ''} onChange={e => zahlungFeld(d.id, 'monat', e.target.value)}>
                             {MONATE_NAMES.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
                           </select>
                         </div>
@@ -1368,7 +1370,7 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
                         </div>
                       </div>
                       {zf.betrag && (
-                        <div style={{ marginTop: 8, fontSize: 11, color: '#666', background: 'white', borderRadius: 8, padding: '8px 12px' }}>
+                        <div style={{ marginTop: 8, fontSize: 11, color: 'var(--bf-text-soft)', background: 'var(--bf-card)', borderRadius: 8, padding: '8px 12px' }}>
                           {(() => {
                             const b = parseFloat(zf.betrag || '0')
                             const { zinsanteil, tilgungsanteil, restsummeNach } = berechneZinsanteile(d.id, b)
@@ -1377,7 +1379,7 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
                         </div>
                       )}
                       <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-                        <button onClick={() => addZahlung(d.id)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: 8, padding: '9px 18px', fontFamily: 'Syne, sans-serif', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        <button onClick={() => addZahlung(d.id)} style={{ ...btnPrimary, borderRadius: 8, padding: '9px 18px' }}>
                           Zahlung buchen
                         </button>
                       </div>
@@ -1385,51 +1387,51 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
 
                     {/* Zahlungshistorie */}
                     {zahlungLaden === d.id ? (
-                      <div style={{ textAlign: 'center', color: '#aaa', padding: 16 }}>⏳ Lade Zahlungen...</div>
+                      <div style={{ textAlign: 'center', color: 'var(--bf-text-muted)', padding: 16 }}>Lade Zahlungen...</div>
                     ) : zahlungen.length === 0 ? (
-                      <div style={{ textAlign: 'center', color: '#aaa', fontSize: 13, padding: 12 }}>Noch keine Zahlungen erfasst</div>
+                      <div style={{ textAlign: 'center', color: 'var(--bf-text-muted)', fontSize: 13, padding: 12 }}>Noch keine Zahlungen erfasst</div>
                     ) : (
                       <div>
-                        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: '#1a2a3a', marginBottom: 10 }}>Zahlungshistorie</div>
+                        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 10 }}>Zahlungshistorie</div>
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                             <thead>
-                              <tr style={{ background: '#f8f9fa' }}>
+                              <tr style={{ background: 'var(--bf-thead)' }}>
                                 {['Datum','Betrag','Zinsanteil','Tilgungsanteil','Restsumme danach','Beleg',''].map(h => (
-                                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
+                                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, color: 'var(--bf-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
                               {zahlungen.map((z: any, idx: number) => (
-                                <tr key={z.id} style={{ borderTop: '1px solid #f0ede8', background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                                  <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>{MONATE_NAMES[(z.monat||1)-1]} {z.jahr}</td>
-                                  <td style={{ padding: '8px 10px', fontWeight: 700 }}>€ {fmtD(z.betrag)}</td>
-                                  <td style={{ padding: '8px 10px', color: '#f59e0b' }}>€ {fmtD(z.zinsanteil)}</td>
-                                  <td style={{ padding: '8px 10px', color: '#10b981' }}>€ {fmtD(z.tilgungsanteil)}</td>
-                                  <td style={{ padding: '8px 10px', color: '#6366f1', fontWeight: 700 }}>€ {fmtD(z.restsummeNach)}</td>
+                                <tr key={z.id} style={{ borderTop: '1px solid var(--bf-divider)', background: idx % 2 === 0 ? 'var(--bf-card)' : 'var(--bf-soft)' }}>
+                                  <td style={{ padding: '8px 10px', whiteSpace: 'nowrap', color: 'var(--bf-text)' }}>{MONATE_NAMES[(z.monat||1)-1]} {z.jahr}</td>
+                                  <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>€ {fmtD(z.betrag)}</td>
+                                  <td style={{ padding: '8px 10px', color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>€ {fmtD(z.zinsanteil)}</td>
+                                  <td style={{ padding: '8px 10px', color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>€ {fmtD(z.tilgungsanteil)}</td>
+                                  <td style={{ padding: '8px 10px', color: '#6366f1', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>€ {fmtD(z.restsummeNach)}</td>
                                   <td style={{ padding: '8px 10px' }}>
                                     {belegLaden === z.id ? (
-                                      <span style={{ fontSize: 11, color: '#aaa' }}>⏳</span>
+                                      <span style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>…</span>
                                     ) : z.belegDateiname ? (
                                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                         <button onClick={() => vorschauZahlungBeleg(z.id, z.belegDateiname)}
-                                          style={{ background: '#ede9fe', color: '#6366f1', border: 'none', borderRadius: 5, padding: '3px 7px', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
-                                          title={z.belegDateiname}>📎 Beleg</button>
+                                          style={{ background: 'var(--bf-soft)', color: ACCENT, border: '1px solid var(--bf-border)', borderRadius: 5, padding: '3px 7px', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
+                                          title={z.belegDateiname}>Beleg</button>
                                         <button onClick={() => loescheZahlungBeleg(z.id, d.id)}
-                                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', fontSize: 11 }}
-                                          onMouseEnter={e => (e.currentTarget.style.color='#ef4444')} onMouseLeave={e => (e.currentTarget.style.color='#ddd')}>✕</button>
+                                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bf-text-muted)', fontSize: 11 }}
+                                          onMouseEnter={e => (e.currentTarget.style.color='#ef4444')} onMouseLeave={e => (e.currentTarget.style.color='var(--bf-text-muted)')}>✕</button>
                                       </div>
                                     ) : (
                                       <button onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'; inp.onchange=async()=>{ if(inp.files?.[0]) await uploadZahlungBeleg(z.id, d.id, inp.files[0]) }; inp.click() }}
-                                        style={{ background: 'none', border: '1px dashed #d1d5db', borderRadius: 5, padding: '3px 7px', fontSize: 10, color: '#aaa', cursor: 'pointer' }}>
+                                        style={{ background: 'none', border: '1px dashed var(--bf-border)', borderRadius: 5, padding: '3px 7px', fontSize: 10, color: 'var(--bf-text-muted)', cursor: 'pointer' }}>
                                         + Beleg
                                       </button>
                                     )}
                                   </td>
                                   <td style={{ padding: '8px 10px' }}>
-                                    <button onClick={() => loescheZahlung(d.id, z.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 13 }}
-                                      onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}>🗑</button>
+                                    <button onClick={() => loescheZahlung(d.id, z.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bf-text-muted)', fontSize: 11, fontWeight: 600 }}
+                                      onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--bf-text-muted)')}>Löschen</button>
                                   </td>
                                 </tr>
                               ))}
@@ -1441,37 +1443,36 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
 
                     {/* Sonstige Unterlagen */}
                     <div style={{ marginTop: 20 }}>
-                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: '#1a2a3a', marginBottom: 10 }}>Sonstige Unterlagen</div>
+                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 10 }}>Sonstige Unterlagen</div>
                       <div
                         onDragOver={e => { e.preventDefault(); setDokDragOver(d.id) }}
                         onDragEnter={e => { e.preventDefault(); setDokDragOver(d.id) }}
                         onDragLeave={() => setDokDragOver(null)}
                         onDrop={async e => { e.preventDefault(); setDokDragOver(null); const f = e.dataTransfer.files?.[0]; if (f) await uploadDokument(d.id, f) }}
-                        style={{ border: `2px dashed ${dokDragOver === d.id ? '#6366f1' : '#e0ddf8'}`, borderRadius: 10, padding: '12px 16px', background: dokDragOver === d.id ? 'rgba(99,102,241,0.06)' : '#fafafe', marginBottom: 12, transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-                        <div style={{ fontSize: 11, color: dokDragOver === d.id ? '#6366f1' : '#aaa' }}>
-                          {dokDragOver === d.id ? '📂 Loslassen zum Hochladen' : '📎 Datei hierher ziehen oder auswählen'}
+                        style={{ border: `2px dashed ${dokDragOver === d.id ? '#6366f1' : 'var(--bf-border)'}`, borderRadius: 10, padding: '12px 16px', background: dokDragOver === d.id ? 'rgba(99,102,241,0.06)' : 'var(--bf-soft)', marginBottom: 12, transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 11, color: dokDragOver === d.id ? '#6366f1' : 'var(--bf-text-muted)' }}>
+                          {dokDragOver === d.id ? 'Loslassen zum Hochladen' : 'Datei hierher ziehen oder auswählen'}
                         </div>
                         <button onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='.pdf,.jpg,.jpeg,.png,.doc,.docx'; inp.onchange=async()=>{ if(inp.files?.[0]) await uploadDokument(d.id, inp.files[0]) }; inp.click() }}
-                          style={{ background: '#1a2a3a', color: 'white', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                          style={{ ...btnPrimary, borderRadius: 7, padding: '6px 12px', fontSize: 11, flexShrink: 0 }}>
                           Datei suchen
                         </button>
                       </div>
                       {(dokumente[d.id] || []).length === 0 ? (
-                        <div style={{ fontSize: 11, color: '#ccc', textAlign: 'center', padding: '8px 0' }}>Noch keine Unterlagen hochgeladen</div>
+                        <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', textAlign: 'center', padding: '8px 0' }}>Noch keine Unterlagen hochgeladen</div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {(dokumente[d.id] || []).map((dok: any) => (
-                            <div key={dok.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8f9fa', borderRadius: 8, padding: '8px 12px', border: '1px solid #e5e0d8' }}>
+                            <div key={dok.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bf-soft)', borderRadius: 8, padding: '8px 12px', border: '1px solid var(--bf-border)' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => vorschauDokument(dok.id, dok.dateiname)}>
-                                <span style={{ fontSize: 16 }}>📄</span>
                                 <div>
                                   <div style={{ fontSize: 11, fontWeight: 600, color: '#6366f1', textDecoration: 'underline' }}>{dok.dateiname}</div>
-                                  <div style={{ fontSize: 10, color: '#aaa' }}>{new Date(dok.createdAt).toLocaleDateString('de-AT')}</div>
+                                  <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>{new Date(dok.createdAt).toLocaleDateString('de-AT')}</div>
                                 </div>
                               </div>
                               <button onClick={() => loescheDokument(d.id, dok.id)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', fontSize: 14 }}
-                                onMouseEnter={e => (e.currentTarget.style.color='#ef4444')} onMouseLeave={e => (e.currentTarget.style.color='#ddd')}>🗑</button>
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bf-text-muted)', fontSize: 11, fontWeight: 600 }}
+                                onMouseEnter={e => (e.currentTarget.style.color='#ef4444')} onMouseLeave={e => (e.currentTarget.style.color='var(--bf-text-muted)')}>Löschen</button>
                             </div>
                           ))}
                         </div>
@@ -1488,14 +1489,14 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
       {/* Modal: Darlehen hinzufügen / bearbeiten */}
       {modalOffen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: '#1a2a3a', marginBottom: 18 }}>{editDarlehen ? '✏️ Darlehen bearbeiten' : '🏦 Neues Darlehen'}</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 18 }}>{editDarlehen ? 'Darlehen bearbeiten' : 'Neues Darlehen'}</div>
             <div style={{ display: 'grid', gap: 12 }}>
               <div>
                 <label style={lS}>Bezeichnung *</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
                   {SCHNELL_BEZEICHNUNGEN.map(b => (
-                    <button key={b} onClick={() => ff('bezeichnung', b)} style={{ padding: '4px 10px', borderRadius: 14, border: `1.5px solid ${form.bezeichnung === b ? '#6366f1' : '#e5e0d8'}`, background: form.bezeichnung === b ? '#ede9fe' : 'white', color: form.bezeichnung === b ? '#6366f1' : '#555', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>{b}</button>
+                    <button key={b} onClick={() => ff('bezeichnung', b)} style={{ padding: '4px 10px', borderRadius: 14, border: `1.5px solid ${form.bezeichnung === b ? ACCENT : 'var(--bf-border)'}`, background: form.bezeichnung === b ? 'var(--bf-soft)' : 'var(--bf-card)', color: form.bezeichnung === b ? ACCENT : 'var(--bf-text-soft)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>{b}</button>
                   ))}
                 </div>
                 <input style={iS} value={form.bezeichnung} onChange={e => ff('bezeichnung', e.target.value)} placeholder="z.B. Wohnungskauf" />
@@ -1520,9 +1521,9 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
               <div><label style={lS}>Notiz</label><textarea style={{ ...iS, resize: 'none', minHeight: 56 } as any} value={form.notiz} onChange={e => ff('notiz', e.target.value)} /></div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <button onClick={() => setModalOffen(false)} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', fontSize: 13, cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={speichereDarlehen} disabled={saving || !form.bezeichnung.trim()} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: saving ? '#aaa' : '#1a2a3a', color: 'white', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                {saving ? '⏳...' : '💾 Speichern'}
+              <button onClick={() => setModalOffen(false)} style={{ ...btnSecondary, flex: 1, padding: 10, fontSize: 13 }}>Abbrechen</button>
+              <button onClick={speichereDarlehen} disabled={saving || !form.bezeichnung.trim()} style={{ ...btnPrimary, flex: 2, padding: 10, fontSize: 13, opacity: saving || !form.bezeichnung.trim() ? 0.55 : 1 }}>
+                {saving ? 'Speichern...' : 'Speichern'}
               </button>
             </div>
           </div>
@@ -1537,7 +1538,6 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
           <div style={{ background: '#1a2a3a', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 18 }}>📄</span>
               <div>
                 <div style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>{vorschau.name}</div>
                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Darlehensvertrag</div>
@@ -1547,12 +1547,12 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
               {['pdf','jpg','jpeg','png'].includes(vorschau.typ) && (
                 <button onClick={() => { const w = window.open(''); if (w) { w.document.write(`<html><body style="margin:0"><${vorschau.typ === 'pdf' ? `iframe src="${vorschau.url}" width="100%" height="100%" style="border:none"` : `img src="${vorschau.url}" style="max-width:100%"`}/></body></html>`); w.focus(); setTimeout(() => w.print(), 500) } }}
                   style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  🖨 Drucken
+                  Drucken
                 </button>
               )}
               <a href={vorschau.url} download={vorschau.name}
                 style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
-                ↓ Download
+                Download
               </a>
               <button onClick={() => { window.URL.revokeObjectURL(vorschau.url); setVorschau(null) }}
                 style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 16, cursor: 'pointer' }}>✕</button>
@@ -1566,13 +1566,12 @@ ${d.notiz ? `<div style="margin-top:14px;background:#fffbf0;border:1px solid #fe
             ) : ['jpg','jpeg','png','gif'].includes(vorschau.typ) ? (
               <img src={vorschau.url} alt={vorschau.name} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }} />
             ) : (
-              <div style={{ background: 'white', borderRadius: 12, padding: 40, textAlign: 'center', maxWidth: 400 }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>📎</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2a3a', marginBottom: 8 }}>{vorschau.name}</div>
-                <div style={{ fontSize: 12, color: '#888', marginBottom: 20 }}>Vorschau für diesen Dateityp nicht verfügbar</div>
+              <div style={{ background: 'var(--bf-card)', borderRadius: 12, padding: 40, textAlign: 'center', maxWidth: 400 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--bf-text)', marginBottom: 8 }}>{vorschau.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginBottom: 20 }}>Vorschau für diesen Dateityp nicht verfügbar</div>
                 <a href={vorschau.url} download={vorschau.name}
-                  style={{ background: '#1a2a3a', color: 'white', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}>
-                  ↓ Herunterladen
+                  style={{ ...btnPrimary, padding: '10px 20px', fontSize: 13, textDecoration: 'none', display: 'inline-block' }}>
+                  Herunterladen
                 </a>
               </div>
             )}
@@ -1651,19 +1650,19 @@ function KostenrechnerTab({ objektId, kaufpreis, vertraege, darlehen, bkBelege, 
   const nettoRendite = kaufpreis > 0 ? (cashflow / kaufpreis) * 100 : 0
   const amortisation = cashflow > 0 ? kaufpreis / cashflow : 0
 
-  const card: React.CSSProperties = { background: 'white', borderRadius: 14, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 14 }
-  const iS: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e0d8', fontSize: 13, outline: 'none', textAlign: 'right' as const, boxSizing: 'border-box' }
+  const card: React.CSSProperties = { background: 'var(--bf-card)', borderRadius: 14, padding: '18px 20px', boxShadow: 'var(--bf-shadow)', marginBottom: 14 }
+  const iS: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', color: 'var(--bf-text)', fontSize: 13, outline: 'none', textAlign: 'right' as const, boxSizing: 'border-box', fontVariantNumeric: 'tabular-nums' }
 
-  if (laden) return <div style={{ padding: 32, textAlign: 'center', color: '#888' }}>⏳ Lade…</div>
+  if (laden) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--bf-text-muted)' }}>Lade…</div>
 
   return (
     <div style={{ padding: '0 2px' }}>
 
       {/* Jahr-Auswahl */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <span style={{ fontSize: 12, color: '#888' }}>Auswertungsjahr:</span>
+        <span style={{ fontSize: 12, color: 'var(--bf-text-muted)' }}>Auswertungsjahr:</span>
         {[bkJahr - 1, bkJahr, bkJahr + 1].map(y => (
-          <button key={y} onClick={() => setJahr(y)} style={{ padding: '4px 12px', borderRadius: 8, border: `1.5px solid ${jahr === y ? '#1a2a3a' : '#e5e0d8'}`, background: jahr === y ? '#1a2a3a' : 'white', color: jahr === y ? 'white' : '#555', fontSize: 12, cursor: 'pointer' }}>{y}</button>
+          <button key={y} onClick={() => setJahr(y)} style={{ padding: '4px 12px', borderRadius: 8, border: `1.5px solid ${jahr === y ? ACCENT : 'var(--bf-border)'}`, background: jahr === y ? 'var(--bf-soft)' : 'var(--bf-card)', color: jahr === y ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 12, cursor: 'pointer' }}>{y}</button>
         ))}
       </div>
 
@@ -1673,11 +1672,11 @@ function KostenrechnerTab({ objektId, kaufpreis, vertraege, darlehen, bkBelege, 
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
           Einnahmen / Jahr
         </div>
-        {!aktivV && <div style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic', marginBottom: 8 }}>Kein aktiver Mietvertrag gefunden</div>}
+        {!aktivV && <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', fontStyle: 'italic', marginBottom: 8 }}>Kein aktiver Mietvertrag gefunden</div>}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '6px 16px', fontSize: 13 }}>
-          <span style={{ color: '#555' }}>Nettomiete</span><span style={{ textAlign: 'right', fontWeight: 600 }}>€ {fmt(jahresmiete)}</span>
-          <span style={{ color: '#555' }}>BK-Vorauszahlung</span><span style={{ textAlign: 'right', fontWeight: 600 }}>€ {fmt(jahresBK_einnahmen)}</span>
-          <span style={{ color: '#888', fontSize: 11 }}>monatlich: € {fmt(gesamtEinnahmen / 12)}</span><span></span>
+          <span style={{ color: 'var(--bf-text-soft)' }}>Nettomiete</span><span style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>€ {fmt(jahresmiete)}</span>
+          <span style={{ color: 'var(--bf-text-soft)' }}>BK-Vorauszahlung</span><span style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>€ {fmt(jahresBK_einnahmen)}</span>
+          <span style={{ color: 'var(--bf-text-muted)', fontSize: 11 }}>monatlich: € {fmt(gesamtEinnahmen / 12)}</span><span></span>
         </div>
         <div style={{ borderTop: '2px solid #10b981', marginTop: 10, paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 15, color: '#10b981' }}>
           <span>Gesamt Einnahmen</span><span>€ {fmt(gesamtEinnahmen)}</span>
@@ -1686,37 +1685,37 @@ function KostenrechnerTab({ objektId, kaufpreis, vertraege, darlehen, bkBelege, 
 
       {/* AUSGABEN DARLEHEN */}
       <div style={card}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           Finanzierung (Darlehen)
         </div>
-        {darlehen.length === 0 && <div style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic' }}>Kein Darlehen erfasst</div>}
+        {darlehen.length === 0 && <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', fontStyle: 'italic' }}>Kein Darlehen erfasst</div>}
         {darlehen.map(d => (
-          <div key={d.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 16px', fontSize: 13, marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid #f5f5f5' }}>
+          <div key={d.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 16px', fontSize: 13, marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid var(--bf-divider)' }}>
             <span style={{ fontWeight: 600 }}>{d.bezeichnung || 'Darlehen'}</span><span></span>
-            <span style={{ color: '#555' }}>Jahresrate</span><span style={{ textAlign: 'right', fontWeight: 600 }}>€ {fmt(n(d.monatlicheRate) * 12)}</span>
-            <span style={{ color: '#888', fontSize: 11 }}>Zinsen ca. (Restsumme × {n(d.sollzins)}%)</span><span style={{ textAlign: 'right', fontSize: 11, color: '#888' }}>€ {fmt(n(d.restsumme) * n(d.sollzins) / 100)}</span>
-            <span style={{ color: '#888', fontSize: 11 }}>Tilgung ca.</span><span style={{ textAlign: 'right', fontSize: 11, color: '#888' }}>€ {fmt(n(d.monatlicheRate) * 12 - n(d.restsumme) * n(d.sollzins) / 100)}</span>
+            <span style={{ color: 'var(--bf-text-soft)' }}>Jahresrate</span><span style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>€ {fmt(n(d.monatlicheRate) * 12)}</span>
+            <span style={{ color: 'var(--bf-text-muted)', fontSize: 11 }}>Zinsen ca. (Restsumme × {n(d.sollzins)}%)</span><span style={{ textAlign: 'right', fontSize: 11, color: 'var(--bf-text-muted)' }}>€ {fmt(n(d.restsumme) * n(d.sollzins) / 100)}</span>
+            <span style={{ color: 'var(--bf-text-muted)', fontSize: 11 }}>Tilgung ca.</span><span style={{ textAlign: 'right', fontSize: 11, color: 'var(--bf-text-muted)' }}>€ {fmt(n(d.monatlicheRate) * 12 - n(d.restsumme) * n(d.sollzins) / 100)}</span>
           </div>
         ))}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13, color: '#1a2a3a', marginTop: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13, color: 'var(--bf-text)', marginTop: 4 }}>
           <span>Gesamt Darlehen/Jahr</span><span>€ {fmt(darlehenJahr)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginTop: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 2 }}>
           <span>davon Zinsaufwand (steuerlich absetzbar)</span><span>€ {fmt(darlehenZinsen)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginTop: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 2 }}>
           <span>davon Tilgung</span><span>€ {fmt(darlehenTilgung > 0 ? darlehenTilgung : 0)}</span>
         </div>
       </div>
 
       {/* BETRIEBSKOSTEN */}
       <div style={card}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Betriebskosten {jahr}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--bf-text-soft)' }}>
           <span>Aus BK-Belegen ({bkBelege.filter(b => b.jahr === jahr).length} Einträge)</span>
           <span style={{ fontWeight: 700 }}>€ {fmt(bkJahrBelege)}</span>
         </div>
@@ -1724,37 +1723,37 @@ function KostenrechnerTab({ objektId, kaufpreis, vertraege, darlehen, bkBelege, 
 
       {/* ZUSATZKOSTEN (editierbar) */}
       <div style={card}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
           Weitere Ausgaben / Jahr
         </div>
         {ZUSATZ_FELDER.map(f => (
           <div key={f.id} style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 10, alignItems: 'center', marginBottom: 10 }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{f.label}</div>
-              <div style={{ fontSize: 11, color: '#aaa' }}>{f.hint}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--bf-text)' }}>{f.label}</div>
+              <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>{f.hint}</div>
             </div>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#888', fontSize: 13 }}>€</span>
+              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--bf-text-muted)', fontSize: 13 }}>€</span>
               <input type="number" value={zusatz[f.id] || ''} onChange={e => setZusatz(p => ({ ...p, [f.id]: e.target.value }))}
                 style={{ ...iS, paddingLeft: 24 }} placeholder="0,00" />
             </div>
           </div>
         ))}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13, color: '#1a2a3a', borderTop: '1px solid #f0ede8', paddingTop: 10, marginTop: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13, color: 'var(--bf-text)', borderTop: '1px solid var(--bf-divider)', paddingTop: 10, marginTop: 4 }}>
           <span>Gesamt Zusatzkosten/Jahr</span><span>€ {fmt(zusatzGesamt)}</span>
         </div>
-        <button onClick={speichern} style={{ marginTop: 12, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: gespeichert ? '#10b981' : '#1a2a3a', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
-          {gespeichert ? '✅ Gespeichert!' : '💾 Zusatzkosten speichern'}
+        <button onClick={speichern} style={{ ...btnPrimary, marginTop: 12, width: '100%', padding: '10px', borderRadius: 10, fontSize: 13, background: gespeichert ? '#10b981' : btnPrimary.background }}>
+          {gespeichert ? '✓ Gespeichert!' : 'Zusatzkosten speichern'}
         </button>
       </div>
 
       {/* ERGEBNIS */}
-      <div style={{ ...card, background: cashflow >= 0 ? '#f0fdf4' : '#fef2f2', border: `2px solid ${cashflow >= 0 ? '#10b981' : '#ef4444'}` }}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#1a2a3a', marginBottom: 14 }}>📊 Ergebnis</div>
+      <div style={{ ...card, background: cashflow >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `2px solid ${cashflow >= 0 ? '#10b981' : '#ef4444'}` }}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 14 }}>Ergebnis</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px 16px', fontSize: 13 }}>
-          <span style={{ color: '#555' }}>Gesamte Einnahmen/Jahr</span><span style={{ textAlign: 'right', fontWeight: 600, color: '#10b981' }}>€ {fmt(gesamtEinnahmen)}</span>
-          <span style={{ color: '#555' }}>Gesamte Ausgaben/Jahr</span><span style={{ textAlign: 'right', fontWeight: 600, color: '#ef4444' }}>€ {fmt(gesamtAusgaben)}</span>
+          <span style={{ color: 'var(--bf-text-soft)' }}>Gesamte Einnahmen/Jahr</span><span style={{ textAlign: 'right', fontWeight: 600, color: '#10b981' }}>€ {fmt(gesamtEinnahmen)}</span>
+          <span style={{ color: 'var(--bf-text-soft)' }}>Gesamte Ausgaben/Jahr</span><span style={{ textAlign: 'right', fontWeight: 600, color: '#ef4444' }}>€ {fmt(gesamtAusgaben)}</span>
         </div>
         <div style={{ borderTop: `2px solid ${cashflow >= 0 ? '#10b981' : '#ef4444'}`, marginTop: 12, paddingTop: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 16, color: cashflow >= 0 ? '#10b981' : '#ef4444', marginBottom: 8 }}>
@@ -1767,16 +1766,16 @@ function KostenrechnerTab({ objektId, kaufpreis, vertraege, darlehen, bkBelege, 
             {[
               { label: 'Brutto-Rendite', value: bruttoRendite.toFixed(2) + '%', sub: 'Jahresmiete / KP', color: '#6366f1' },
               { label: 'Netto-Rendite',  value: nettoRendite.toFixed(2) + '%',  sub: 'Cashflow / KP',   color: nettoRendite >= 4 ? '#10b981' : nettoRendite >= 2 ? '#f59e0b' : '#ef4444' },
-              { label: 'Amortisation',   value: amortisation > 0 ? amortisation.toFixed(0) + ' J.' : '—', sub: 'bei aktuellem CF', color: '#1a2a3a' },
+              { label: 'Amortisation',   value: amortisation > 0 ? amortisation.toFixed(0) + ' J.' : '—', sub: 'bei aktuellem CF', color: 'var(--bf-text)' },
             ].map(k => (
-              <div key={k.label} style={{ background: 'white', borderRadius: 10, padding: '10px 12px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <div key={k.label} style={{ background: 'var(--bf-card)', borderRadius: 10, padding: '10px 12px', textAlign: 'center', boxShadow: 'var(--bf-shadow)' }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: k.color, fontFamily: 'Syne, sans-serif' }}>{k.value}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#333', marginTop: 2 }}>{k.label}</div>
-                <div style={{ fontSize: 10, color: '#aaa' }}>{k.sub}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--bf-text)', marginTop: 2 }}>{k.label}</div>
+                <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>{k.sub}</div>
               </div>
             ))}
           </div>
-          {kaufpreis === 0 && <div style={{ fontSize: 11, color: '#aaa', fontStyle: 'italic', marginTop: 8, textAlign: 'center' }}>⚠️ Kaufpreis in Stammdaten eintragen für Rendite-Berechnung</div>}
+          {kaufpreis === 0 && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', fontStyle: 'italic', marginTop: 8, textAlign: 'center' }}>Kaufpreis in Stammdaten eintragen für Rendite-Berechnung</div>}
         </div>
       </div>
 
@@ -1900,47 +1899,47 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
   const gesamtpreis = kp + nebenkostenSumme
   const nebenkostenPct = kp > 0 ? (nebenkostenSumme / kp * 100) : 0
 
-  const card: React.CSSProperties = { background: 'white', borderRadius: 14, border: '1px solid #e8e4dd', padding: '20px 24px', marginBottom: 16 }
-  const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f0ede8' }
+  const card: React.CSSProperties = { background: 'var(--bf-card)', borderRadius: 14, border: '1px solid var(--bf-border)', padding: '20px 24px', marginBottom: 16 }
+  const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--bf-divider)' }
   const fmtE = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  const iS: React.CSSProperties = { padding: '4px 6px', borderRadius: 6, border: '1.5px solid #e8e4dd', fontSize: 12, textAlign: 'right', fontWeight: 700, color: '#1a2a3a', width: '100%' }
+  const iS: React.CSSProperties = { padding: '4px 6px', borderRadius: 6, border: '1.5px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', fontSize: 12, textAlign: 'right', fontWeight: 700, color: 'var(--bf-text)', width: '100%', fontVariantNumeric: 'tabular-nums' }
 
-  if (dbLaden) return <div style={{ padding: 32, textAlign: 'center', color: '#888', fontSize: 13 }}>⏳ Lade gespeicherte Werte…</div>
+  if (dbLaden) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--bf-text-muted)', fontSize: 13 }}>Lade gespeicherte Werte…</div>
 
   return (
     <div style={{ padding: '0 2px' }}>
 
       {/* Kaufpreis Karte */}
       <div style={card}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Kaufpreis</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Kaufpreis</div>
         {kp > 0 ? (
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#1a2a3a', fontFamily: 'Syne, sans-serif' }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--bf-text)', fontFamily: 'Syne, sans-serif' }}>
             € {fmtE(kp)}
           </div>
         ) : (
-          <div style={{ color: '#aaa', fontSize: 13 }}>Kein Kaufpreis in den Stammdaten eingetragen</div>
+          <div style={{ color: 'var(--bf-text-muted)', fontSize: 13 }}>Kein Kaufpreis in den Stammdaten eingetragen</div>
         )}
       </div>
 
       {/* Nebenkosten */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Nebenkosten</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Nebenkosten</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#555', userSelect: 'none' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: 'var(--bf-text-soft)', userSelect: 'none' }}>
               <input type="checkbox" checked={zeigeMwSt} onChange={e => { setZeigeMwSt(e.target.checked); localStorage.setItem(`kaufpreis_mwst_${objektId}`, e.target.checked ? '1' : '0') }}
-                style={{ width: 14, height: 14, accentColor: '#1a2a3a', cursor: 'pointer' }} />
+                style={{ width: 14, height: 14, accentColor: '#c8a96e', cursor: 'pointer' }} />
               MwSt anzeigen
             </label>
-            <button onClick={speichern} style={{ padding: '5px 14px', borderRadius: 8, border: 'none', background: gespeichert ? '#10b981' : geaendert ? '#1a2a3a' : '#e0ddd8', color: gespeichert ? 'white' : geaendert ? 'white' : '#aaa', fontSize: 12, fontWeight: 700, cursor: geaendert ? 'pointer' : 'default', transition: 'all 0.2s' }}>
-              {gespeichert ? '✓ Gespeichert' : '💾 Speichern'}
+            <button onClick={speichern} style={{ ...btnPrimary, padding: '5px 14px', borderRadius: 8, background: gespeichert ? '#10b981' : geaendert ? btnPrimary.background : 'var(--bf-soft)', color: gespeichert || geaendert ? 'white' : 'var(--bf-text-muted)', boxShadow: geaendert && !gespeichert ? btnPrimary.boxShadow : 'none', cursor: geaendert ? 'pointer' : 'default', transition: 'all 0.2s' }}>
+              {gespeichert ? '✓ Gespeichert' : 'Speichern'}
             </button>
           </div>
         </div>
-        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 14 }}>% oder € eingeben — Summen aktualisieren erst nach Speichern</div>
+        <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginBottom: 14 }}>% oder € eingeben — Summen aktualisieren erst nach Speichern</div>
 
         {/* Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 90px 130px 110px', gap: 8, padding: '6px 0', borderBottom: '2px solid #e8e4dd', fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 90px 130px 110px', gap: 8, padding: '6px 0', borderBottom: '2px solid var(--bf-border)', fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase' }}>
           <div>Position</div>
           <div style={{ textAlign: 'center' }}>%</div>
           <div style={{ textAlign: 'right' }}>Betrag €</div>
@@ -1952,23 +1951,23 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
           return (
           <div key={p.id} style={{ ...row, display: 'grid', gridTemplateColumns: '2fr 90px 130px 110px', gap: 8 }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2a3a' }}>{p.label}</div>
-              <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{p.hint}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--bf-text)' }}>{p.label}</div>
+              <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 1 }}>{p.hint}</div>
               {zeigeMwSt && p.mwst > 0 && p.betragNum > 0 && (() => {
                 const netto = p.betragNum / (1 + p.mwst / 100)
                 const mwstBetrag = p.betragNum - netto
                 return (
-                  <div style={{ marginTop: 5, background: '#fff8e1', borderRadius: 6, padding: '4px 8px', fontSize: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555' }}>
+                  <div style={{ marginTop: 5, background: 'rgba(245,158,11,0.1)', borderRadius: 6, padding: '4px 8px', fontSize: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--bf-text-soft)' }}>
                       <span>Netto</span>
-                      <span style={{ fontWeight: 600 }}>€ {fmtE(netto)}</span>
+                      <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(netto)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#e65100', marginTop: 2 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b', marginTop: 2 }}>
                       <span>MwSt {p.mwst}%</span>
-                      <span style={{ fontWeight: 700, color: '#e65100' }}>€ {fmtE(mwstBetrag)}</span>
+                      <span style={{ fontWeight: 700, color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(mwstBetrag)}</span>
                     </div>
-                    <div style={{ marginTop: 4, color: '#777', borderTop: '1px solid #ffe082', paddingTop: 3 }}>
-                      ⚠️ Vorsteuerabzug <strong>nur</strong> bei gewerblicher Vermietung mit Optierung zur USt-Pflicht (§ 6 Abs. 2 UStG). Bei privater Wohnraumvermietung <strong>nicht</strong> möglich.
+                    <div style={{ marginTop: 4, color: 'var(--bf-text-soft)', borderTop: '1px solid rgba(245,158,11,0.35)', paddingTop: 3 }}>
+                      Vorsteuerabzug <strong>nur</strong> bei gewerblicher Vermietung mit Optierung zur USt-Pflicht (§ 6 Abs. 2 UStG). Bei privater Wohnraumvermietung <strong>nicht</strong> möglich.
                     </div>
                   </div>
                 )
@@ -1979,11 +1978,11 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
               <input type="number" step="0.01" value={p.draftPct}
                 onChange={e => onPctChange(p.id, e.target.value)}
                 style={{ ...iS, width: 62 }} />
-              <span style={{ fontSize: 11, color: '#888' }}>%</span>
+              <span style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>%</span>
             </div>
             {/* € Eingabe */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <span style={{ fontSize: 11, color: '#888' }}>€</span>
+              <span style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>€</span>
               <input type="number" step="1" value={p.draftBetrag}
                 onChange={e => onBetragChange(p.id, e.target.value)}
                 style={{ ...iS, width: 100 }} />
@@ -1994,17 +1993,17 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
                 <>
                   <button onClick={() => oeffneVorschau(beleg.id, beleg.dateiname)}
                     title={beleg.dateiname}
-                    style={{ background: '#e8f5e9', border: 'none', borderRadius: 6, padding: '3px 8px', fontSize: 11, color: '#2e7d32', cursor: 'pointer', fontWeight: 600, width: '100%' }}>
-                    📄 Vorschau
+                    style={{ ...btnSecondary, color: ACCENT, borderRadius: 6, padding: '3px 8px', fontSize: 11, width: '100%' }}>
+                    Vorschau
                   </button>
                   <button onClick={() => loescheBeleg(p.id, beleg.id)}
-                    style={{ background: '#fdecea', border: 'none', borderRadius: 6, padding: '2px 8px', fontSize: 10, color: '#c62828', cursor: 'pointer', width: '100%' }}>
-                    🗑 Löschen
+                    style={{ ...btnDanger, borderRadius: 6, padding: '2px 8px', fontSize: 10, width: '100%' }}>
+                    Löschen
                   </button>
                 </>
               ) : (
-                <label style={{ cursor: 'pointer', background: '#f0f4ff', border: '1.5px dashed #90a4e8', borderRadius: 6, padding: '4px 8px', fontSize: 11, color: '#3949ab', textAlign: 'center', width: '100%' }}>
-                  {belegLaden === p.id ? '…' : '📎 Anhängen'}
+                <label style={{ cursor: 'pointer', background: 'var(--bf-soft)', border: '1.5px dashed var(--bf-border)', borderRadius: 6, padding: '4px 8px', fontSize: 11, color: ACCENT, textAlign: 'center', width: '100%' }}>
+                  {belegLaden === p.id ? '…' : 'Anhängen'}
                   <input type="file" style={{ display: 'none' }} accept=".pdf,.jpg,.jpeg,.png"
                     onChange={e => e.target.files?.[0] && uploadBeleg(p.id, e.target.files[0])} />
                 </label>
@@ -2015,10 +2014,10 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
         })}
 
         {/* Nebenkosten Summe */}
-        <div style={{ display: 'flex', gap: 12, padding: '12px 0 4px', borderTop: '2px solid #1a2a3a', marginTop: 4 }}>
-          <div style={{ flex: 3, fontSize: 13, fontWeight: 700, color: '#555' }}>Nebenkosten gesamt</div>
+        <div style={{ display: 'flex', gap: 12, padding: '12px 0 4px', borderTop: '2px solid var(--bf-text)', marginTop: 4 }}>
+          <div style={{ flex: 3, fontSize: 13, fontWeight: 700, color: 'var(--bf-text-soft)' }}>Nebenkosten gesamt</div>
           <div style={{ flex: 1 }} />
-          <div style={{ flex: 2, textAlign: 'right', fontSize: 14, fontWeight: 800, color: '#555' }}>
+          <div style={{ flex: 2, textAlign: 'right', fontSize: 14, fontWeight: 800, color: 'var(--bf-text-soft)' }}>
             € {kp > 0 ? fmtE(nebenkostenSumme) : '–'}
           </div>
           <div style={{ flex: 1, textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#e67e22' }}>
@@ -2032,12 +2031,12 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
             .reduce((s, p) => s + (p.betragNum - p.betragNum / (1 + p.mwst / 100)), 0)
           if (vorsteuerGesamt <= 0) return null
           return (
-            <div style={{ background: '#e8f5e9', borderRadius: 8, padding: '8px 12px', marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 11, color: '#2e7d32', fontWeight: 600 }}>
-                ✅ Rückforderbare Vorsteuer gesamt
-                <div style={{ fontSize: 10, color: '#4caf50', fontWeight: 400, marginTop: 1 }}>nur bei gewerblicher Vermietung mit USt-Optierung möglich</div>
+            <div style={{ background: 'rgba(16,185,129,0.1)', borderRadius: 8, padding: '8px 12px', marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>
+                Rückforderbare Vorsteuer gesamt
+                <div style={{ fontSize: 10, color: 'var(--bf-text-soft)', fontWeight: 400, marginTop: 1 }}>nur bei gewerblicher Vermietung mit USt-Optierung möglich</div>
               </div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#2e7d32' }}>€ {fmtE(vorsteuerGesamt)}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(vorsteuerGesamt)}</div>
             </div>
           )
         })()}
@@ -2069,7 +2068,7 @@ function KaufpreisTab({ kaufpreis, objektId }: { kaufpreis: number; objektId: nu
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', flexDirection: 'column' }}>
           <div style={{ background: '#1a2a3a', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ color: 'white', fontWeight: 600, fontSize: 13, flex: 1 }}>{vorschau.name}</span>
-            <a href={vorschau.url} download={vorschau.name} style={{ color: '#90caf9', fontSize: 12, textDecoration: 'none' }}>⬇ Download</a>
+            <a href={vorschau.url} download={vorschau.name} style={{ color: '#90caf9', fontSize: 12, textDecoration: 'none' }}>Download</a>
             <button onClick={() => { window.URL.revokeObjectURL(vorschau.url); setVorschau(null) }}
               style={{ background: 'none', border: 'none', color: 'white', fontSize: 20, cursor: 'pointer' }}>✕</button>
           </div>
@@ -2169,16 +2168,16 @@ function BetriebskostenTab({ objektId, vertraege, setVertraege, belege, setBeleg
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* ── Kopf: Ansicht wählen ── */}
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 16 }}>
+      <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
           <div style={{ display: 'flex', gap: 6 }}>
             {(['belege','vertraege'] as const).map(a => (
-              <button key={a} onClick={() => setAnsicht(a)} style={{ padding: '7px 16px', borderRadius: 20, border: `1.5px solid ${ansicht === a ? '#1a2a3a' : '#e5e0d8'}`, background: ansicht === a ? '#1a2a3a' : 'white', color: ansicht === a ? 'white' : '#555', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
-                {a === 'belege' ? '🧾 Monatliche Belege' : '📄 Verträge'}
+              <button key={a} onClick={() => setAnsicht(a)} style={{ padding: '7px 16px', borderRadius: 20, border: `1.5px solid ${ansicht === a ? ACCENT : 'var(--bf-border)'}`, background: ansicht === a ? 'var(--bf-soft)' : 'var(--bf-card)', color: ansicht === a ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
+                {a === 'belege' ? 'Monatliche Belege' : 'Verträge'}
               </button>
             ))}
           </div>
-          <button onClick={() => { setFormOffen(true); setBelegEditId(null); setVertragEditId(null) }} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
+          <button onClick={() => { setFormOffen(true); setBelegEditId(null); setVertragEditId(null) }} style={{ ...btnPrimary, borderRadius: 8, padding: '8px 16px' }}>
             + {ansicht === 'belege' ? 'Beleg hinzufügen' : 'Vertrag hinzufügen'}
           </button>
         </div>
@@ -2186,10 +2185,10 @@ function BetriebskostenTab({ objektId, vertraege, setVertraege, belege, setBeleg
         {/* Monat/Jahr Filter (nur bei Belege) */}
         {ansicht === 'belege' && (
           <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <select value={monat} onChange={e => setMonat(parseInt(e.target.value))} style={{ padding: '7px 12px', border: '1px solid #e5e0d8', borderRadius: 7, fontSize: 13, background: 'white', cursor: 'pointer' }}>
+            <select value={monat} onChange={e => setMonat(parseInt(e.target.value))} style={{ padding: '7px 12px', border: '1px solid var(--bf-input-border)', borderRadius: 7, fontSize: 13, background: 'var(--bf-input-bg)', color: 'var(--bf-text)', cursor: 'pointer' }}>
               {MONATE.map((m, i) => <option key={i} value={i+1}>{m}</option>)}
             </select>
-            <select value={bkJahr} onChange={e => setBkJahr(parseInt(e.target.value))} style={{ padding: '7px 12px', border: '1px solid #e5e0d8', borderRadius: 7, fontSize: 13, background: 'white', cursor: 'pointer' }}>
+            <select value={bkJahr} onChange={e => setBkJahr(parseInt(e.target.value))} style={{ padding: '7px 12px', border: '1px solid var(--bf-input-border)', borderRadius: 7, fontSize: 13, background: 'var(--bf-input-bg)', color: 'var(--bf-text)', cursor: 'pointer' }}>
               {[2023,2024,2025,2026,2027].map(j => <option key={j} value={j}>{j}</option>)}
             </select>
             <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, color: '#6366f1' }}>
@@ -2201,53 +2200,50 @@ function BetriebskostenTab({ objektId, vertraege, setVertraege, belege, setBeleg
 
       {/* ── Jahresübersicht Karten ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 16 }}>
-          <div style={{ fontSize: 20, marginBottom: 6 }}>🧾</div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#f59e0b' }}>€ {fmtE(summeJahr)}</div>
-          <div style={{ fontSize: 11, color: '#555', fontWeight: 600 }}>Belege {bkJahr}</div>
-          <div style={{ fontSize: 10, color: '#aaa' }}>{belegeJahr.length} Einträge</div>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 16 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(summeJahr)}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-soft)', fontWeight: 600 }}>Belege {bkJahr}</div>
+          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>{belegeJahr.length} Einträge</div>
         </div>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 16 }}>
-          <div style={{ fontSize: 20, marginBottom: 6 }}>📄</div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#6366f1' }}>€ {fmtE(vertraegeJahr)}</div>
-          <div style={{ fontSize: 11, color: '#555', fontWeight: 600 }}>Verträge / Jahr</div>
-          <div style={{ fontSize: 10, color: '#aaa' }}>{vertraege.length} aktive Verträge</div>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 16 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#6366f1', fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(vertraegeJahr)}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-soft)', fontWeight: 600 }}>Verträge / Jahr</div>
+          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>{vertraege.length} aktive Verträge</div>
         </div>
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 16 }}>
-          <div style={{ fontSize: 20, marginBottom: 6 }}>📅</div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#10b981' }}>€ {fmtE(summeMonat)}</div>
-          <div style={{ fontSize: 11, color: '#555', fontWeight: 600 }}>{MONATE[monat-1]} {bkJahr}</div>
-          <div style={{ fontSize: 10, color: '#aaa' }}>{belegeMonat.length} Belege</div>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 16 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(summeMonat)}</div>
+          <div style={{ fontSize: 11, color: 'var(--bf-text-soft)', fontWeight: 600 }}>{MONATE[monat-1]} {bkJahr}</div>
+          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>{belegeMonat.length} Belege</div>
         </div>
       </div>
 
       {/* ── BELEGE Ansicht ── */}
       {ansicht === 'belege' && (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, marginBottom: 14, color: '#1a2a3a' }}>
-            🧾 Belege — {MONATE[monat-1]} {bkJahr}
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, marginBottom: 14, color: 'var(--bf-text)' }}>
+            Belege — {MONATE[monat-1]} {bkJahr}
           </div>
           {belegeMonat.length === 0 ? (
-            <div style={{ color: '#aaa', fontSize: 13, textAlign: 'center', padding: 24 }}>Keine Belege für diesen Monat</div>
+            <div style={{ color: 'var(--bf-text-muted)', fontSize: 13, textAlign: 'center', padding: 24 }}>Keine Belege für diesen Monat</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {belegeMonat.map((b: any) => (
-                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', border: '1px solid #e5e0d8', borderRadius: 9, background: '#fafafa' }}>
+                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', border: '1px solid var(--bf-border)', borderRadius: 9, background: 'var(--bf-soft)' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>{b.kategorie}</span>
-                      {b.belegNummer && <span style={{ fontSize: 10, color: '#888', background: '#f0ede8', padding: '1px 7px', borderRadius: 8 }}>#{b.belegNummer}</span>}
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--bf-text)' }}>{b.kategorie}</span>
+                      {b.belegNummer && <span style={{ fontSize: 10, color: 'var(--bf-text-muted)', background: 'var(--bf-divider)', padding: '1px 7px', borderRadius: 8 }}>#{b.belegNummer}</span>}
                     </div>
-                    {b.beschreibung && <div style={{ fontSize: 11, color: '#888' }}>{b.beschreibung}</div>}
+                    {b.beschreibung && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>{b.beschreibung}</div>}
                   </div>
                   <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#f59e0b', whiteSpace: 'nowrap' }}>€ {fmtE(n(b.betrag))}</div>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    <button onClick={() => { setBelegForm({ kategorie: b.kategorie, monat: b.monat, jahr: b.jahr, betrag: b.betrag, beschreibung: b.beschreibung||'', belegNummer: b.belegNummer||'' }); setBelegEditId(b.id); setFormOffen(true); setAnsicht('belege') }} style={{ background: '#f0ede8', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', fontSize: 12 }}>✏️</button>
-                    <button onClick={() => loescheBelege(b.id)} style={{ background: '#fee2e2', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', fontSize: 12 }}>🗑</button>
+                    <button onClick={() => { setBelegForm({ kategorie: b.kategorie, monat: b.monat, jahr: b.jahr, betrag: b.betrag, beschreibung: b.beschreibung||'', belegNummer: b.belegNummer||'' }); setBelegEditId(b.id); setFormOffen(true); setAnsicht('belege') }} style={{ ...btnSecondary, borderRadius: 6, padding: '5px 9px', fontSize: 11 }}>Bearbeiten</button>
+                    <button onClick={() => loescheBelege(b.id)} style={{ ...btnDanger, borderRadius: 6, padding: '5px 9px', fontSize: 11 }}>Löschen</button>
                   </div>
                 </div>
               ))}
-              <div style={{ paddingTop: 10, borderTop: '2px solid #e5e0d8', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ paddingTop: 10, borderTop: '2px solid var(--bf-border)', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13, color: 'var(--bf-text)' }}>
                 <span>Gesamt {MONATE[monat-1]}</span>
                 <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, color: '#f59e0b' }}>€ {fmtE(summeMonat)}</span>
               </div>
@@ -2256,13 +2252,13 @@ function BetriebskostenTab({ objektId, vertraege, setVertraege, belege, setBeleg
 
           {/* Jahres-Kategorien Übersicht */}
           {Object.keys(katSummen).length > 0 && (
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f0ede8' }}>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 12, fontWeight: 700, marginBottom: 10, color: '#888' }}>JAHRESÜBERSICHT {bkJahr} NACH KATEGORIE</div>
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--bf-divider)' }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 12, fontWeight: 700, marginBottom: 10, color: 'var(--bf-text-muted)' }}>JAHRESÜBERSICHT {bkJahr} NACH KATEGORIE</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
                 {Object.entries(katSummen).sort(([,a],[,b]) => b-a).map(([kat, sum]) => (
-                  <div key={kat} style={{ background: '#fffbf0', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px' }}>
-                    <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 2 }}>{kat}</div>
-                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a' }}>€ {fmtE(sum as number)}</div>
+                  <div key={kat} style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 8, padding: '8px 12px' }}>
+                    <div style={{ fontSize: 11, color: '#f59e0b', fontWeight: 600, marginBottom: 2 }}>{kat}</div>
+                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(sum as number)}</div>
                   </div>
                 ))}
               </div>
@@ -2273,37 +2269,37 @@ function BetriebskostenTab({ objektId, vertraege, setVertraege, belege, setBeleg
 
       {/* ── VERTRÄGE Ansicht ── */}
       {ansicht === 'vertraege' && (
-        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, marginBottom: 14, color: '#1a2a3a' }}>📄 Aktive Verträge</div>
+        <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, marginBottom: 14, color: 'var(--bf-text)' }}>Aktive Verträge</div>
           {vertraege.length === 0 ? (
-            <div style={{ color: '#aaa', fontSize: 13, textAlign: 'center', padding: 24 }}>Keine Verträge erfasst</div>
+            <div style={{ color: 'var(--bf-text-muted)', fontSize: 13, textAlign: 'center', padding: 24 }}>Keine Verträge erfasst</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {vertraege.map((v: any) => (
-                <div key={v.id} style={{ border: '1px solid #e5e0d8', borderRadius: 10, padding: '12px 16px' }}>
+                <div key={v.id} style={{ border: '1px solid var(--bf-border)', borderRadius: 10, padding: '12px 16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                        <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, color: '#1a2a3a' }}>{v.anbieter || v.kategorie}</span>
+                        <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--bf-text)' }}>{v.anbieter || v.kategorie}</span>
                         <span style={{ background: '#ede9fe', color: '#6d28d9', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{v.kategorie}</span>
-                        {v.vertragsnummer && <span style={{ fontSize: 10, color: '#888' }}>#{v.vertragsnummer}</span>}
+                        {v.vertragsnummer && <span style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>#{v.vertragsnummer}</span>}
                       </div>
-                      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 12, color: '#666' }}>
+                      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 12, color: 'var(--bf-text-soft)' }}>
                         <span>€ {fmtE(n(v.monatsbetrag))}/Monat · <strong>€ {fmtE(n(v.monatsbetrag)*12)}/Jahr</strong></span>
                         {v.laufzeitBeginn && <span>Von {new Date(v.laufzeitBeginn).toLocaleDateString('de-AT')}</span>}
                         {v.laufzeitEnde && <span>Bis {new Date(v.laufzeitEnde).toLocaleDateString('de-AT')}</span>}
                         {v.kuendigungsfrist && <span>Kündigungsfrist: {v.kuendigungsfrist} Monat(e)</span>}
                       </div>
-                      {v.notiz && <div style={{ fontSize: 11, color: '#888', marginTop: 4, fontStyle: 'italic' }}>📝 {v.notiz}</div>}
+                      {v.notiz && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 4, fontStyle: 'italic' }}>{v.notiz}</div>}
                     </div>
                     <div style={{ display: 'flex', gap: 5 }}>
-                      <button onClick={() => { setVertragForm({ kategorie: v.kategorie, anbieter: v.anbieter||'', vertragsnummer: v.vertragsnummer||'', monatsbetrag: v.monatsbetrag||'', laufzeitBeginn: v.laufzeitBeginn?v.laufzeitBeginn.split('T')[0]:'', laufzeitEnde: v.laufzeitEnde?v.laufzeitEnde.split('T')[0]:'', kuendigungsfrist: v.kuendigungsfrist?.toString()||'1', notiz: v.notiz||'' }); setVertragEditId(v.id); setFormOffen(true) }} style={{ background: '#f0ede8', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>✏️</button>
-                      <button onClick={() => loescheVertrag(v.id)} style={{ background: '#fee2e2', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>🗑</button>
+                      <button onClick={() => { setVertragForm({ kategorie: v.kategorie, anbieter: v.anbieter||'', vertragsnummer: v.vertragsnummer||'', monatsbetrag: v.monatsbetrag||'', laufzeitBeginn: v.laufzeitBeginn?v.laufzeitBeginn.split('T')[0]:'', laufzeitEnde: v.laufzeitEnde?v.laufzeitEnde.split('T')[0]:'', kuendigungsfrist: v.kuendigungsfrist?.toString()||'1', notiz: v.notiz||'' }); setVertragEditId(v.id); setFormOffen(true) }} style={{ ...btnSecondary, borderRadius: 7, padding: '6px 10px', fontSize: 11 }}>Bearbeiten</button>
+                      <button onClick={() => loescheVertrag(v.id)} style={{ ...btnDanger, borderRadius: 7, padding: '6px 10px', fontSize: 11 }}>Löschen</button>
                     </div>
                   </div>
                 </div>
               ))}
-              <div style={{ paddingTop: 10, borderTop: '2px solid #e5e0d8', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13 }}>
+              <div style={{ paddingTop: 10, borderTop: '2px solid var(--bf-border)', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 13, color: 'var(--bf-text)' }}>
                 <span>Gesamt Verträge / Jahr</span>
                 <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, color: '#6366f1' }}>€ {fmtE(vertraegeJahr)}</span>
               </div>
@@ -2315,21 +2311,21 @@ function BetriebskostenTab({ objektId, vertraege, setVertraege, belege, setBeleg
       {/* ── Formular Modal ── */}
       {formOffen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
             {ansicht === 'belege' ? (
               <>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 18 }}>{belegEditId ? '✏️ Beleg bearbeiten' : '+ Neuer Beleg'}</div>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 18, color: 'var(--bf-text)' }}>{belegEditId ? 'Beleg bearbeiten' : '+ Neuer Beleg'}</div>
                 <div style={{ display: 'grid', gap: 12 }}>
                   <div>
                     <label style={lS}>Kategorie</label>
-                    <select value={belegForm.kategorie} onChange={e => bf('kategorie', e.target.value)} style={{ ...iS, background: 'white' }}>
+                    <select value={belegForm.kategorie} onChange={e => bf('kategorie', e.target.value)} style={{ ...iS, background: 'var(--bf-input-bg)' }}>
                       {BK_KATEGORIEN.map(k => <option key={k}>{k}</option>)}
                     </select>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                     <div>
                       <label style={lS}>Monat</label>
-                      <select value={belegForm.monat} onChange={e => bf('monat', e.target.value)} style={{ ...iS, background: 'white' }}>
+                      <select value={belegForm.monat} onChange={e => bf('monat', e.target.value)} style={{ ...iS, background: 'var(--bf-input-bg)' }}>
                         {MONATE.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
                       </select>
                     </div>
@@ -2340,19 +2336,19 @@ function BetriebskostenTab({ objektId, vertraege, setVertraege, belege, setBeleg
                   <div><label style={lS}>Belegnummer</label><input style={iS} value={belegForm.belegNummer} onChange={e => bf('belegNummer', e.target.value)} placeholder="z.B. 2024-123" /></div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                  <button onClick={() => { setFormOffen(false); setBelegEditId(null) }} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', fontSize: 13, cursor: 'pointer' }}>Abbrechen</button>
-                  <button onClick={speichereBelege} disabled={saving || !belegForm.betrag} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: saving ? '#e5e0d8' : '#6366f1', color: 'white', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    {saving ? '⏳...' : '💾 Speichern'}
+                  <button onClick={() => { setFormOffen(false); setBelegEditId(null) }} style={{ ...btnSecondary, flex: 1, padding: 10, fontSize: 13 }}>Abbrechen</button>
+                  <button onClick={speichereBelege} disabled={saving || !belegForm.betrag} style={{ ...btnPrimary, flex: 2, padding: 10, fontSize: 13, opacity: saving || !belegForm.betrag ? 0.55 : 1 }}>
+                    {saving ? 'Speichern...' : 'Speichern'}
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 18 }}>{vertragEditId ? '✏️ Vertrag bearbeiten' : '+ Neuer Vertrag'}</div>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 18, color: 'var(--bf-text)' }}>{vertragEditId ? 'Vertrag bearbeiten' : '+ Neuer Vertrag'}</div>
                 <div style={{ display: 'grid', gap: 12 }}>
                   <div>
                     <label style={lS}>Kategorie</label>
-                    <select value={vertragForm.kategorie} onChange={e => vf('kategorie', e.target.value)} style={{ ...iS, background: 'white' }}>
+                    <select value={vertragForm.kategorie} onChange={e => vf('kategorie', e.target.value)} style={{ ...iS, background: 'var(--bf-input-bg)' }}>
                       {BK_KATEGORIEN.map(k => <option key={k}>{k}</option>)}
                     </select>
                   </div>
@@ -2369,9 +2365,9 @@ function BetriebskostenTab({ objektId, vertraege, setVertraege, belege, setBeleg
                   <div><label style={lS}>Notiz</label><textarea style={{ ...iS, resize: 'none', minHeight: 56 } as any} value={vertragForm.notiz} onChange={e => vf('notiz', e.target.value)} /></div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                  <button onClick={() => { setFormOffen(false); setVertragEditId(null) }} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', fontSize: 13, cursor: 'pointer' }}>Abbrechen</button>
-                  <button onClick={speichereVertrag} disabled={saving} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: '#6366f1', color: 'white', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    {saving ? '⏳...' : '💾 Speichern'}
+                  <button onClick={() => { setFormOffen(false); setVertragEditId(null) }} style={{ ...btnSecondary, flex: 1, padding: 10, fontSize: 13 }}>Abbrechen</button>
+                  <button onClick={speichereVertrag} disabled={saving} style={{ ...btnPrimary, flex: 2, padding: 10, fontSize: 13, opacity: saving ? 0.55 : 1 }}>
+                    {saving ? 'Speichern...' : 'Speichern'}
                   </button>
                 </div>
               </>
@@ -2492,7 +2488,7 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
   const ff = (k: string, val: string) => setFinanzForm((p: any) => ({ ...p, [k]: val }))
   const vf = (k: string, val: string) => setVerbForm((p: any) => ({ ...p, [k]: val }))
 
-  const flagFarben = { kritisch: { bg: '#fef2f2', border: '#fca5a5', text: '#dc2626', icon: '🔴' }, warnung: { bg: '#fffbeb', border: '#fcd34d', text: '#d97706', icon: '⚠️' }, ok: { bg: '#f0fdf4', border: '#86efac', text: '#16a34a', icon: '✅' }, info: { bg: '#eff6ff', border: '#93c5fd', text: '#2563eb', icon: 'ℹ️' } }
+  const flagFarben = { kritisch: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.35)', text: '#dc2626', punkt: '#ef4444' }, warnung: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.35)', text: '#d97706', punkt: '#f59e0b' }, ok: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.35)', text: '#16a34a', punkt: '#10b981' }, info: { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.35)', text: '#2563eb', punkt: '#3b82f6' } }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -2500,18 +2496,17 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
       {/* ── Kennzahlen-Karten ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
         {[
-          { label: 'DSTI', value: `${dsti.toFixed(1)}%`, sub: 'Schuldendienst-Quote', color: dsti > 60 ? '#dc2626' : dsti > 40 ? '#d97706' : '#16a34a', icon: '📊' },
-          { label: 'Kapitaldienstfähigkeit', value: `€ ${fmtE(kapDienst)}`, sub: 'Freie Liquidität/Monat', color: kapDienst < 0 ? '#dc2626' : '#16a34a', icon: '💧' },
-          { label: 'Gesamtbelastung', value: `€ ${fmtE(gesamtBelastung)}`, sub: 'Alle Raten + neue Rate', color: '#6366f1', icon: '💶' },
-          { label: 'Stress-Liquidität', value: `€ ${fmtE(stressLiquiditaet)}`, sub: 'Bei +2% Zinswende', color: stressLiquiditaet < 0 ? '#dc2626' : '#d97706', icon: '🌡️' },
-          { label: 'Verschuldungsgrad', value: `${verschuldungsgrad.toFixed(1)}%`, sub: 'Verbindl. / Vermögen', color: verschuldungsgrad > 80 ? '#dc2626' : verschuldungsgrad > 60 ? '#d97706' : '#16a34a', icon: '⚖️' },
-          { label: 'Gesamtverbindlichkeiten', value: `€ ${fmtE(gesamtVerbindl)}`, sub: `${verbindlichkeiten.length} Kredite`, color: '#1a2a3a', icon: '🏦' },
+          { label: 'DSTI', value: `${dsti.toFixed(1)}%`, sub: 'Schuldendienst-Quote', color: dsti > 60 ? '#dc2626' : dsti > 40 ? '#d97706' : '#16a34a' },
+          { label: 'Kapitaldienstfähigkeit', value: `€ ${fmtE(kapDienst)}`, sub: 'Freie Liquidität/Monat', color: kapDienst < 0 ? '#dc2626' : '#16a34a' },
+          { label: 'Gesamtbelastung', value: `€ ${fmtE(gesamtBelastung)}`, sub: 'Alle Raten + neue Rate', color: '#6366f1' },
+          { label: 'Stress-Liquidität', value: `€ ${fmtE(stressLiquiditaet)}`, sub: 'Bei +2% Zinswende', color: stressLiquiditaet < 0 ? '#dc2626' : '#d97706' },
+          { label: 'Verschuldungsgrad', value: `${verschuldungsgrad.toFixed(1)}%`, sub: 'Verbindl. / Vermögen', color: verschuldungsgrad > 80 ? '#dc2626' : verschuldungsgrad > 60 ? '#d97706' : '#16a34a' },
+          { label: 'Gesamtverbindlichkeiten', value: `€ ${fmtE(gesamtVerbindl)}`, sub: `${verbindlichkeiten.length} Kredite`, color: 'var(--bf-text)' },
         ].map((k, i) => (
-          <div key={i} style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 14 }}>
-            <div style={{ fontSize: 18, marginBottom: 6 }}>{k.icon}</div>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: k.color, marginBottom: 2 }}>{k.value}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#555' }}>{k.label}</div>
-            <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>{k.sub}</div>
+          <div key={i} style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 14 }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: k.color, marginBottom: 2, fontVariantNumeric: 'tabular-nums' }}>{k.value}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--bf-text-soft)' }}>{k.label}</div>
+            <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 1 }}>{k.sub}</div>
           </div>
         ))}
       </div>
@@ -2523,7 +2518,7 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
             const farbe = flagFarben[f.typ]
             return (
               <div key={i} style={{ background: farbe.bg, border: `1px solid ${farbe.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ flexShrink: 0 }}>{farbe.icon}</span>
+                <span style={{ flexShrink: 0, width: 8, height: 8, borderRadius: '50%', background: farbe.punkt, marginTop: 5, boxShadow: `0 0 6px ${farbe.punkt}66` }} />
                 <span style={{ fontSize: 13, color: farbe.text, fontWeight: 500 }}>{f.text}</span>
               </div>
             )
@@ -2532,8 +2527,8 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
       )}
 
       {/* ── Finanzdaten ── */}
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
-        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, marginBottom: 16, color: '#1a2a3a' }}>📥 Einkommens- & Vermögensdaten</div>
+      <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, marginBottom: 16, color: 'var(--bf-text)' }}>Einkommens- & Vermögensdaten</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {[
             { k: 'nettoEinkommen',                  label: 'Nettoeinkommen / Monat (€)' },
@@ -2550,12 +2545,12 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
           ))}
         </div>
         <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={speichereFinanz} disabled={saving} style={{ background: finanzSaved ? '#10b981' : '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, padding: '9px 20px', fontFamily: 'Syne, sans-serif', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-            {finanzSaved ? '✓ Gespeichert' : saving ? '⏳...' : '💾 Speichern'}
+          <button onClick={speichereFinanz} disabled={saving} style={{ ...btnPrimary, borderRadius: 8, padding: '9px 20px', background: finanzSaved ? '#10b981' : btnPrimary.background, opacity: saving ? 0.55 : 1 }}>
+            {finanzSaved ? '✓ Gespeichert' : saving ? 'Speichern...' : 'Speichern'}
           </button>
         </div>
         {/* Rechenweg */}
-        <div style={{ marginTop: 14, padding: 12, background: '#f8f9fa', borderRadius: 8, fontSize: 12, color: '#555', lineHeight: 1.8 }}>
+        <div style={{ marginTop: 14, padding: 12, background: 'var(--bf-soft)', borderRadius: 8, fontSize: 12, color: 'var(--bf-text-soft)', lineHeight: 1.8 }}>
           <strong>Rechenweg:</strong><br/>
           Bereinigte Mieteinnahmen = {fmtE(mietNetto)} − {fmtE(bkNichtUml)} − {fmtE(instandh)} = <strong>€ {fmtE(mietBereinigt)}</strong><br/>
           Gesamteinkommen = {fmtE(nettoEink)} + {fmtE(Math.max(0, mietBereinigt))} = <strong>€ {fmtE(gesamtEink)}</strong><br/>
@@ -2564,14 +2559,14 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
       </div>
 
       {/* ── Verbindlichkeiten ── */}
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: 20 }}>
+      <div style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: '#1a2a3a' }}>🏦 Bestehende Verbindlichkeiten</div>
-          <button onClick={() => { setVerbFormOffen(true); setVerbEditId(null); setVerbForm({ kreditTyp: 'Hypothek', glaeubiger: '', restsumme: '', monatlicheRate: '', sollzins: '', zinsbindungEnde: '', laufzeitEnde: '', notiz: '' }) }} style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>+ Kredit hinzufügen</button>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: 'var(--bf-text)' }}>Bestehende Verbindlichkeiten</div>
+          <button onClick={() => { setVerbFormOffen(true); setVerbEditId(null); setVerbForm({ kreditTyp: 'Hypothek', glaeubiger: '', restsumme: '', monatlicheRate: '', sollzins: '', zinsbindungEnde: '', laufzeitEnde: '', notiz: '' }) }} style={{ ...btnPrimary, borderRadius: 8, padding: '7px 14px' }}>+ Kredit hinzufügen</button>
         </div>
 
         {verbindlichkeiten.length === 0 ? (
-          <div style={{ color: '#aaa', fontSize: 13, textAlign: 'center', padding: 20 }}>Keine Verbindlichkeiten erfasst</div>
+          <div style={{ color: 'var(--bf-text-muted)', fontSize: 13, textAlign: 'center', padding: 20 }}>Keine Verbindlichkeiten erfasst</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {verbindlichkeiten.map((v: any) => {
@@ -2580,16 +2575,16 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
               const zinsBaldAblauf   = monateZinsbindung !== null && monateZinsbindung <= 12
               const kurzRestlaufzeit = monateLaufzeit !== null && monateLaufzeit >= 0 && monateLaufzeit < 6
               return (
-                <div key={v.id} style={{ border: `1px solid ${kurzRestlaufzeit ? '#fcd34d' : zinsBaldAblauf ? '#fca5a5' : '#e5e0d8'}`, borderRadius: 10, padding: '12px 16px', background: kurzRestlaufzeit ? '#fffbeb' : 'white' }}>
+                <div key={v.id} style={{ border: `1px solid ${kurzRestlaufzeit ? 'rgba(245,158,11,0.45)' : zinsBaldAblauf ? 'rgba(239,68,68,0.45)' : 'var(--bf-border)'}`, borderRadius: 10, padding: '12px 16px', background: kurzRestlaufzeit ? 'rgba(245,158,11,0.08)' : 'var(--bf-card)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-                        <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, color: '#1a2a3a' }}>{v.glaeubiger || 'Unbekannter Gläubiger'}</span>
-                        <span style={{ background: '#f0ede8', color: '#555', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{v.kreditTyp}</span>
-                        {kurzRestlaufzeit && <span style={{ background: '#fef3c7', color: '#92400e', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>⏳ Läuft bald aus</span>}
-                        {zinsBaldAblauf && !kurzRestlaufzeit && <span style={{ background: '#fee2e2', color: '#dc2626', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>⚡ Zinsbindung endet</span>}
+                        <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--bf-text)' }}>{v.glaeubiger || 'Unbekannter Gläubiger'}</span>
+                        <span style={{ background: 'var(--bf-divider)', color: 'var(--bf-text-soft)', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>{v.kreditTyp}</span>
+                        {kurzRestlaufzeit && <span style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>Läuft bald aus</span>}
+                        {zinsBaldAblauf && !kurzRestlaufzeit && <span style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>Zinsbindung endet</span>}
                       </div>
-                      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: '#666' }}>
+                      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: 'var(--bf-text-soft)' }}>
                         <span>Restschuld: <strong>€ {fmtE(n(v.restsumme))}</strong></span>
                         <span>Rate: <strong>€ {fmtE(n(v.monatlicheRate))}/Monat</strong></span>
                         {v.sollzins > 0 && <span>Sollzins: <strong>{v.sollzins}%</strong></span>}
@@ -2598,16 +2593,16 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => oeffneEdit(v)} style={{ background: '#f0ede8', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>✏️</button>
-                      <button onClick={() => loescheVerb(v.id)} style={{ background: '#fee2e2', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>🗑</button>
+                      <button onClick={() => oeffneEdit(v)} style={{ ...btnSecondary, borderRadius: 7, padding: '6px 10px', fontSize: 11 }}>Bearbeiten</button>
+                      <button onClick={() => loescheVerb(v.id)} style={{ ...btnDanger, borderRadius: 7, padding: '6px 10px', fontSize: 11 }}>Löschen</button>
                     </div>
                   </div>
                 </div>
               )
             })}
-            <div style={{ padding: '10px 0', borderTop: '2px solid #e5e0d8', display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700 }}>
+            <div style={{ padding: '10px 0', borderTop: '2px solid var(--bf-border)', display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: 'var(--bf-text)' }}>
               <span>Gesamt Raten / Monat</span>
-              <span style={{ color: '#dc2626', fontFamily: 'Syne, sans-serif', fontSize: 15 }}>€ {fmtE(gesamtRaten)}</span>
+              <span style={{ color: '#dc2626', fontFamily: 'Syne, sans-serif', fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(gesamtRaten)}</span>
             </div>
           </div>
         )}
@@ -2616,13 +2611,13 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
       {/* ── Formular Modal ── */}
       {verbFormOffen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 18 }}>{verbEditId ? '✏️ Kredit bearbeiten' : '+ Neuer Kredit'}</div>
+          <div style={{ background: 'var(--bf-card)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, marginBottom: 18, color: 'var(--bf-text)' }}>{verbEditId ? 'Kredit bearbeiten' : '+ Neuer Kredit'}</div>
             <div style={{ display: 'grid', gap: 12 }}>
               <div>
                 <label style={lS}>Kredittyp</label>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {KREDIT_TYPEN.map(t => <button key={t} onClick={() => vf('kreditTyp', t)} style={{ padding: '5px 12px', borderRadius: 16, border: `1.5px solid ${verbForm.kreditTyp === t ? '#1a2a3a' : '#e5e0d8'}`, background: verbForm.kreditTyp === t ? '#1a2a3a' : 'white', color: verbForm.kreditTyp === t ? 'white' : '#555', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>{t}</button>)}
+                  {KREDIT_TYPEN.map(t => <button key={t} onClick={() => vf('kreditTyp', t)} style={{ padding: '5px 12px', borderRadius: 16, border: `1.5px solid ${verbForm.kreditTyp === t ? ACCENT : 'var(--bf-border)'}`, background: verbForm.kreditTyp === t ? 'var(--bf-soft)' : 'var(--bf-card)', color: verbForm.kreditTyp === t ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>{t}</button>)}
                 </div>
               </div>
               <div><label style={lS}>Gläubiger / Bank</label><input style={iS} value={verbForm.glaeubiger} onChange={e => vf('glaeubiger', e.target.value)} placeholder="z.B. Erste Bank" /></div>
@@ -2638,9 +2633,9 @@ function BonitaetTab({ objektId, verbindlichkeiten, setVerbindlichkeiten, finanz
               <div><label style={lS}>Notiz</label><textarea style={{ ...iS, resize: 'none', minHeight: 56 } as any} value={verbForm.notiz} onChange={e => vf('notiz', e.target.value)} /></div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <button onClick={() => { setVerbFormOffen(false); setVerbEditId(null) }} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', fontSize: 13, cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={speichereVerb} disabled={saving} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: '#1a1a1a', color: 'white', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                {saving ? '⏳...' : '💾 Speichern'}
+              <button onClick={() => { setVerbFormOffen(false); setVerbEditId(null) }} style={{ ...btnSecondary, flex: 1, padding: 10, fontSize: 13 }}>Abbrechen</button>
+              <button onClick={speichereVerb} disabled={saving} style={{ ...btnPrimary, flex: 2, padding: 10, fontSize: 13, opacity: saving ? 0.55 : 1 }}>
+                {saving ? 'Speichern...' : 'Speichern'}
               </button>
             </div>
           </div>
@@ -2669,11 +2664,11 @@ const PLANUNGS_POSITIONEN = [
 ]
 
 const BAU_STATUS = ['Geplant', 'Beauftragt', 'In Arbeit', 'Abgeschlossen']
-const STATUS_FARBE: Record<string, { bg: string; text: string }> = {
-  Geplant:       { bg: '#f0ede8', text: '#888' },
-  Beauftragt:    { bg: '#dbeafe', text: '#1e40af' },
-  'In Arbeit':   { bg: '#fef3c7', text: '#92400e' },
-  Abgeschlossen: { bg: '#d1f5e0', text: '#2d6a4f' },
+const STATUS_FARBE: Record<string, string> = {
+  Geplant:       '#94a3b8',
+  Beauftragt:    '#3b82f6',
+  'In Arbeit':   '#f59e0b',
+  Abgeschlossen: '#10b981',
 }
 
 // ── Print helper ──────────────────────────────────────────────
@@ -2784,21 +2779,21 @@ function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, o
   const tatsGes   = allePositionen.reduce((s, p) => s + num(daten[p.id]?.tatsaechlich || ''), 0)
   const differenz = budgetGes - tatsGes
 
-  const card: React.CSSProperties = { background: 'white', borderRadius: 14, border: '1px solid #e8e4dd', padding: '18px 20px', marginBottom: 14 }
-  const iSt: React.CSSProperties = { padding: '5px 8px', borderRadius: 6, border: '1.5px solid #e8e4dd', fontSize: 12, width: '100%', color: '#1a2a3a', fontWeight: 600, boxSizing: 'border-box' as const }
+  const card: React.CSSProperties = { background: 'var(--bf-card)', borderRadius: 14, border: '1px solid var(--bf-border)', padding: '18px 20px', marginBottom: 14 }
+  const iSt: React.CSSProperties = { padding: '5px 8px', borderRadius: 6, border: '1.5px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', fontSize: 12, width: '100%', color: 'var(--bf-text)', fontWeight: 600, boxSizing: 'border-box' as const }
 
-  if (laden) return <div style={{ padding: 32, textAlign: 'center', color: '#888', fontSize: 13 }}>⏳ Lade gespeicherte Werte…</div>
+  if (laden) return <div style={{ padding: 32, textAlign: 'center', color: 'var(--bf-text-muted)', fontSize: 13 }}>Lade gespeicherte Werte…</div>
 
   return (
     <div style={{ padding: '0 2px' }}>
       {/* Buttons oben */}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 10 }}>
         <button onClick={() => kostenDrucken(titel, objektName, [{ label: titel, positionen, daten }])}
-          style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e0ddd8', background: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#555' }}>
-          🖨️ Drucken
+          style={{ ...btnSecondary, padding: '6px 14px', borderRadius: 8, fontSize: 12 }}>
+          Drucken
         </button>
-        <button onClick={onSpeichern} style={{ padding: '6px 18px', borderRadius: 8, border: 'none', background: gespeichert ? '#10b981' : geaendert ? '#1a2a3a' : '#e0ddd8', color: gespeichert ? 'white' : geaendert ? 'white' : '#aaa', fontSize: 12, fontWeight: 700, cursor: geaendert ? 'pointer' : 'default', transition: 'all 0.2s' }}>
-          {gespeichert ? '✓ Gespeichert' : '💾 Speichern'}
+        <button onClick={onSpeichern} style={{ ...btnPrimary, padding: '6px 18px', borderRadius: 8, background: gespeichert ? '#10b981' : geaendert ? btnPrimary.background : 'var(--bf-soft)', color: gespeichert || geaendert ? 'white' : 'var(--bf-text-muted)', boxShadow: geaendert && !gespeichert ? btnPrimary.boxShadow : 'none', cursor: geaendert ? 'pointer' : 'default', transition: 'all 0.2s' }}>
+          {gespeichert ? '✓ Gespeichert' : 'Speichern'}
         </button>
       </div>
 
@@ -2813,20 +2808,20 @@ function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, o
               <div style={{ flex: 1, minWidth: 0 }}>
                 {pos.isCustom ? (
                   <input
-                    style={{ ...iSt, fontSize: 13, fontWeight: 700, border: '1.5px dashed #ccc', background: '#fafaf8' }}
+                    style={{ ...iSt, fontSize: 13, fontWeight: 700, border: '1.5px dashed var(--bf-border)', background: 'var(--bf-soft)' }}
                     value={pos.label}
                     onChange={e => updateLabel(pos.id, e.target.value)}
                     placeholder="Kategoriename eingeben…"
                   />
                 ) : (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{pos.label}</div>
-                    {pos.hint && <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{pos.hint}</div>}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bf-text)' }}>{pos.label}</div>
+                    {pos.hint && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 1 }}>{pos.hint}</div>}
                   </>
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 10 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: sf.bg, color: sf.text, whiteSpace: 'nowrap' }}>{z.status || 'Geplant'}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', color: 'var(--bf-text-soft)', whiteSpace: 'nowrap' }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: sf, flexShrink: 0 }} />{z.status || 'Geplant'}</span>
                 {pos.isCustom && (
                   <button onClick={() => deleteEigene(pos.id)} title="Löschen"
                     style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: '#dc2626', lineHeight: 1, padding: '0 2px' }}>×</button>
@@ -2835,31 +2830,31 @@ function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, o
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
               <div>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 3, fontWeight: 600 }}>Budget (€)</div>
+                <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginBottom: 3, fontWeight: 600 }}>Budget (€)</div>
                 <input type="number" style={iSt} value={z.budget} placeholder="0,00" onChange={e => upd(pos.id, 'budget', e.target.value)} />
               </div>
               <div>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 3, fontWeight: 600 }}>Tatsächlich (€)</div>
+                <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginBottom: 3, fontWeight: 600 }}>Tatsächlich (€)</div>
                 <input type="number" style={iSt} value={z.tatsaechlich} placeholder="0,00" onChange={e => upd(pos.id, 'tatsaechlich', e.target.value)} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
               {BAU_STATUS.map(s => (
-                <button key={s} onClick={() => upd(pos.id, 'status', s)} style={{ padding: '3px 10px', borderRadius: 10, border: `1.5px solid ${z.status === s ? '#1a2a3a' : '#e8e4dd'}`, background: z.status === s ? '#1a2a3a' : 'white', color: z.status === s ? 'white' : '#555', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{s}</button>
+                <button key={s} onClick={() => upd(pos.id, 'status', s)} style={{ padding: '3px 10px', borderRadius: 10, border: `1.5px solid ${z.status === s ? ACCENT : 'var(--bf-border)'}`, background: z.status === s ? 'var(--bf-soft)' : 'var(--bf-card)', color: z.status === s ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{s}</button>
               ))}
               {num(z.budget) > 0 && (
-                <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: diff >= 0 ? '#2d6a4f' : '#dc2626' }}>
+                <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: diff >= 0 ? '#10b981' : '#ef4444', fontVariantNumeric: 'tabular-nums' }}>
                   {diff >= 0 ? '▲' : '▼'} € {fmtE(Math.abs(diff))}
                 </span>
               )}
             </div>
-            <input style={{ ...iSt, fontSize: 11, fontWeight: 400, color: '#555' }} placeholder="Notiz (optional)" value={z.notiz || ''} onChange={e => upd(pos.id, 'notiz', e.target.value)} />
+            <input style={{ ...iSt, fontSize: 11, fontWeight: 400, color: 'var(--bf-text-soft)' }} placeholder="Notiz (optional)" value={z.notiz || ''} onChange={e => upd(pos.id, 'notiz', e.target.value)} />
           </div>
         )
       })}
 
       {/* Eigene Kategorie hinzufügen */}
-      <button onClick={addEigene} style={{ width: '100%', padding: '10px', borderRadius: 10, border: '2px dashed #d0ccc5', background: 'transparent', fontSize: 12, fontWeight: 600, color: '#888', cursor: 'pointer', marginBottom: 14 }}>
+      <button onClick={addEigene} style={{ width: '100%', padding: '10px', borderRadius: 10, border: '2px dashed var(--bf-border)', background: 'transparent', fontSize: 12, fontWeight: 600, color: 'var(--bf-text-muted)', cursor: 'pointer', marginBottom: 14 }}>
         + Kategorie hinzufügen
       </button>
 
@@ -2867,8 +2862,8 @@ function KostenTabInner({ positionen, daten, setDaten, gespeichert, geaendert, o
       <div style={{ background: '#1a2a3a', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.6, marginBottom: 10 }}>Zusammenfassung</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-          <div><div style={{ fontSize: 10, opacity: 0.6, marginBottom: 3 }}>Budget gesamt</div><div style={{ fontSize: 16, fontWeight: 800 }}>€ {fmtE(budgetGes)}</div></div>
-          <div><div style={{ fontSize: 10, opacity: 0.6, marginBottom: 3 }}>Tatsächlich</div><div style={{ fontSize: 16, fontWeight: 800 }}>€ {fmtE(tatsGes)}</div></div>
+          <div><div style={{ fontSize: 10, opacity: 0.6, marginBottom: 3 }}>Budget gesamt</div><div style={{ fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(budgetGes)}</div></div>
+          <div><div style={{ fontSize: 10, opacity: 0.6, marginBottom: 3 }}>Tatsächlich</div><div style={{ fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>€ {fmtE(tatsGes)}</div></div>
           <div><div style={{ fontSize: 10, opacity: 0.6, marginBottom: 3 }}>Differenz</div><div style={{ fontSize: 16, fontWeight: 800, color: differenz >= 0 ? '#6ee7b7' : '#fca5a5' }}>{differenz >= 0 ? '+' : ''}€ {fmtE(differenz)}</div></div>
         </div>
       </div>

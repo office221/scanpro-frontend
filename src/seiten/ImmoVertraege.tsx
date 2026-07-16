@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
+import { btnPrimary, btnSecondary, ACCENT } from '../ui/theme'
 
 const STATUS_OPTIONEN = ['Aktiv', 'Gekündigt', 'Beendet']
-const STATUS_FARBEN: Record<string, { bg: string; text: string }> = {
-  Aktiv:     { bg: '#d1f5e0', text: '#2d6a4f' },
-  Gekündigt: { bg: '#fef3c7', text: '#92400e' },
-  Beendet:   { bg: '#f0f0f0', text: '#666' },
+const STATUS_FARBEN: Record<string, string> = {
+  Aktiv:     '#10b981',
+  Gekündigt: '#f59e0b',
+  Beendet:   '#94a3b8',
 }
 
 const leer = { objektId: '', mieterId: '', mietbeginn: '', mietende: '', mietzins: '', bk_pauschale: '', kaution: '', status: 'Aktiv', notizen: '' }
 
 const eur = (v: any) => v ? `€ ${parseFloat(v).toLocaleString('de-AT', { minimumFractionDigits: 2 })}` : '—'
-const datum = (d: string | null) => d ? new Date(d).toLocaleDateString('de-AT') : '∞ unbefristet'
+const datum = (d: string | null) => d ? new Date(d).toLocaleDateString('de-AT') : 'unbefristet'
 
 export default function ImmoVertraege() {
   const [vertraege, setVertraege] = useState<any[]>([])
@@ -79,10 +80,10 @@ export default function ImmoVertraege() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800 }}>📄 Mietverträge</div>
-          <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{vertraege.filter(v => v.status === 'Aktiv').length} aktive Verträge</div>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: 'var(--bf-text)' }}>Mietverträge</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>{vertraege.filter(v => v.status === 'Aktiv').length} aktive Verträge</div>
         </div>
-        <button onClick={() => oeffnen()} style={{ background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 9, padding: '10px 20px', fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+        <button onClick={() => oeffnen()} style={{ ...btnPrimary, padding: '10px 20px', fontSize: 13 }}>
           + Neuer Vertrag
         </button>
       </div>
@@ -90,7 +91,7 @@ export default function ImmoVertraege() {
       {/* Filter */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {['Alle', ...STATUS_OPTIONEN].map(s => (
-          <button key={s} onClick={() => setStatusFilter(s)} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${statusFilter === s ? '#1a2a3a' : '#e5e0d8'}`, background: statusFilter === s ? '#1a2a3a' : 'white', color: statusFilter === s ? 'white' : '#555', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+          <button key={s} onClick={() => setStatusFilter(s)} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${statusFilter === s ? ACCENT : 'var(--bf-border)'}`, background: statusFilter === s ? 'var(--bf-soft)' : 'var(--bf-card)', color: statusFilter === s ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
             {s}
           </button>
         ))}
@@ -98,12 +99,11 @@ export default function ImmoVertraege() {
 
       {/* Liste */}
       {laden ? (
-        <div style={{ textAlign: 'center', color: '#aaa', padding: 40 }}>⏳ Laden...</div>
+        <div style={{ textAlign: 'center', color: 'var(--bf-text-muted)', padding: 40 }}>Laden...</div>
       ) : gefiltert.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, background: 'white', borderRadius: 12, border: '1px solid #e5e0d8' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Keine Verträge gefunden</div>
-          <div style={{ color: '#aaa', fontSize: 13 }}>Legen Sie einen neuen Mietvertrag an</div>
+        <div style={{ textAlign: 'center', padding: 60, background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)' }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, marginBottom: 6, color: 'var(--bf-text)' }}>Keine Verträge gefunden</div>
+          <div style={{ color: 'var(--bf-text-muted)', fontSize: 13 }}>Legen Sie einen neuen Mietvertrag an</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -111,32 +111,34 @@ export default function ImmoVertraege() {
             const sf = STATUS_FARBEN[v.status] || STATUS_FARBEN.Beendet
             const gesamt = (parseFloat(v.mietzins)||0) + (parseFloat(v.bk_pauschale)||0)
             return (
-              <div key={v.id} onClick={() => oeffnen(v)} style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e0d8', padding: '16px 20px', cursor: 'pointer', display: 'flex', gap: 16, alignItems: 'flex-start' }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+              <div key={v.id} onClick={() => oeffnen(v)} style={{ background: 'var(--bf-card)', borderRadius: 12, border: '1px solid var(--bf-border)', padding: '16px 20px', cursor: 'pointer', display: 'flex', gap: 16, alignItems: 'flex-start' }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--bf-shadow)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                    <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800 }}>
+                    <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: 'var(--bf-text)' }}>
                       {v.objekt_name || '— kein Objekt —'}
                     </span>
-                    <span style={{ background: sf.bg, color: sf.text, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{v.status}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--bf-soft)', border: '1px solid var(--bf-border)', color: 'var(--bf-text-soft)', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: sf, flexShrink: 0 }} />
+                      {v.status}
+                    </span>
                   </div>
-                  <div style={{ fontSize: 13, color: '#555', marginBottom: 4 }}>
-                    👤 {v.mieter_vorname || ''} {v.mieter_nachname || '— kein Mieter —'}
-                    {v.mieter_email && <span style={{ color: '#aaa', fontSize: 12 }}> · {v.mieter_email}</span>}
+                  <div style={{ fontSize: 13, color: 'var(--bf-text-soft)', marginBottom: 4 }}>
+                    {v.mieter_vorname || ''} {v.mieter_nachname || '— kein Mieter —'}
+                    {v.mieter_email && <span style={{ color: 'var(--bf-text-muted)', fontSize: 12 }}> · {v.mieter_email}</span>}
                   </div>
-                  <div style={{ fontSize: 12, color: '#888' }}>
-                    📅 {datum(v.mietbeginn)} – {datum(v.mietende)}
-                    {v.kaution && parseFloat(v.kaution) > 0 && <span style={{ marginLeft: 12 }}>🔒 Kaution: {eur(v.kaution)}</span>}
+                  <div style={{ fontSize: 12, color: 'var(--bf-text-muted)' }}>
+                    {datum(v.mietbeginn)} – {datum(v.mietende)}
+                    {v.kaution && parseFloat(v.kaution) > 0 && <span style={{ marginLeft: 12 }}>Kaution: {eur(v.kaution)}</span>}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#1a2a3a' }}>{eur(gesamt)}</div>
-                  <div style={{ fontSize: 11, color: '#aaa' }}>/ Monat</div>
-                  {parseFloat(v.bk_pauschale) > 0 && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>incl. BK {eur(v.bk_pauschale)}</div>}
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>{eur(gesamt)}</div>
+                  <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>/ Monat</div>
+                  {parseFloat(v.bk_pauschale) > 0 && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>incl. BK {eur(v.bk_pauschale)}</div>}
                 </div>
-                <button onClick={e => { e.stopPropagation(); loeschen(v.id) }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0, flexShrink: 0, minHeight: 40, minWidth: 40 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}>
-                  🗑
+                <button onClick={e => { e.stopPropagation(); loeschen(v.id) }} style={{ ...btnSecondary, color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)', padding: '5px 10px', fontSize: 11, flexShrink: 0 }}>
+                  Löschen
                 </button>
               </div>
             )
@@ -147,9 +149,9 @@ export default function ImmoVertraege() {
       {/* Modal */}
       {formOffen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 0 : 20 }}>
-          <div style={{ background: 'white', borderRadius: isMobile ? 0 : 16, padding: 28, width: '100%', maxWidth: isMobile ? '100%' : 560, height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '90vh', overflowY: 'auto' }}>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20 }}>
-              {bearbeitenId ? '✏️ Vertrag bearbeiten' : '📄 Neuer Mietvertrag'}
+          <div style={{ background: 'var(--bf-card)', borderRadius: isMobile ? 0 : 16, padding: 28, width: '100%', maxWidth: isMobile ? '100%' : 560, height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '90vh', overflowY: 'auto' }}>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, marginBottom: 20, color: 'var(--bf-text)' }}>
+              {bearbeitenId ? 'Vertrag bearbeiten' : 'Neuer Mietvertrag'}
             </div>
 
             <div style={{ display: 'grid', gap: 14 }}>
@@ -206,7 +208,10 @@ export default function ImmoVertraege() {
                   {STATUS_OPTIONEN.map(s => {
                     const sf = STATUS_FARBEN[s]
                     return (
-                      <button key={s} onClick={() => f('status', s)} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${form.status === s ? sf.text : '#e5e0d8'}`, background: form.status === s ? sf.bg : 'white', color: form.status === s ? sf.text : '#555', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{s}</button>
+                      <button key={s} onClick={() => f('status', s)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${form.status === s ? sf : 'var(--bf-border)'}`, background: form.status === s ? 'var(--bf-soft)' : 'var(--bf-card)', color: form.status === s ? 'var(--bf-text)' : 'var(--bf-text-soft)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: sf, flexShrink: 0 }} />
+                        {s}
+                      </button>
                     )
                   })}
                 </div>
@@ -220,16 +225,16 @@ export default function ImmoVertraege() {
 
               {/* Gesamtvorschau */}
               {form.mietzins && (
-                <div style={{ background: '#f0f6fb', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#1a2a3a' }}>
-                  💰 Gesamtmiete: <strong>€ {((parseFloat(form.mietzins)||0) + (parseFloat(form.bk_pauschale)||0)).toLocaleString('de-AT', { minimumFractionDigits: 2 })}</strong> / Monat
+                <div style={{ background: 'var(--bf-soft)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--bf-text)' }}>
+                  Gesamtmiete: <strong style={{ fontVariantNumeric: 'tabular-nums' }}>€ {((parseFloat(form.mietzins)||0) + (parseFloat(form.bk_pauschale)||0)).toLocaleString('de-AT', { minimumFractionDigits: 2 })}</strong> / Monat
                 </div>
               )}
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={() => setFormOffen(false)} style={{ flex: 1, padding: 11, borderRadius: 8, border: '1px solid #e5e0d8', background: 'white', fontSize: 13, cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={speichern} disabled={speichernLaden || !form.mietbeginn || !form.mietzins} style={{ flex: 2, padding: 11, borderRadius: 8, border: 'none', background: !form.mietbeginn || !form.mietzins ? '#e5e0d8' : '#1a1a1a', color: !form.mietbeginn || !form.mietzins ? '#aaa' : 'white', fontSize: 13, fontWeight: 700, cursor: !form.mietbeginn || !form.mietzins ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif' }}>
-                {speichernLaden ? '⏳ Speichern...' : '💾 Speichern'}
+              <button onClick={() => setFormOffen(false)} style={{ ...btnSecondary, flex: 1, padding: 11, fontSize: 13 }}>Abbrechen</button>
+              <button onClick={speichern} disabled={speichernLaden || !form.mietbeginn || !form.mietzins} style={{ ...btnPrimary, flex: 2, padding: 11, fontSize: 13, opacity: !form.mietbeginn || !form.mietzins ? 0.55 : 1, cursor: !form.mietbeginn || !form.mietzins ? 'not-allowed' : 'pointer' }}>
+                {speichernLaden ? 'Speichern...' : 'Speichern'}
               </button>
             </div>
           </div>
@@ -239,5 +244,5 @@ export default function ImmoVertraege() {
   )
 }
 
-const labelStyle: React.CSSProperties = { display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: '#888', fontWeight: 600, marginBottom: 5 }
-const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1px solid #e5e0d8', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
+const labelStyle: React.CSSProperties = { display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--bf-text-muted)', fontWeight: 600, marginBottom: 5 }
+const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1px solid var(--bf-input-border)', background: 'var(--bf-input-bg)', color: 'var(--bf-text)', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }

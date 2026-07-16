@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import api from '../services/api'
+import { StatusChip, btnPrimary, btnSecondary } from '../ui/theme'
 
 const GOLD  = '#c8a96e'
 const BLAU  = '#6366f1'
@@ -143,19 +144,19 @@ function RouteKarte({ startKoord, zielKoord, routeGeometry, startAdresse, zielAd
   useEffect(() => { if (bereit) karteAktualisieren() }, [bereit, karteAktualisieren])
 
   return (
-    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #e5e0d8', background: '#f0ece4' }}>
+    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--bf-border)', background: 'var(--bf-soft)' }}>
       <div style={{ padding: '8px 12px', background: '#1a2a3a', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: '#c8a96e', letterSpacing: 0.5, textTransform: 'uppercase' }}>
-          🗺️ Routenvorschau
+          Routenvorschau
         </span>
         <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
           {routeGeometry ? '● Route berechnet' : '○ Nur Marker (Route noch nicht berechnet)'}
         </span>
       </div>
       <div ref={divRef} style={{ width: '100%', height: 280 }} />
-      <div style={{ padding: '6px 12px', background: '#f9f6f1', display: 'flex', gap: 14, fontSize: 11 }}>
+      <div style={{ padding: '6px 12px', background: 'var(--bf-soft)', display: 'flex', gap: 14, fontSize: 11 }}>
         <span><span style={{ color: '#10b981', fontWeight: 700 }}>S</span> {startAdresse?.split(',')[0] || 'Start'}</span>
-        <span style={{ color: '#aaa' }}>→</span>
+        <span style={{ color: 'var(--bf-text-muted)' }}>→</span>
         <span><span style={{ color: '#ef4444', fontWeight: 700 }}>Z</span> {zielAdresse?.split(',')[0] || 'Ziel'}</span>
       </div>
     </div>
@@ -321,7 +322,7 @@ export default function KMBuch() {
           setForm(f => ({ ...f, ziel_adresse: adresse }))
           setZielKoord({ lat: String(lat), lon: String(lon) })
         }
-        zeigeToast(`✅ ${ziel === 'start' ? 'Startadresse' : 'Zieladresse'} per GPS übernommen`)
+        zeigeToast(`${ziel === 'start' ? 'Startadresse' : 'Zieladresse'} per GPS übernommen`)
         if (ziel === 'start') setGpsLadenStart(false)
         else setGpsLadenZiel(false)
       },
@@ -354,7 +355,7 @@ export default function KMBuch() {
         // Geometrie (GeoJSON) für Kartenvorschau speichern
         const coords = data.routes[0].geometry?.coordinates
         if (coords) setRouteGeometry(coords)
-        zeigeToast(`✅ Route berechnet: ${km.toFixed(1)} km`)
+        zeigeToast(`Route berechnet: ${km.toFixed(1)} km`)
       } else {
         zeigeToast('Route konnte nicht berechnet werden', false)
       }
@@ -508,7 +509,7 @@ export default function KMBuch() {
       }
       await ladeFahrten()
       setFormOffen(false)
-      zeigeToast(editFahrt ? '✅ Fahrt gespeichert' : '✅ Fahrt eingetragen!')
+      zeigeToast(editFahrt ? 'Fahrt gespeichert' : 'Fahrt eingetragen!')
     } catch (e: any) {
       zeigeToast(e?.response?.data?.fehler || 'Fehler beim Speichern', false)
     }
@@ -531,7 +532,7 @@ export default function KMBuch() {
     try {
       const res = await api.post(`/km-buch/zu-guv/${f.id}`, {})
       setFahrten(prev => prev.map(x => x.id === f.id ? { ...x, in_guv: true } : x))
-      zeigeToast(`✅ € ${fmt(res.data.betrag)} KM-Geld zur G&V übertragen`)
+      zeigeToast(`€ ${fmt(res.data.betrag)} KM-Geld zur G&V übertragen`)
     } catch (e: any) {
       zeigeToast(e?.response?.data?.fehler || 'Fehler', false)
     }
@@ -683,7 +684,7 @@ export default function KMBuch() {
         .ref { display: inline-block; margin-top: 3px; font-size: 9px; color: #6366f1; font-weight: 600; background: #eff6ff; padding: 1px 6px; border-radius: 4px; }
         @media print { body { padding: 10px; } }
       </style></head><body>
-      <h1>🚗 KM-Buch / Fahrtenbuch ${filterJahr}${filterMonat !== 'Alle' ? ' · ' + filterMonat : ''}</h1>
+      <h1>KM-Buch / Fahrtenbuch ${filterJahr}${filterMonat !== 'Alle' ? ' · ' + filterMonat : ''}</h1>
       <div class="meta">km-Satz: € ${kmSatz.toFixed(4)}/km &nbsp;·&nbsp; Gesamt: ${fmtKm(totalKm)} km &nbsp;·&nbsp; KM-Geld: € ${fmt(totalBetrag)} &nbsp;·&nbsp; ${gefiltert.length} Fahrten</div>
       <table>
         <tr>
@@ -699,7 +700,7 @@ export default function KMBuch() {
             <td class="r">${f.km_start ? Number(f.km_start).toLocaleString('de-AT') : '—'}</td>
             <td class="r">${f.km_ende  ? Number(f.km_ende).toLocaleString('de-AT')  : '—'}</td>
             <td class="r"><strong>${Number(f.km_gefahren).toFixed(1)}</strong></td>
-            <td>${f.zweck}${f.notiz ? '<br><span style="color:#999;font-size:9px">' + f.notiz + '</span>' : ''}${f.rechnung_nummer ? '<br><span class="ref">' + (f.rechnung_typ === 'angebot' ? '📝 ' : '🧾 ') + f.rechnung_nummer + (f.rechnung_projekt ? ' – ' + f.rechnung_projekt : '') + '</span>' : ''}${f.start_adresse && f.ziel_adresse ? '<br><a href="https://www.google.com/maps/dir/' + encodeURIComponent(f.start_adresse) + '/' + encodeURIComponent(f.ziel_adresse) + '" style="color:#4285f4;font-size:9px;text-decoration:none">🗺️ Google Maps Route</a>' : ''}</td>
+            <td>${f.zweck}${f.notiz ? '<br><span style="color:#999;font-size:9px">' + f.notiz + '</span>' : ''}${f.rechnung_nummer ? '<br><span class="ref">' + (f.rechnung_typ === 'angebot' ? 'Angebot ' : 'Rechnung ') + f.rechnung_nummer + (f.rechnung_projekt ? ' – ' + f.rechnung_projekt : '') + '</span>' : ''}${f.start_adresse && f.ziel_adresse ? '<br><a href="https://www.google.com/maps/dir/' + encodeURIComponent(f.start_adresse) + '/' + encodeURIComponent(f.ziel_adresse) + '" style="color:#4285f4;font-size:9px;text-decoration:none">Google Maps Route</a>' : ''}</td>
             <td class="r">€ ${fmt(Number(f.km_gefahren) * kmSatz)}</td>
             <td><span class="badge ${f.in_guv ? 'guv' : 'offen'}">${f.in_guv ? '✓ G&V' : 'offen'}</span></td>
           </tr>`).join('')}
@@ -721,16 +722,16 @@ export default function KMBuch() {
 
   // ── Styles ─────────────────────────────────────────────────────────────────
   const card: React.CSSProperties = {
-    background: 'white', borderRadius: 16, padding: '18px 20px',
-    border: '1px solid #f0ece4', boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+    background: 'var(--bf-card)', borderRadius: 16, padding: '18px 20px',
+    border: '1px solid var(--bf-border)', boxShadow: 'var(--bf-shadow)',
   }
   const inp: React.CSSProperties = {
-    width: '100%', padding: '10px 13px', border: '1px solid #e5e0d8',
+    width: '100%', padding: '10px 13px', border: '1px solid var(--bf-input-border)',
     borderRadius: 10, fontFamily: 'DM Sans, sans-serif', fontSize: 14,
-    background: 'white', color: '#1a2a3a', outline: 'none', boxSizing: 'border-box',
+    background: 'var(--bf-input-bg)', color: 'var(--bf-text)', outline: 'none', boxSizing: 'border-box',
   }
   const lbl: React.CSSProperties = {
-    display: 'block', fontSize: 11, fontWeight: 700, color: '#aaa',
+    display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--bf-text-muted)',
     textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
   }
   const jahre = [new Date().getFullYear(), new Date().getFullYear()-1, new Date().getFullYear()-2]
@@ -754,10 +755,10 @@ export default function KMBuch() {
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 20 : 24, fontWeight: 800, margin: 0, color: '#1a2a3a' }}>
-          🚗 KM-Buch
+        <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 20 : 24, fontWeight: 800, margin: 0, color: 'var(--bf-text)' }}>
+          KM-Buch
         </h2>
-        <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 4 }}>
           Fahrtenbuch · km-Satz € {kmSatz.toFixed(4)}/km · Österreich § 26 EStG
         </div>
         {/* Jahr-Tabs */}
@@ -766,8 +767,8 @@ export default function KMBuch() {
             <button key={j} onClick={() => { setFilterJahr(j); setFilterMonat('Alle') }} style={{
               padding: '7px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
               fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700,
-              background: j === filterJahr ? `linear-gradient(135deg, ${GOLD}, #e8c98e)` : '#f4f1eb',
-              color: j === filterJahr ? '#0a0a0a' : '#888',
+              background: j === filterJahr ? `linear-gradient(135deg, ${GOLD}, #e8c98e)` : 'var(--bf-soft)',
+              color: j === filterJahr ? '#0a0a0a' : 'var(--bf-text-muted)',
               boxShadow: j === filterJahr ? '0 4px 14px rgba(200,169,110,0.35)' : 'none',
               transition: 'all 0.2s',
             }}>{j}</button>
@@ -785,8 +786,8 @@ export default function KMBuch() {
         ].map(s => (
           <div key={s.label} style={{ ...card, borderTop: `3px solid ${s.color}` }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: s.color, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{s.label}</div>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 18 : 22, fontWeight: 800, color: '#1a2a3a' }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{s.sub}</div>
+            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 18 : 22, fontWeight: 800, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 4 }}>{s.sub}</div>
           </div>
         ))}
       </div>
@@ -804,24 +805,24 @@ export default function KMBuch() {
             {/* Header + Toggle */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
               <div>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: '#1a2a3a' }}>
-                  🚗 Kilometer-Statistik – {filterJahr}
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: 'var(--bf-text)' }}>
+                  Kilometer-Statistik – {filterJahr}
                 </div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
+                <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 3 }}>
                   {diagrammAnsichtKM === 'jahr'
                     ? '12-Monats-Balkendiagramm · km gefahren · Hover für Details'
                     : `Monatsdetail: ${MONATSNAMEN_LANG_KM[diagrammMonatKM - 1]} ${filterJahr}`}
                 </div>
               </div>
               {/* Toggle Jahr / Monat */}
-              <div style={{ display: 'flex', background: '#f4f1eb', borderRadius: 10, padding: 3, gap: 2 }}>
-                {[{ k: 'jahr' as const, l: '📅 Jahresansicht' }, { k: 'monat' as const, l: '🔍 Monatsdetail' }].map(t => (
+              <div style={{ display: 'flex', background: 'var(--bf-soft)', borderRadius: 10, padding: 3, gap: 2 }}>
+                {[{ k: 'jahr' as const, l: 'Jahresansicht' }, { k: 'monat' as const, l: 'Monatsdetail' }].map(t => (
                   <button key={t.k} onClick={() => setDiagrammAnsichtKM(t.k)} style={{
                     padding: '7px 13px', borderRadius: 8, border: 'none', cursor: 'pointer',
                     fontSize: 12, fontWeight: 700,
-                    background: diagrammAnsichtKM === t.k ? 'white' : 'transparent',
-                    color: diagrammAnsichtKM === t.k ? '#1a2a3a' : '#aaa',
-                    boxShadow: diagrammAnsichtKM === t.k ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                    background: diagrammAnsichtKM === t.k ? 'var(--bf-card)' : 'transparent',
+                    color: diagrammAnsichtKM === t.k ? 'var(--bf-text)' : 'var(--bf-text-muted)',
+                    boxShadow: diagrammAnsichtKM === t.k ? 'var(--bf-shadow)' : 'none',
                     transition: 'all 0.2s',
                   }}>{t.l}</button>
                 ))}
@@ -835,7 +836,7 @@ export default function KMBuch() {
                   {/* Y-Achse */}
                   <div style={{ display: 'flex', flexDirection: 'column-reverse', justifyContent: 'space-between', height: CHART_H + 22, paddingBottom: 22, marginRight: 8, flexShrink: 0 }}>
                     {[0,1,2,3,4].map(i => (
-                      <div key={i} style={{ fontSize: 9, color: '#ccc', textAlign: 'right', minWidth: 38, lineHeight: 1 }}>
+                      <div key={i} style={{ fontSize: 9, color: 'var(--bf-text-muted)', textAlign: 'right', minWidth: 38, lineHeight: 1 }}>
                         {i === 0 ? '0 km' : `${fmtKmChart(maxKmJahr * i / 4)} km`}
                       </div>
                     ))}
@@ -848,7 +849,7 @@ export default function KMBuch() {
                       <div key={i} style={{
                         position: 'absolute', left: 0, right: 0,
                         bottom: 22 + Math.round(p * CHART_H),
-                        height: 1, background: i === 0 ? '#e5e0d8' : '#f4f1eb', zIndex: 0,
+                        height: 1, background: i === 0 ? 'var(--bf-border)' : 'var(--bf-divider)', zIndex: 0,
                       }} />
                     ))}
 
@@ -873,12 +874,12 @@ export default function KMBuch() {
                                 boxShadow: '0 6px 20px rgba(0,0,0,0.25)', pointerEvents: 'none',
                               }}>
                                 <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>{m.labelLang} {filterJahr}</div>
-                                <div style={{ color: `${BLAU}dd`, marginBottom: 3 }}>🚗 km: {Number(m.km).toFixed(1)} km</div>
-                                <div style={{ color: GOLD, marginBottom: 3 }}>💶 KM-Geld: € {m.betrag.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                                <div style={{ color: '#aaa', marginBottom: 3 }}>📋 Fahrten: {m.anzahl}</div>
+                                <div style={{ color: `${BLAU}dd`, marginBottom: 3 }}>km: {Number(m.km).toFixed(1)} km</div>
+                                <div style={{ color: GOLD, marginBottom: 3 }}>KM-Geld: € {m.betrag.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div style={{ color: '#aaa', marginBottom: 3 }}>Fahrten: {m.anzahl}</div>
                                 {m.anzahl > 0 && (
                                   <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', marginTop: 6, paddingTop: 6, color: m.inGuv === m.anzahl ? GRUEN : '#ffbb55', fontWeight: 700 }}>
-                                    {m.inGuv === m.anzahl ? '✅' : '⏳'} G&V: {m.inGuv}/{m.anzahl}
+                                    G&V: {m.inGuv}/{m.anzahl}
                                   </div>
                                 )}
                               </div>
@@ -901,7 +902,7 @@ export default function KMBuch() {
                             {/* X-Label */}
                             <div style={{
                               fontSize: isMobile ? 8 : 10, marginTop: 5,
-                              color: istAktMonat ? BLAU : m.hatDaten ? '#666' : '#ccc',
+                              color: istAktMonat ? BLAU : m.hatDaten ? 'var(--bf-text-soft)' : 'var(--bf-text-muted)',
                               fontWeight: istAktMonat ? 800 : 600,
                             }}>{m.label}</div>
                             {istAktMonat && <div style={{ width: 4, height: 4, borderRadius: '50%', background: BLAU, marginTop: 1 }} />}
@@ -917,22 +918,22 @@ export default function KMBuch() {
                   <div style={{ display: 'flex', gap: 18 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                       <div style={{ width: 12, height: 12, borderRadius: 3, background: BLAU }} />
-                      <span style={{ color: '#555', fontWeight: 600 }}>km gefahren</span>
+                      <span style={{ color: 'var(--bf-text-soft)', fontWeight: 600 }}>km gefahren</span>
                     </div>
                     {filterJahr === new Date().getFullYear() && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                         <div style={{ width: 4, height: 4, borderRadius: '50%', background: BLAU }} />
-                        <span style={{ color: '#aaa' }}>aktueller Monat</span>
+                        <span style={{ color: 'var(--bf-text-muted)' }}>aktueller Monat</span>
                       </div>
                     )}
                   </div>
-                  <span style={{ fontSize: 11, color: '#ccc' }}>← Hover für Details</span>
+                  <span style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>← Hover für Details</span>
                 </div>
 
                 {/* G&V-Status Mini-Chips je Monat */}
                 {monatsDatenKM.some(m => m.hatDaten) && (
-                  <div style={{ marginTop: 14, padding: '12px 14px', background: '#faf8f5', borderRadius: 10 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                  <div style={{ marginTop: 14, padding: '12px 14px', background: 'var(--bf-soft)', borderRadius: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
                       G&V-Status pro Monat
                     </div>
                     <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -962,9 +963,9 @@ export default function KMBuch() {
                     <button key={i} onClick={() => setDiagrammMonatKM(m.monat)} style={{
                       padding: '6px 11px', borderRadius: 8, border: 'none', cursor: 'pointer',
                       fontSize: 11, fontWeight: 700,
-                      background: diagrammMonatKM === m.monat ? '#1a2a3a' : m.hatDaten ? '#f4f1eb' : '#fafafa',
-                      color:      diagrammMonatKM === m.monat ? 'white'    : m.hatDaten ? '#555'    : '#ccc',
-                      boxShadow:  diagrammMonatKM === m.monat ? '0 3px 10px rgba(0,0,0,0.15)' : 'none',
+                      background: diagrammMonatKM === m.monat ? 'var(--bf-text)' : m.hatDaten ? 'var(--bf-soft)' : 'var(--bf-hover)',
+                      color:      diagrammMonatKM === m.monat ? 'var(--bf-card)' : m.hatDaten ? 'var(--bf-text-soft)' : 'var(--bf-text-muted)',
+                      boxShadow:  diagrammMonatKM === m.monat ? 'var(--bf-shadow)' : 'none',
                       position: 'relative',
                     }}>
                       {m.label}
@@ -979,8 +980,7 @@ export default function KMBuch() {
                   const monatFahrten = fahrten.filter(f => new Date(f.datum).getMonth() + 1 === diagrammMonatKM)
 
                   if (monatFahrten.length === 0) return (
-                    <div style={{ textAlign: 'center', padding: '30px 16px', color: '#ccc' }}>
-                      <div style={{ fontSize: 40, marginBottom: 8 }}>🚗</div>
+                    <div style={{ textAlign: 'center', padding: '30px 16px', color: 'var(--bf-text-muted)' }}>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>Keine Fahrten für {mDat.labelLang}</div>
                       <div style={{ fontSize: 11, marginTop: 4 }}>Monate mit Daten sind mit ● markiert</div>
                     </div>
@@ -1003,14 +1003,14 @@ export default function KMBuch() {
                       {/* 3 Kennzahlen-Karten */}
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
                         <div style={{ background: `${BLAU}10`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${BLAU}22` }}>
-                          <div style={{ fontSize: 10, color: BLAU, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>🚗 km gesamt</div>
-                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: BLAU }}>{Number(mDat.km).toFixed(1)} km</div>
-                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>{mDat.anzahl} Fahrten</div>
+                          <div style={{ fontSize: 10, color: BLAU, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>km gesamt</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: BLAU, fontVariantNumeric: 'tabular-nums' }}>{Number(mDat.km).toFixed(1)} km</div>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 3 }}>{mDat.anzahl} Fahrten</div>
                         </div>
                         <div style={{ background: `${GOLD}15`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${GOLD}33` }}>
-                          <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>💶 KM-Geld</div>
-                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#b8922a' }}>€ {mDat.betrag.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>à € {kmSatz.toFixed(4)}/km</div>
+                          <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>KM-Geld</div>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: '#b8922a', fontVariantNumeric: 'tabular-nums' }}>€ {mDat.betrag.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 3 }}>à € {kmSatz.toFixed(4)}/km</div>
                         </div>
                         <div style={{
                           background: inGuvCount === mDat.anzahl ? '#d1fae520' : '#fef3c720',
@@ -1019,17 +1019,17 @@ export default function KMBuch() {
                           gridColumn: isMobile ? '1 / -1' : 'auto',
                         }}>
                           <div style={{ fontSize: 10, color: inGuvCount === mDat.anzahl ? GRUEN : GOLD, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
-                            {inGuvCount === mDat.anzahl ? '✅ G&V komplett' : '⏳ G&V offen'}
+                            {inGuvCount === mDat.anzahl ? 'G&V komplett' : 'G&V offen'}
                           </div>
-                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: inGuvCount === mDat.anzahl ? '#065f46' : '#92400e' }}>
+                          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: inGuvCount === mDat.anzahl ? '#065f46' : '#92400e', fontVariantNumeric: 'tabular-nums' }}>
                             {inGuvCount}/{mDat.anzahl}
                           </div>
-                          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Fahrten in G&V</div>
+                          <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 3 }}>Fahrten in G&V</div>
                         </div>
                       </div>
 
                       {/* Horizontale Balken nach Zweck */}
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
                         Aufschlüsselung nach Fahrtgrund (Zweck)
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1038,10 +1038,10 @@ export default function KMBuch() {
                           .map(([zweck, v]) => (
                           <div key={zweck}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a', flex: 1, marginRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{zweck}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--bf-text)', flex: 1, marginRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{zweck}</span>
                               <span style={{ fontSize: 12, display: 'flex', gap: 10, flexShrink: 0 }}>
-                                <span style={{ color: BLAU, fontWeight: 700 }}>{Number(v.km).toFixed(1)} km</span>
-                                <span style={{ color: '#aaa' }}>{v.anzahl}×</span>
+                                <span style={{ color: BLAU, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{Number(v.km).toFixed(1)} km</span>
+                                <span style={{ color: 'var(--bf-text-muted)' }}>{v.anzahl}×</span>
                               </span>
                             </div>
                             <div style={{ height: 9, background: `${BLAU}12`, borderRadius: 5, overflow: 'hidden', border: `1px solid ${BLAU}22` }}>
@@ -1061,17 +1061,12 @@ export default function KMBuch() {
 
       {/* Action Bar */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        <button onClick={() => oeffneForm()} style={{
-          background: `linear-gradient(135deg, ${GOLD}, #e8c98e)`, color: '#0a0a0a',
-          border: 'none', borderRadius: 10, padding: '9px 18px',
-          fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-          boxShadow: '0 4px 14px rgba(200,169,110,0.35)',
-        }}>+ Neue Fahrt</button>
-        <button onClick={drucken} style={{ background: '#f4f1eb', color: '#555', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          🖨 PDF drucken
+        <button onClick={() => oeffneForm()} style={{ ...btnPrimary }}>+ Neue Fahrt</button>
+        <button onClick={drucken} style={{ ...btnSecondary }}>
+          PDF drucken
         </button>
-        <button onClick={exportCSV} style={{ background: '#f4f1eb', color: '#555', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          📊 Excel/CSV
+        <button onClick={exportCSV} style={{ ...btnSecondary }}>
+          Excel/CSV
         </button>
       </div>
 
@@ -1081,8 +1076,8 @@ export default function KMBuch() {
           <button onClick={() => setFilterMonat('Alle')} style={{
             padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
             fontSize: 12, fontWeight: 700,
-            background: filterMonat === 'Alle' ? '#1a2a3a' : '#f4f1eb',
-            color: filterMonat === 'Alle' ? 'white' : '#888',
+            background: filterMonat === 'Alle' ? 'var(--bf-text)' : 'var(--bf-soft)',
+            color: filterMonat === 'Alle' ? 'var(--bf-card)' : 'var(--bf-text-muted)',
           }}>Alle ({fahrten.length})</button>
           {monate.map(m => {
             const count = fahrten.filter(f => f.datum?.startsWith(m)).length
@@ -1090,8 +1085,8 @@ export default function KMBuch() {
               <button key={m} onClick={() => setFilterMonat(m)} style={{
                 padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 700,
-                background: filterMonat === m ? '#1a2a3a' : '#f4f1eb',
-                color: filterMonat === m ? 'white' : '#888',
+                background: filterMonat === m ? 'var(--bf-text)' : 'var(--bf-soft)',
+                color: filterMonat === m ? 'var(--bf-card)' : 'var(--bf-text-muted)',
               }}>
                 {new Date(m + '-01').toLocaleDateString('de-AT', { month: 'short', year: '2-digit' })} ({count})
               </button>
@@ -1102,31 +1097,30 @@ export default function KMBuch() {
 
       {/* Liste */}
       {laden ? (
-        <div style={{ textAlign: 'center', padding: 50, color: '#ccc' }}>Lädt...</div>
+        <div style={{ textAlign: 'center', padding: 50, color: 'var(--bf-text-muted)' }}>Lädt...</div>
       ) : gefiltert.length === 0 ? (
         <div style={{ ...card, textAlign: 'center', padding: '50px 24px' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🚗</div>
-          <div style={{ fontSize: 15, color: '#aaa', marginBottom: 8 }}>Noch keine Fahrten für {filterJahr}</div>
-          <div style={{ fontSize: 12, color: '#ccc' }}>Klicke „+ Neue Fahrt" für den ersten Eintrag</div>
+          <div style={{ fontSize: 15, color: 'var(--bf-text-muted)', marginBottom: 8 }}>Noch keine Fahrten für {filterJahr}</div>
+          <div style={{ fontSize: 12, color: 'var(--bf-text-muted)' }}>Klicke „+ Neue Fahrt" für den ersten Eintrag</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
 
           {/* Desktop-Header */}
           {!isMobile && (
-            <div style={{ display: 'grid', gridTemplateColumns: '95px 1fr 1fr 70px 100px 110px 90px', padding: '8px 16px', background: '#f8f6f2', borderRadius: 10, gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '95px 1fr 1fr 70px 100px 110px 90px', padding: '8px 16px', background: 'var(--bf-thead)', borderRadius: 10, gap: 8 }}>
               {['Datum','Von','Nach','km','KM-Stand','Zweck / Betrag',''].map((h,i) => (
-                <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: 0.7 }}>{h}</div>
+                <div key={i} style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.7 }}>{h}</div>
               ))}
             </div>
           )}
 
           {gefiltert.map(f => (
             <div key={f.id} onClick={() => setDetailFahrt(f)} style={{
-              background: 'white', borderRadius: 12,
-              border: '1px solid #f0ece4',
+              background: 'var(--bf-card)', borderRadius: 12,
+              border: '1px solid var(--bf-border)',
               borderLeft: `4px solid ${f.in_guv ? GRUEN : GOLD}`,
-              boxShadow: '0 1px 6px rgba(0,0,0,0.04)', overflow: 'hidden',
+              boxShadow: 'var(--bf-shadow)', overflow: 'hidden',
               cursor: 'pointer',
             }}>
               {isMobile ? (
@@ -1134,49 +1128,52 @@ export default function KMBuch() {
                 <div style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>
-                        📅 {f.datum ? new Date(f.datum).toLocaleDateString('de-AT') : '—'}
+                      <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginBottom: 4 }}>
+                        {f.datum ? new Date(f.datum).toLocaleDateString('de-AT') : '—'}
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bf-text)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {f.zweck || '—'}
                       </div>
                       {f.rechnung_nummer && (
                         <div style={{ fontSize: 11, color: BLAU, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span>{f.rechnung_typ === 'angebot' ? '📝' : '🧾'}</span>
                           <span style={{ fontWeight: 600 }}>{f.rechnung_nummer}</span>
-                          {f.rechnung_projekt && <span style={{ color: '#aaa' }}>– {f.rechnung_projekt}</span>}
+                          {f.rechnung_projekt && <span style={{ color: 'var(--bf-text-muted)' }}>– {f.rechnung_projekt}</span>}
                         </div>
                       )}
                       {(f.start_adresse || f.ziel_adresse) && (
-                        <div style={{ fontSize: 11, color: '#888', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          📍 {(f.start_adresse||'?').split(',')[0]} → {(f.ziel_adresse||'?').split(',')[0]}
+                        <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {(f.start_adresse||'?').split(',')[0]} → {(f.ziel_adresse||'?').split(',')[0]}
                         </div>
                       )}
                       {(f.km_start || f.km_ende) && (
-                        <div style={{ fontSize: 11, color: '#bbb' }}>
+                        <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>
                           Tacho: {f.km_start||'?'} → {f.km_ende||'?'}
                         </div>
                       )}
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: BLAU }}>
+                      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: BLAU, fontVariantNumeric: 'tabular-nums' }}>
                         {Number(f.km_gefahren).toFixed(1)} km
                       </div>
-                      <div style={{ fontSize: 12, color: GOLD, fontWeight: 700 }}>
+                      <div style={{ fontSize: 12, color: GOLD, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
                         € {fmt(Number(f.km_gefahren) * kmSatz)}
                       </div>
                       {f.in_guv && (
-                        <div style={{ fontSize: 10, color: GRUEN, fontWeight: 700, marginTop: 2 }}>✓ in G&V</div>
+                        <div style={{ marginTop: 4 }}><StatusChip status="Bezahlt" label="in G&V" /></div>
                       )}
                       <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 4, marginTop: 8, justifyContent: 'flex-end' }}>
                         {(f.start_adresse || f.start_lat) && (
-                          <button onClick={() => oeffneMaps(f)} title="Route auf Google Maps" style={{ background: '#e8f0fe', color: BLAU, border: 'none', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🗺️</button>
+                          <button onClick={() => oeffneMaps(f)} title="Route auf Google Maps" style={{ background: 'var(--bf-soft)', color: BLAU, border: '1px solid var(--bf-border)', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+                          </button>
                         )}
-                        <button onClick={() => zuGuv(f)} disabled={f.in_guv} title={f.in_guv ? 'Bereits in G&V' : 'Zur G&V übertragen'} style={{ background: f.in_guv ? '#d1fae5' : '#fdf8f0', color: f.in_guv ? GRUEN : GOLD, border: 'none', borderRadius: 6, width: 30, height: 30, cursor: f.in_guv ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                        <button onClick={() => zuGuv(f)} disabled={f.in_guv} title={f.in_guv ? 'Bereits in G&V' : 'Zur G&V übertragen'} style={{ background: 'var(--bf-soft)', color: f.in_guv ? GRUEN : GOLD, border: '1px solid var(--bf-border)', borderRadius: 6, width: 30, height: 30, cursor: f.in_guv ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
                           {f.in_guv ? '✓' : '↓'}
                         </button>
-                        <button onClick={() => oeffneForm(f)} style={{ background: '#f4f1eb', color: '#555', border: 'none', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>✏️</button>
-                        <button onClick={() => loeschen(f.id)} style={{ background: '#fef2f2', color: ROT, border: 'none', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>✕</button>
+                        <button onClick={() => oeffneForm(f)} title="Bearbeiten" style={{ background: 'var(--bf-soft)', color: 'var(--bf-text-soft)', border: '1px solid var(--bf-border)', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button onClick={() => loeschen(f.id)} title="Löschen" style={{ background: 'var(--bf-soft)', color: ROT, border: '1px solid rgba(239,68,68,0.35)', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>✕</button>
                       </div>
                     </div>
                   </div>
@@ -1184,53 +1181,53 @@ export default function KMBuch() {
               ) : (
                 /* Desktop */
                 <div style={{ display: 'grid', gridTemplateColumns: '95px 1fr 1fr 70px 100px 110px 90px', padding: '12px 16px', alignItems: 'center', gap: 8 }}>
-                  <div style={{ fontSize: 12, color: '#888' }}>
+                  <div style={{ fontSize: 12, color: 'var(--bf-text-muted)' }}>
                     {f.datum ? new Date(f.datum).toLocaleDateString('de-AT') : '—'}
                   </div>
-                  <div style={{ fontSize: 12, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.start_adresse}>
+                  <div style={{ fontSize: 12, color: 'var(--bf-text-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.start_adresse}>
                     {f.start_adresse ? f.start_adresse.split(',')[0] : '—'}
                   </div>
-                  <div style={{ fontSize: 12, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.ziel_adresse}>
+                  <div style={{ fontSize: 12, color: 'var(--bf-text-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.ziel_adresse}>
                     {f.ziel_adresse ? f.ziel_adresse.split(',')[0] : '—'}
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: BLAU }}>{Number(f.km_gefahren).toFixed(1)}</div>
-                    <div style={{ fontSize: 10, color: '#aaa' }}>km</div>
+                    <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 800, color: BLAU, fontVariantNumeric: 'tabular-nums' }}>{Number(f.km_gefahren).toFixed(1)}</div>
+                    <div style={{ fontSize: 10, color: 'var(--bf-text-muted)' }}>km</div>
                   </div>
-                  <div style={{ fontSize: 11, color: '#aaa' }}>
+                  <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
                     {f.km_start ? `${f.km_start} → ${f.km_ende||'?'}` : '—'}
                   </div>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.zweck}</div>
-                    <div style={{ fontSize: 12, color: GOLD, fontWeight: 700 }}>€ {fmt(Number(f.km_gefahren) * kmSatz)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.zweck}</div>
+                    <div style={{ fontSize: 12, color: GOLD, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>€ {fmt(Number(f.km_gefahren) * kmSatz)}</div>
                     {f.rechnung_nummer && (
                       <div style={{ fontSize: 10, color: BLAU, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                        {f.rechnung_typ === 'angebot' ? '📝' : '🧾'} {f.rechnung_nummer}{f.rechnung_projekt ? ` – ${f.rechnung_projekt}` : ''}
+                        {f.rechnung_nummer}{f.rechnung_projekt ? ` – ${f.rechnung_projekt}` : ''}
                       </div>
                     )}
                   </div>
                   <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
                     {(f.start_adresse || f.start_lat) && (
                       <button onClick={() => oeffneMaps(f)} title="Route auf Google Maps öffnen"
-                        style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, transition: 'color 0.15s' }}
+                        style={{ background: 'none', border: 'none', color: 'var(--bf-text-muted)', cursor: 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.15s' }}
                         onMouseEnter={ev => ev.currentTarget.style.color = BLAU}
-                        onMouseLeave={ev => ev.currentTarget.style.color = '#bbb'}
-                      >🗺️</button>
+                        onMouseLeave={ev => ev.currentTarget.style.color = 'var(--bf-text-muted)'}
+                      ><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></button>
                     )}
                     <button onClick={() => zuGuv(f)} disabled={f.in_guv} title={f.in_guv ? 'Bereits in G&V' : 'Zur G&V übertragen'}
-                      style={{ background: 'none', border: 'none', color: f.in_guv ? GRUEN : '#bbb', cursor: f.in_guv ? 'default' : 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, transition: 'color 0.15s' }}
+                      style={{ background: 'none', border: 'none', color: f.in_guv ? GRUEN : 'var(--bf-text-muted)', cursor: f.in_guv ? 'default' : 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, transition: 'color 0.15s' }}
                       onMouseEnter={ev => { if (!f.in_guv) ev.currentTarget.style.color = GOLD }}
-                      onMouseLeave={ev => { if (!f.in_guv) ev.currentTarget.style.color = '#bbb' }}
+                      onMouseLeave={ev => { if (!f.in_guv) ev.currentTarget.style.color = 'var(--bf-text-muted)' }}
                     >{f.in_guv ? '✓' : '↓'}</button>
                     <button onClick={() => oeffneForm(f)} title="Bearbeiten"
-                      style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, transition: 'color 0.15s' }}
-                      onMouseEnter={ev => ev.currentTarget.style.color = '#555'}
-                      onMouseLeave={ev => ev.currentTarget.style.color = '#bbb'}
-                    >✏️</button>
+                      style={{ background: 'none', border: 'none', color: 'var(--bf-text-muted)', cursor: 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.15s' }}
+                      onMouseEnter={ev => ev.currentTarget.style.color = 'var(--bf-text-soft)'}
+                      onMouseLeave={ev => ev.currentTarget.style.color = 'var(--bf-text-muted)'}
+                    ><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                     <button onClick={() => loeschen(f.id)} title="Löschen"
-                      style={{ background: 'none', border: 'none', color: '#ddd', cursor: 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, transition: 'color 0.15s' }}
+                      style={{ background: 'none', border: 'none', color: 'var(--bf-text-muted)', cursor: 'pointer', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, transition: 'color 0.15s' }}
                       onMouseEnter={ev => ev.currentTarget.style.color = ROT}
-                      onMouseLeave={ev => ev.currentTarget.style.color = '#ddd'}
+                      onMouseLeave={ev => ev.currentTarget.style.color = 'var(--bf-text-muted)'}
                     >✕</button>
                   </div>
                 </div>
@@ -1243,12 +1240,12 @@ export default function KMBuch() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', gap: isMobile ? 8 : 28, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>Gesamt</span>
-                <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: '#93c5fd' }}>{fmtKm(totalKm)} km</span>
+                <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: '#93c5fd', fontVariantNumeric: 'tabular-nums' }}>{fmtKm(totalKm)} km</span>
               </div>
               <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 16 }}>×</div>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 700 }}>€ {kmSatz.toFixed(4)}/km</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>€ {kmSatz.toFixed(4)}/km</span>
               <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 16 }}>=</div>
-              <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: GOLD }}>€ {fmt(totalBetrag)}</span>
+              <span style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 800, color: GOLD, fontVariantNumeric: 'tabular-nums' }}>€ {fmt(totalBetrag)}</span>
             </div>
           </div>
         </div>
@@ -1261,12 +1258,14 @@ export default function KMBuch() {
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             width: isMobile ? '95vw' : 560, maxHeight: '90vh', overflowY: 'auto',
-            background: 'white', borderRadius: 18, zIndex: 901,
+            background: 'var(--bf-card)', borderRadius: 18, zIndex: 901,
             boxShadow: '0 24px 80px rgba(0,0,0,0.3)', fontFamily: 'DM Sans, sans-serif',
           }}>
             {/* Header */}
             <div style={{ padding: '18px 22px', background: '#1a2a3a', borderRadius: '18px 18px 0 0', display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: detailFahrt.in_guv ? '#d1fae5' : '#fdf8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🚗</div>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: detailFahrt.in_guv ? '#d1fae5' : '#fdf8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: detailFahrt.in_guv ? GRUEN : GOLD }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 800, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {detailFahrt.zweck || 'Fahrt'}
@@ -1276,10 +1275,10 @@ export default function KMBuch() {
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: GOLD }}>
+                <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: GOLD, fontVariantNumeric: 'tabular-nums' }}>
                   € {fmt(Number(detailFahrt.km_gefahren) * kmSatz)}
                 </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontVariantNumeric: 'tabular-nums' }}>
                   {Number(detailFahrt.km_gefahren).toFixed(1)} km
                 </div>
               </div>
@@ -1291,22 +1290,22 @@ export default function KMBuch() {
 
               {/* Route */}
               {(detailFahrt.start_adresse || detailFahrt.ziel_adresse) && (
-                <div style={{ marginBottom: 16, background: '#f8f6f2', borderRadius: 12, padding: '14px 16px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>🗺️ Route</div>
+                <div style={{ marginBottom: 16, background: 'var(--bf-soft)', borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--bf-text-muted)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>Route</div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 11, color: GRUEN, fontWeight: 700, marginBottom: 2 }}>VON</div>
-                      <div style={{ fontSize: 13, color: '#1a2a3a' }}>{detailFahrt.start_adresse || '—'}</div>
+                      <div style={{ fontSize: 13, color: 'var(--bf-text)' }}>{detailFahrt.start_adresse || '—'}</div>
                     </div>
-                    <div style={{ fontSize: 20, color: '#ccc', paddingTop: 16 }}>→</div>
+                    <div style={{ fontSize: 20, color: 'var(--bf-text-muted)', paddingTop: 16 }}>→</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 11, color: ROT, fontWeight: 700, marginBottom: 2 }}>NACH</div>
-                      <div style={{ fontSize: 13, color: '#1a2a3a' }}>{detailFahrt.ziel_adresse || '—'}</div>
+                      <div style={{ fontSize: 13, color: 'var(--bf-text)' }}>{detailFahrt.ziel_adresse || '—'}</div>
                     </div>
                   </div>
                   {detailFahrt.start_adresse && detailFahrt.ziel_adresse && (
-                    <button onClick={() => oeffneMaps(detailFahrt)} style={{ marginTop: 10, width: '100%', padding: '8px', borderRadius: 8, border: `1px solid ${BLAU}33`, background: '#eff6ff', color: BLAU, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                      🗺️ Google Maps Route öffnen
+                    <button onClick={() => oeffneMaps(detailFahrt)} style={{ marginTop: 10, width: '100%', padding: '8px', borderRadius: 8, border: `1px solid ${BLAU}33`, background: 'var(--bf-card)', color: BLAU, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      Google Maps Route öffnen
                     </button>
                   )}
                 </div>
@@ -1315,13 +1314,12 @@ export default function KMBuch() {
               {/* Details Zeilen */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {[
-                  { icon: '📏', label: 'km gefahren', value: `${Number(detailFahrt.km_gefahren).toFixed(1)} km` },
-                  { icon: '💰', label: 'KM-Geld', value: `€ ${fmt(Number(detailFahrt.km_gefahren) * kmSatz)} (${Number(detailFahrt.km_gefahren).toFixed(1)} × € ${kmSatz.toFixed(4)})` },
-                  detailFahrt.km_start ? { icon: '🔢', label: 'KM-Stand', value: `${detailFahrt.km_start} → ${detailFahrt.km_ende || '?'}` } : null,
-                  detailFahrt.notiz ? { icon: '📝', label: 'Notiz', value: detailFahrt.notiz } : null,
-                  detailFahrt.rechnung_nummer ? { icon: detailFahrt.rechnung_typ === 'angebot' ? '📝' : '🧾', label: 'Rechnung / Angebot', value: `${detailFahrt.rechnung_nummer}${detailFahrt.rechnung_projekt ? ' – ' + detailFahrt.rechnung_projekt : ''}${detailFahrt.rechnung_kunde ? ' · ' + detailFahrt.rechnung_kunde : ''}` } : null,
+                  { label: 'km gefahren', value: `${Number(detailFahrt.km_gefahren).toFixed(1)} km` },
+                  { label: 'KM-Geld', value: `€ ${fmt(Number(detailFahrt.km_gefahren) * kmSatz)} (${Number(detailFahrt.km_gefahren).toFixed(1)} × € ${kmSatz.toFixed(4)})` },
+                  detailFahrt.km_start ? { label: 'KM-Stand', value: `${detailFahrt.km_start} → ${detailFahrt.km_ende || '?'}` } : null,
+                  detailFahrt.notiz ? { label: 'Notiz', value: detailFahrt.notiz } : null,
+                  detailFahrt.rechnung_nummer ? { label: 'Rechnung / Angebot', value: `${detailFahrt.rechnung_nummer}${detailFahrt.rechnung_projekt ? ' – ' + detailFahrt.rechnung_projekt : ''}${detailFahrt.rechnung_kunde ? ' · ' + detailFahrt.rechnung_kunde : ''}` } : null,
                   (detailFahrt.beleg_id && (detailFahrt.beleg_beschreibung || detailFahrt.beleg_dateiname)) ? {
-                    icon: '🧾',
                     label: 'G&V-Beleg',
                     value: [
                       detailFahrt.beleg_beschreibung || detailFahrt.beleg_dateiname,
@@ -1332,10 +1330,9 @@ export default function KMBuch() {
                   } : null,
                 ].filter(Boolean).map((row: any) => (
                   <div key={row.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{row.icon}</span>
                     <div>
-                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#aaa', fontWeight: 700, marginBottom: 2 }}>{row.label}</div>
-                      <div style={{ fontSize: 13, color: '#1a2a3a', fontWeight: 500 }}>{row.value}</div>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bf-text-muted)', fontWeight: 700, marginBottom: 2 }}>{row.label}</div>
+                      <div style={{ fontSize: 13, color: 'var(--bf-text)', fontWeight: 500 }}>{row.value}</div>
                     </div>
                   </div>
                 ))}
@@ -1344,40 +1341,40 @@ export default function KMBuch() {
               {/* G&V Status */}
               <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 10, background: detailFahrt.in_guv ? '#d1fae5' : '#fdf8f0', border: `1px solid ${detailFahrt.in_guv ? '#a7f3d0' : GOLD + '44'}` }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: detailFahrt.in_guv ? GRUEN : GOLD }}>
-                  {detailFahrt.in_guv ? '✅ In G&V übertragen' : '⏳ Noch nicht in G&V'}
+                  {detailFahrt.in_guv ? 'In G&V übertragen' : 'Noch nicht in G&V'}
                 </div>
               </div>
 
               {/* Beweis / Foto */}
-              <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 10, background: detailFahrt.beweis_name ? '#f0fdf4' : '#fafaf8', border: `1px solid ${detailFahrt.beweis_name ? '#a7f3d044' : '#f0ece4'}` }}>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: detailFahrt.beweis_name ? GRUEN : '#ccc', marginBottom: 8 }}>
-                  📎 Fahrtbeweis
+              <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 10, background: detailFahrt.beweis_name ? '#f0fdf4' : 'var(--bf-soft)', border: `1px solid ${detailFahrt.beweis_name ? '#a7f3d044' : 'var(--bf-border)'}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: detailFahrt.beweis_name ? GRUEN : 'var(--bf-text-muted)', marginBottom: 8 }}>
+                  Fahrtbeweis
                 </div>
                 {detailFahrt.beweis_name ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 22 }}>
-                      {detailFahrt.beweis_typ?.startsWith('image/') ? '🖼️' : detailFahrt.beweis_typ?.includes('pdf') ? '📄' : '📎'}
+                    <span style={{ color: GRUEN, display: 'flex', alignItems: 'center' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {detailFahrt.beweis_name}
                       </div>
-                      <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>Finanzamt-Nachweis angehängt</div>
+                      <div style={{ fontSize: 10, color: '#666', marginTop: 1 }}>Finanzamt-Nachweis angehängt</div>
                     </div>
                     <button
                       onClick={() => zeigeBeweis(detailFahrt)}
                       disabled={beweisLaden}
                       style={{ background: GRUEN, color: 'white', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: beweisLaden ? 0.6 : 1 }}>
-                      {beweisLaden ? '⏳' : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:4}}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Anzeigen</>}
+                      {beweisLaden ? 'Lädt...' : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:4}}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Anzeigen</>}
                     </button>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 12, color: '#bbb' }}>
+                  <div style={{ fontSize: 12, color: 'var(--bf-text-muted)' }}>
                     Kein Beweis angehängt ·{' '}
                     <span
                       style={{ color: BLAU, cursor: 'pointer', fontWeight: 600 }}
                       onClick={() => { setDetailFahrt(null); oeffneForm(detailFahrt) }}>
-                      Jetzt hinzufügen ✏️
+                      Jetzt hinzufügen
                     </span>
                   </div>
                 )}
@@ -1385,20 +1382,20 @@ export default function KMBuch() {
             </div>
 
             {/* Footer Aktionen */}
-            <div style={{ padding: '14px 22px', borderTop: '1px solid #f0ece4', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ padding: '14px 22px', borderTop: '1px solid var(--bf-divider)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={() => { setDetailFahrt(null); oeffneForm(detailFahrt) }}
-                style={{ flex: 1, padding: '10px', borderRadius: 9, border: '1.5px solid #e5e0d8', background: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#555' }}>
-                ✏️ Bearbeiten
+                style={{ ...btnSecondary, flex: 1, padding: '10px' }}>
+                Bearbeiten
               </button>
               {!detailFahrt.in_guv && (
                 <button onClick={() => { zuGuv(detailFahrt); setDetailFahrt(null) }}
-                  style={{ flex: 1, padding: '10px', borderRadius: 9, border: `1.5px solid ${GOLD}66`, background: '#fdf8f0', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: GOLD }}>
+                  style={{ ...btnSecondary, flex: 1, padding: '10px', border: `1.5px solid ${GOLD}66`, color: GOLD, fontWeight: 700 }}>
                   ↓ Zu G&V übertragen
                 </button>
               )}
               <button onClick={() => { setDetailFahrt(null); loeschen(detailFahrt.id) }}
-                style={{ padding: '10px 16px', borderRadius: 9, border: '1.5px solid #fde8e6', background: 'white', fontSize: 13, cursor: 'pointer', color: ROT }}>
-                🗑
+                style={{ ...btnSecondary, padding: '10px 16px', color: ROT, borderColor: 'rgba(239,68,68,0.35)' }}>
+                Löschen
               </button>
             </div>
           </div>
@@ -1411,26 +1408,24 @@ export default function KMBuch() {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1500 }} onClick={() => setConfirmModal(null)} />
           <div style={{
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-            background: 'white', borderRadius: 20, width: '90%', maxWidth: 380,
+            background: 'var(--bf-card)', borderRadius: 20, width: '90%', maxWidth: 380,
             boxShadow: '0 32px 80px rgba(0,0,0,0.35)', zIndex: 1501,
             fontFamily: 'DM Sans, sans-serif', overflow: 'hidden',
           }}>
             <div style={{ padding: '28px 24px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 44, marginBottom: 10 }}>🗑️</div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a2a3a', marginBottom: 8 }}>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: 'var(--bf-text)', marginBottom: 8 }}>
                 Wirklich löschen?
               </div>
-              <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 13, color: 'var(--bf-text-muted)', lineHeight: 1.6 }}>
                 {confirmModal.text}
               </div>
-              <div style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>
+              <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 6 }}>
                 Diese Aktion kann nicht rückgängig gemacht werden.
               </div>
             </div>
             <div style={{ padding: '12px 20px 22px', display: 'flex', gap: 10 }}>
               <button onClick={() => setConfirmModal(null)} style={{
-                flex: 1, padding: '12px', borderRadius: 10, border: '1.5px solid #e5e0d8',
-                background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555',
+                ...btnSecondary, flex: 1, padding: '12px', borderRadius: 10,
               }}>Abbrechen</button>
               <button onClick={confirmModal.onJa} style={{
                 flex: 1, padding: '12px', borderRadius: 10, border: 'none',
@@ -1446,13 +1441,13 @@ export default function KMBuch() {
       {formOffen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}
           onClick={() => setFormOffen(false)}>
-          <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.35)' }}
+          <div style={{ background: 'var(--bf-card)', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.35)' }}
             onClick={ev => ev.stopPropagation()}>
 
             {/* Modal-Header */}
             <div style={{ padding: '16px 22px', background: '#1a2a3a', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1, fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 800, color: 'white' }}>
-                🚗 {editFahrt ? 'Fahrt bearbeiten' : 'Neue Fahrt eintragen'}
+                {editFahrt ? 'Fahrt bearbeiten' : 'Neue Fahrt eintragen'}
               </div>
               <button onClick={() => setFormOffen(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
@@ -1462,13 +1457,13 @@ export default function KMBuch() {
 
               {/* Datum */}
               <div>
-                <label style={lbl}>📅 Datum der Fahrt *</label>
+                <label style={lbl}>Datum der Fahrt *</label>
                 <input type="date" value={form.datum} onChange={e => setForm(f => ({ ...f, datum: e.target.value }))} style={inp} />
               </div>
 
               {/* Startadresse */}
               <div>
-                <label style={lbl}>📍 Startadresse</label>
+                <label style={lbl}>Startadresse</label>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <div style={{ flex: 1, position: 'relative' }}>
                     <input
@@ -1477,16 +1472,16 @@ export default function KMBuch() {
                       onFocus={() => setStartFokus(true)}
                       onBlur={() => setTimeout(() => setStartFokus(false), 200)}
                       placeholder="z.B. Mariahilfer Straße 1, Wien"
-                      style={{ ...inp, borderColor: startKoord ? GRUEN : '#e5e0d8' }}
+                      style={{ ...inp, borderColor: startKoord ? GRUEN : 'var(--bf-input-border)' }}
                     />
                     {startVorschlaege.length > 0 && startFokus && (
-                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200, background: 'var(--bf-card)', borderRadius: 10, border: '1px solid var(--bf-border)', boxShadow: 'var(--bf-shadow)', overflow: 'hidden' }}>
                         {startVorschlaege.map((v, i) => (
                           <div key={i} onMouseDown={() => waehleStart(v)}
-                            style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: '#1a2a3a', borderBottom: '1px solid #f4f1eb' }}
-                            onMouseEnter={ev => ev.currentTarget.style.background = '#fdf8f0'}
-                            onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
-                            📍 {v.display_name}
+                            style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: 'var(--bf-text)', borderBottom: '1px solid var(--bf-divider)' }}
+                            onMouseEnter={ev => ev.currentTarget.style.background = 'var(--bf-hover)'}
+                            onMouseLeave={ev => ev.currentTarget.style.background = 'var(--bf-card)'}>
+                            {v.display_name}
                           </div>
                         ))}
                       </div>
@@ -1497,14 +1492,14 @@ export default function KMBuch() {
                     disabled={gpsLadenStart}
                     title="Aktuellen GPS-Standort als Startadresse übernehmen"
                     style={{
-                      padding: '0 12px', borderRadius: 10, border: `1px solid ${gpsLadenStart ? '#e5e0d8' : GRUEN + '66'}`,
-                      background: gpsLadenStart ? '#f4f1eb' : '#ecfdf5',
-                      color: gpsLadenStart ? '#aaa' : GRUEN,
+                      padding: '0 12px', borderRadius: 10, border: `1px solid ${gpsLadenStart ? 'var(--bf-border)' : GRUEN + '66'}`,
+                      background: gpsLadenStart ? 'var(--bf-soft)' : '#ecfdf5',
+                      color: gpsLadenStart ? 'var(--bf-text-muted)' : GRUEN,
                       cursor: gpsLadenStart ? 'default' : 'pointer',
-                      fontSize: 18, flexShrink: 0, display: 'flex', alignItems: 'center',
+                      fontSize: 12, fontWeight: 700, flexShrink: 0, display: 'flex', alignItems: 'center',
                       justifyContent: 'center', minWidth: 46, whiteSpace: 'nowrap',
                     }}>
-                    {gpsLadenStart ? '⏳' : '📍'}
+                    {gpsLadenStart ? '…' : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>}
                   </button>
                 </div>
                 {startKoord && <div style={{ fontSize: 10, color: GRUEN, marginTop: 3 }}>✓ Koordinaten gespeichert – Route kann berechnet werden</div>}
@@ -1512,7 +1507,7 @@ export default function KMBuch() {
 
               {/* Zieladresse */}
               <div>
-                <label style={lbl}>🏁 Zieladresse / Reiseziel</label>
+                <label style={lbl}>Zieladresse / Reiseziel</label>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <div style={{ flex: 1, position: 'relative' }}>
                     <input
@@ -1521,16 +1516,16 @@ export default function KMBuch() {
                       onFocus={() => setZielFokus(true)}
                       onBlur={() => setTimeout(() => setZielFokus(false), 200)}
                       placeholder="z.B. Hauptplatz 5, Graz"
-                      style={{ ...inp, borderColor: zielKoord ? GRUEN : '#e5e0d8' }}
+                      style={{ ...inp, borderColor: zielKoord ? GRUEN : 'var(--bf-input-border)' }}
                     />
                     {zielVorschlaege.length > 0 && zielFokus && (
-                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200, background: 'var(--bf-card)', borderRadius: 10, border: '1px solid var(--bf-border)', boxShadow: 'var(--bf-shadow)', overflow: 'hidden' }}>
                         {zielVorschlaege.map((v, i) => (
                           <div key={i} onMouseDown={() => waehleZiel(v)}
-                            style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: '#1a2a3a', borderBottom: '1px solid #f4f1eb' }}
-                            onMouseEnter={ev => ev.currentTarget.style.background = '#fdf8f0'}
-                            onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
-                            🏁 {v.display_name}
+                            style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: 'var(--bf-text)', borderBottom: '1px solid var(--bf-divider)' }}
+                            onMouseEnter={ev => ev.currentTarget.style.background = 'var(--bf-hover)'}
+                            onMouseLeave={ev => ev.currentTarget.style.background = 'var(--bf-card)'}>
+                            {v.display_name}
                           </div>
                         ))}
                       </div>
@@ -1541,14 +1536,14 @@ export default function KMBuch() {
                     disabled={gpsLadenZiel}
                     title="Wenn angekommen: aktuellen GPS-Standort als Zieladresse übernehmen"
                     style={{
-                      padding: '0 12px', borderRadius: 10, border: `1px solid ${gpsLadenZiel ? '#e5e0d8' : ROT + '66'}`,
-                      background: gpsLadenZiel ? '#f4f1eb' : '#fef2f2',
-                      color: gpsLadenZiel ? '#aaa' : ROT,
+                      padding: '0 12px', borderRadius: 10, border: `1px solid ${gpsLadenZiel ? 'var(--bf-border)' : ROT + '66'}`,
+                      background: gpsLadenZiel ? 'var(--bf-soft)' : '#fef2f2',
+                      color: gpsLadenZiel ? 'var(--bf-text-muted)' : ROT,
                       cursor: gpsLadenZiel ? 'default' : 'pointer',
-                      fontSize: 18, flexShrink: 0, display: 'flex', alignItems: 'center',
+                      fontSize: 12, fontWeight: 700, flexShrink: 0, display: 'flex', alignItems: 'center',
                       justifyContent: 'center', minWidth: 46, whiteSpace: 'nowrap',
                     }}>
-                    {gpsLadenZiel ? '⏳' : '🏁'}
+                    {gpsLadenZiel ? '…' : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>}
                   </button>
                 </div>
                 {zielKoord && <div style={{ fontSize: 10, color: GRUEN, marginTop: 3 }}>✓ Koordinaten gespeichert</div>}
@@ -1560,18 +1555,18 @@ export default function KMBuch() {
                   style={{
                     flex: 1, padding: '10px', borderRadius: 10, border: 'none',
                     cursor: startKoord && zielKoord ? 'pointer' : 'default',
-                    background: startKoord && zielKoord ? `linear-gradient(135deg, ${GOLD}, #e8c98e)` : '#f4f1eb',
-                    color: startKoord && zielKoord ? '#0a0a0a' : '#aaa',
+                    background: startKoord && zielKoord ? `linear-gradient(135deg, ${GOLD}, #e8c98e)` : 'var(--bf-soft)',
+                    color: startKoord && zielKoord ? '#0a0a0a' : 'var(--bf-text-muted)',
                     fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700,
                     boxShadow: startKoord && zielKoord ? '0 4px 14px rgba(200,169,110,0.3)' : 'none',
                   }}>
-                  {routeLaden ? '⏳ Berechne Route...' : '🗺️ km automatisch berechnen'}
+                  {routeLaden ? 'Berechne Route...' : 'km automatisch berechnen'}
                 </button>
                 {form.start_adresse && form.ziel_adresse && (
                   <button
                     onClick={() => window.open(`https://www.google.com/maps/dir/${encodeURIComponent(form.start_adresse)}/${encodeURIComponent(form.ziel_adresse)}`, '_blank')}
-                    style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid #e0ecff', background: '#f0f4ff', color: BLAU, cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                    📍 Maps
+                    style={{ padding: '10px 14px', borderRadius: 10, border: `1px solid ${BLAU}33`, background: 'var(--bf-soft)', color: BLAU, cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    Maps
                   </button>
                 )}
               </div>
@@ -1589,9 +1584,9 @@ export default function KMBuch() {
 
               {/* Trennlinie */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1, height: 1, background: '#f0ece4' }} />
-                <span style={{ fontSize: 10, color: '#ccc', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>oder manuell eingeben</span>
-                <div style={{ flex: 1, height: 1, background: '#f0ece4' }} />
+                <div style={{ flex: 1, height: 1, background: 'var(--bf-divider)' }} />
+                <span style={{ fontSize: 10, color: 'var(--bf-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>oder manuell eingeben</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--bf-divider)' }} />
               </div>
 
               {/* KM-Stand + km gefahren */}
@@ -1606,13 +1601,13 @@ export default function KMBuch() {
                 </div>
                 <div>
                   <label style={{ ...lbl, color: GOLD }}>km gefahren *</label>
-                  <input type="number" step="0.1" value={form.km_gefahren} onChange={e => setForm(f => ({ ...f, km_gefahren: e.target.value }))} placeholder="150.0" style={{ ...inp, borderColor: form.km_gefahren ? GOLD : '#e5e0d8', fontWeight: 700 }} />
+                  <input type="number" step="0.1" value={form.km_gefahren} onChange={e => setForm(f => ({ ...f, km_gefahren: e.target.value }))} placeholder="150.0" style={{ ...inp, borderColor: form.km_gefahren ? GOLD : 'var(--bf-input-border)', fontWeight: 700 }} />
                 </div>
               </div>
 
               {/* Zweck */}
               <div>
-                <label style={lbl}>🎯 Zweck der Fahrt *</label>
+                <label style={lbl}>Zweck der Fahrt *</label>
                 <input value={form.zweck} onChange={e => setForm(f => ({ ...f, zweck: e.target.value }))} placeholder="z.B. Kundenbesuch Firma Müller GmbH, Materialeinkauf Baumarkt" style={inp} />
               </div>
 
@@ -1624,17 +1619,16 @@ export default function KMBuch() {
 
               {/* ── G&V-Beleg verknüpfen ── */}
               <div style={{ position: 'relative' }}>
-                <label style={lbl}>🧾 G&V-Beleg verknüpfen (optional)</label>
-                <div style={{ fontSize: 10, color: '#bbb', marginBottom: 6 }}>Bereits in G&V übertragene Belege – als Nachweis für diese Fahrt</div>
+                <label style={lbl}>G&V-Beleg verknüpfen (optional)</label>
+                <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginBottom: 6 }}>Bereits in G&V übertragene Belege – als Nachweis für diese Fahrt</div>
                 {belegGewählt ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f0fdf4', border: `1px solid ${GRUEN}44`, borderRadius: 10 }}>
-                    <span style={{ fontSize: 18 }}>🧾</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {belegGewählt.beschreibung || belegGewählt.dateiname || 'Beleg'}
                       </div>
                       <div style={{ fontSize: 11, color: '#888', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {belegGewählt.lieferant && <span>📍 {belegGewählt.lieferant}</span>}
+                        {belegGewählt.lieferant && <span>{belegGewählt.lieferant}</span>}
                         {belegGewählt.betrag != null && <span>€ {Number(belegGewählt.betrag).toFixed(2)}</span>}
                         {belegGewählt.kategorie && <span style={{ background: '#e5e7eb', borderRadius: 4, padding: '1px 6px' }}>{belegGewählt.kategorie}</span>}
                       </div>
@@ -1653,23 +1647,22 @@ export default function KMBuch() {
                       style={inp}
                     />
                     {belegDropdownOffen && gefilterteBelege.length > 0 && (
-                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: 240, overflowY: 'auto' }}>
+                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 300, background: 'var(--bf-card)', borderRadius: 10, border: '1px solid var(--bf-border)', boxShadow: 'var(--bf-shadow)', overflow: 'hidden', maxHeight: 240, overflowY: 'auto' }}>
                         {gefilterteBelege.map(b => (
                           <div key={b.id}
                             onMouseDown={() => { setBelegGewählt(b); setBelegSuche(''); setBelegDropdownOffen(false) }}
-                            style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f4f1eb', display: 'flex', alignItems: 'flex-start', gap: 10 }}
-                            onMouseEnter={ev => ev.currentTarget.style.background = '#f0fdf4'}
-                            onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
-                            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>🧾</span>
+                            style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--bf-divider)', display: 'flex', alignItems: 'flex-start', gap: 10 }}
+                            onMouseEnter={ev => ev.currentTarget.style.background = 'var(--bf-hover)'}
+                            onMouseLeave={ev => ev.currentTarget.style.background = 'var(--bf-card)'}>
                             <div style={{ minWidth: 0, flex: 1 }}>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {b.beschreibung || b.dateiname || 'Beleg #' + b.id}
                               </div>
-                              <div style={{ fontSize: 11, color: '#aaa', display: 'flex', gap: 8 }}>
+                              <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', display: 'flex', gap: 8 }}>
                                 {b.lieferant && <span>{b.lieferant}</span>}
-                                {b.betrag != null && <span style={{ color: GOLD, fontWeight: 700 }}>€ {Number(b.betrag).toFixed(2)}</span>}
+                                {b.betrag != null && <span style={{ color: GOLD, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>€ {Number(b.betrag).toFixed(2)}</span>}
                                 {b.datum && <span>{new Date(b.datum).toLocaleDateString('de-AT')}</span>}
-                                {b.kategorie && <span style={{ background: '#f4f1eb', borderRadius: 4, padding: '0 5px' }}>{b.kategorie}</span>}
+                                {b.kategorie && <span style={{ background: 'var(--bf-soft)', borderRadius: 4, padding: '0 5px' }}>{b.kategorie}</span>}
                               </div>
                             </div>
                           </div>
@@ -1677,7 +1670,7 @@ export default function KMBuch() {
                       </div>
                     )}
                     {belegDropdownOffen && belegListe.length === 0 && (
-                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Keine G&V-Belege vorhanden – Belegscanner → erst zur G&V übertragen</div>
+                      <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 4 }}>Keine G&V-Belege vorhanden – Belegscanner → erst zur G&V übertragen</div>
                     )}
                   </div>
                 )}
@@ -1685,10 +1678,9 @@ export default function KMBuch() {
 
               {/* Zuordnung zu Rechnung / Angebot */}
               <div style={{ position: 'relative' }}>
-                <label style={lbl}>📋 Zuordnung – Rechnung / Angebot (optional)</label>
+                <label style={lbl}>Zuordnung – Rechnung / Angebot (optional)</label>
                 {rechnungGewählt ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#eff6ff', border: `1px solid ${BLAU}44`, borderRadius: 10 }}>
-                    <span style={{ fontSize: 18 }}>{rechnungGewählt.typ === 'angebot' ? '📝' : '🧾'}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2a3a' }}>{rechnungGewählt.nummer}</div>
                       {rechnungGewählt.projektName && <div style={{ fontSize: 11, color: '#888' }}>{rechnungGewählt.projektName}</div>}
@@ -1706,21 +1698,20 @@ export default function KMBuch() {
                       style={inp}
                     />
                     {rechnungDropdownOffen && gefilterteRechnungen.length > 0 && (
-                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 300, background: 'white', borderRadius: 10, border: '1px solid #e5e0d8', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: 220, overflowY: 'auto' }}>
+                      <div style={{ position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 300, background: 'var(--bf-card)', borderRadius: 10, border: '1px solid var(--bf-border)', boxShadow: 'var(--bf-shadow)', overflow: 'hidden', maxHeight: 220, overflowY: 'auto' }}>
                         {gefilterteRechnungen.map(r => {
                           const kunde = r.firma || [r.vorname, r.nachname].filter(Boolean).join(' ')
                           return (
                             <div key={r.id}
                               onMouseDown={() => { setRechnungGewählt(r); setRechnungSuche(''); setRechnungDropdownOffen(false) }}
-                              style={{ padding: '9px 14px', cursor: 'pointer', borderBottom: '1px solid #f4f1eb', display: 'flex', alignItems: 'center', gap: 10 }}
-                              onMouseEnter={ev => ev.currentTarget.style.background = '#eff6ff'}
-                              onMouseLeave={ev => ev.currentTarget.style.background = 'white'}>
-                              <span style={{ fontSize: 16, flexShrink: 0 }}>{r.typ === 'angebot' ? '📝' : '🧾'}</span>
+                              style={{ padding: '9px 14px', cursor: 'pointer', borderBottom: '1px solid var(--bf-divider)', display: 'flex', alignItems: 'center', gap: 10 }}
+                              onMouseEnter={ev => ev.currentTarget.style.background = 'var(--bf-hover)'}
+                              onMouseLeave={ev => ev.currentTarget.style.background = 'var(--bf-card)'}>
                               <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bf-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {r.nummer}{r.projektName ? ` – ${r.projektName}` : ''}
                                 </div>
-                                {kunde && <div style={{ fontSize: 11, color: '#aaa' }}>{kunde}</div>}
+                                {kunde && <div style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>{kunde}</div>}
                               </div>
                             </div>
                           )
@@ -1728,7 +1719,7 @@ export default function KMBuch() {
                       </div>
                     )}
                     {rechnungDropdownOffen && rechnungenListe.length === 0 && (
-                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Keine Rechnungen / Angebote vorhanden</div>
+                      <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 4 }}>Keine Rechnungen / Angebote vorhanden</div>
                     )}
                   </div>
                 )}
@@ -1736,19 +1727,19 @@ export default function KMBuch() {
 
               {/* ── Beweis / Foto-Anhang ── */}
               <div>
-                <label style={lbl}>📎 Fahrtbeweis (optional) – Foto / PDF / E-Mail</label>
+                <label style={lbl}>Fahrtbeweis (optional) – Foto / PDF / E-Mail</label>
                 {/* Vorschau wenn Datei geladen */}
                 {(beweisData || beweisName) && (
-                  <div style={{ marginBottom: 10, background: '#f8f6f2', borderRadius: 12, padding: '12px 14px', border: '1px solid #e5e0d8' }}>
+                  <div style={{ marginBottom: 10, background: 'var(--bf-soft)', borderRadius: 12, padding: '12px 14px', border: '1px solid var(--bf-border)' }}>
                     {beweisData && beweisTyp?.startsWith('image/') ? (
                       <img src={beweisData} alt="Beweis" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain', display: 'block', marginBottom: 8 }} />
                     ) : (
-                      <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 6 }}>
-                        {beweisTyp?.includes('pdf') ? '📄' : beweisTyp?.includes('image') ? '🖼️' : '📎'}
+                      <div style={{ textAlign: 'center', marginBottom: 6, color: 'var(--bf-text-muted)' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                       </div>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ flex: 1, fontSize: 12, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ flex: 1, fontSize: 12, color: 'var(--bf-text-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {beweisName || 'Datei angehängt'}
                         {!beweisData && beweisName && (
                           <span style={{ marginLeft: 6, fontSize: 10, color: GRUEN, fontWeight: 700 }}>✓ vorhanden</span>
@@ -1756,12 +1747,12 @@ export default function KMBuch() {
                       </span>
                       <button
                         onClick={() => { setBeweisData(null); setBeweisName(null); setBeweisTyp(null); setBeweisGeaendert(true) }}
-                        style={{ background: '#fef2f2', border: 'none', color: ROT, borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
-                        ✕ Entfernen
+                        style={{ background: 'var(--bf-card)', border: '1px solid rgba(239,68,68,0.35)', color: ROT, borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
+                        Entfernen
                       </button>
                     </div>
                     {!beweisData && beweisName && (
-                      <div style={{ fontSize: 10, color: '#aaa', marginTop: 4 }}>
+                      <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 4 }}>
                         Neues Foto hochladen um vorhandenen Beweis zu ersetzen
                       </div>
                     )}
@@ -1770,13 +1761,13 @@ export default function KMBuch() {
                 <label style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   padding: '12px', borderRadius: 10, cursor: 'pointer',
-                  border: `2px dashed ${beweisData || beweisName ? GRUEN : '#d1cdc7'}`,
-                  background: beweisData || beweisName ? '#f0fdf4' : '#fafaf8',
-                  color: beweisData || beweisName ? GRUEN : '#aaa',
+                  border: `2px dashed ${beweisData || beweisName ? GRUEN : 'var(--bf-border)'}`,
+                  background: beweisData || beweisName ? '#f0fdf4' : 'var(--bf-soft)',
+                  color: beweisData || beweisName ? GRUEN : 'var(--bf-text-muted)',
                   fontSize: 13, fontWeight: 700, transition: 'all 0.2s',
                 }}>
-                  <span style={{ fontSize: 18 }}>📷</span>
-                  {beweisData || beweisName ? '🔄 Anderen Beweis hochladen' : 'Foto / PDF / Screenshot hochladen'}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  {beweisData || beweisName ? 'Anderen Beweis hochladen' : 'Foto / PDF / Screenshot hochladen'}
                   <input
                     type="file"
                     accept="image/*,application/pdf,.pdf,.eml,.msg,.png,.jpg,.jpeg,.webp,.heic"
@@ -1784,20 +1775,20 @@ export default function KMBuch() {
                     style={{ display: 'none' }}
                   />
                 </label>
-                <div style={{ fontSize: 10, color: '#bbb', marginTop: 5 }}>
+                <div style={{ fontSize: 10, color: 'var(--bf-text-muted)', marginTop: 5 }}>
                   Foto, PDF, Screenshot als Nachweis fürs Finanzamt · max. 10 MB
                 </div>
               </div>
 
               {/* KM-Geld Vorschau */}
               {form.km_gefahren && !isNaN(parseFloat(form.km_gefahren)) && (
-                <div style={{ background: '#fdf8f0', border: `1px solid ${GOLD}44`, borderRadius: 12, padding: '14px 18px' }}>
+                <div style={{ background: 'var(--bf-soft)', border: `1px solid ${GOLD}44`, borderRadius: 12, padding: '14px 18px' }}>
                   <div style={{ fontSize: 10, color: GOLD, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>KM-Geld Vorschau</div>
-                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a2a3a' }}>
+                  <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: 'var(--bf-text)', fontVariantNumeric: 'tabular-nums' }}>
                     {parseFloat(form.km_gefahren).toFixed(1)} km × € {kmSatz.toFixed(4)} ={' '}
                     <span style={{ color: GOLD }}>€ {fmt(parseFloat(form.km_gefahren) * kmSatz)}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', marginTop: 4 }}>
                     Steuerfreies KM-Geld gem. § 26 EStG
                   </div>
                 </div>
@@ -1805,16 +1796,11 @@ export default function KMBuch() {
             </div>
 
             {/* Footer */}
-            <div style={{ padding: '14px 22px', borderTop: '1px solid #f0ece4', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setFormOffen(false)} style={{ background: '#f4f1eb', color: '#555', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            <div style={{ padding: '14px 22px', borderTop: '1px solid var(--bf-divider)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setFormOffen(false)} style={{ ...btnSecondary, padding: '10px 20px' }}>
                 Abbrechen
               </button>
-              <button onClick={speichern} style={{
-                background: `linear-gradient(135deg, ${GOLD}, #e8c98e)`, color: '#0a0a0a',
-                border: 'none', borderRadius: 10, padding: '10px 24px',
-                fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(200,169,110,0.35)',
-              }}>✓ Speichern</button>
+              <button onClick={speichern} style={{ ...btnPrimary, padding: '10px 24px' }}>Speichern</button>
             </div>
           </div>
         </div>
@@ -1827,11 +1813,11 @@ export default function KMBuch() {
             onClick={ev => ev.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
               <div style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                📎 {beweisModal.name}
+                {beweisModal.name}
               </div>
               <a href={beweisModal.data} download={beweisModal.name}
                 style={{ background: GOLD, color: '#0a0a0a', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}>
-                ⬇ Herunterladen
+                Herunterladen
               </a>
               <button onClick={() => setBeweisModal(null)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>
             </div>
@@ -1848,24 +1834,23 @@ export default function KMBuch() {
       {rueckfahrtModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}
           onClick={() => setRueckfahrtModal(null)}>
-          <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 420, padding: 28, boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}
+          <div style={{ background: 'var(--bf-card)', borderRadius: 20, width: '100%', maxWidth: 420, padding: 28, boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}
             onClick={ev => ev.stopPropagation()}>
 
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>🔄</div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: '#1a2a3a' }}>Rückfahrt eintragen?</div>
-              <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>Du hast heute bereits eine Fahrt eingetragen</div>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: 'var(--bf-text)' }}>Rückfahrt eintragen?</div>
+              <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 4 }}>Du hast heute bereits eine Fahrt eingetragen</div>
             </div>
 
             {/* Vorschau der heutigen Fahrt */}
-            <div style={{ background: '#f5f3ef', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
-              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8, color: '#aaa', fontWeight: 700, marginBottom: 8 }}>Letzte Fahrt heute</div>
+            <div style={{ background: 'var(--bf-soft)', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--bf-text-muted)', fontWeight: 700, marginBottom: 8 }}>Letzte Fahrt heute</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>📍 {rueckfahrtModal.vorlage.start_adresse || '—'}</div>
-                  <div style={{ fontSize: 11, color: '#888', margin: '3px 0' }}>↓ {rueckfahrtModal.vorlage.km_gefahren} km</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>🏁 {rueckfahrtModal.vorlage.ziel_adresse || '—'}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bf-text)' }}>{rueckfahrtModal.vorlage.start_adresse || '—'}</div>
+                  <div style={{ fontSize: 11, color: 'var(--bf-text-muted)', margin: '3px 0' }}>↓ {rueckfahrtModal.vorlage.km_gefahren} km</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bf-text)' }}>{rueckfahrtModal.vorlage.ziel_adresse || '—'}</div>
                 </div>
               </div>
             </div>
@@ -1873,15 +1858,15 @@ export default function KMBuch() {
             {/* Rückfahrt-Vorschau */}
             <div style={{ background: '#e8f5e9', borderRadius: 12, padding: '14px 16px', marginBottom: 24, border: '1.5px solid #a5d6a7' }}>
               <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8, color: '#2e7d32', fontWeight: 700, marginBottom: 8 }}>Rückfahrt (wird eingetragen)</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>📍 {rueckfahrtModal.vorlage.ziel_adresse || '—'}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>{rueckfahrtModal.vorlage.ziel_adresse || '—'}</div>
               <div style={{ fontSize: 11, color: '#888', margin: '3px 0' }}>↓ {rueckfahrtModal.vorlage.km_gefahren} km</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>🏁 {rueckfahrtModal.vorlage.start_adresse || '—'}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2a3a' }}>{rueckfahrtModal.vorlage.start_adresse || '—'}</div>
             </div>
 
             {/* Buttons */}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => { setRueckfahrtModal(null); oeffneFormNeu() }}
-                style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #e5e0d8', background: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555' }}>
+                style={{ ...btnSecondary, flex: 1, padding: '11px' }}>
                 + Neue Fahrt
               </button>
               <button onClick={() => oeffneRueckfahrt(rueckfahrtModal.vorlage)}
