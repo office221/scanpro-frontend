@@ -115,6 +115,16 @@ export default function Angebote() {
     }
   }, [formOffen])
 
+  // Textzeilen-Textareas an den Inhalt anpassen — auch beim Öffnen eines
+  // bestehenden Angebots (nicht nur beim Tippen)
+  useEffect(() => {
+    if (!formOffen) return
+    document.querySelectorAll<HTMLTextAreaElement>('textarea.bf-autogrow').forEach(el => {
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+    })
+  }, [formOffen, positionen])
+
   useEffect(() => {
     api.get('/kunden').then(r => setKunden(r.data))
     angeboteLaden()
@@ -662,7 +672,7 @@ export default function Angebote() {
                         <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
                           style={{background: idx === positionen.length - 1 ? 'var(--bf-soft)' : 'var(--bf-divider)', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
-                      <textarea
+                      <textarea className="bf-autogrow"
                         style={{...inputStyle, resize:'none', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'var(--bf-soft)', borderColor:'var(--bf-input-border)', color:'var(--bf-text)'}}
                         placeholder="Zwischentitel / Abschnittsbezeichnung..."
                         rows={1}

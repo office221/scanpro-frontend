@@ -137,6 +137,16 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     }
   }, [formOffen])
 
+  // Positions-Textareas an den Inhalt anpassen — auch beim Öffnen einer
+  // bestehenden Rechnung und nach Vorlagen-Einfügen (nicht nur beim Tippen)
+  useEffect(() => {
+    if (!formOffen) return
+    document.querySelectorAll<HTMLTextAreaElement>('textarea.bf-autogrow').forEach(el => {
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+    })
+  }, [formOffen, positionen, vollbild])
+
   // Auto-load stunden wenn von Stundenliste navigiert
   useEffect(() => {
     const pid = sessionStorage.getItem('stundenProjektId')
@@ -848,8 +858,8 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                         <button onClick={() => positionVerschieben(idx, 'runter')} disabled={idx === positionen.length - 1} title="Nach unten"
                           style={{background: idx === positionen.length - 1 ? 'var(--bf-soft)' : 'var(--bf-hover)', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
-                      <textarea
-                        style={{...inputStyle, resize:'vertical', overflow:'auto', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'var(--bf-soft)', borderColor:'var(--bf-input-border)', color:'var(--bf-text)'}}
+                      <textarea className="bf-autogrow"
+                        style={{...inputStyle, resize:'vertical', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block', fontWeight:700, background:'var(--bf-soft)', borderColor:'var(--bf-input-border)', color:'var(--bf-text)'}}
                         placeholder="Zwischentitel / Abschnittsbezeichnung..."
                         rows={1}
                         value={pos.beschreibung}
@@ -868,7 +878,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                           style={{background: idx === positionen.length - 1 ? 'var(--bf-soft)' : 'var(--bf-hover)', border:'none', borderRadius:4, height:17, cursor: idx === positionen.length - 1 ? 'default' : 'pointer', color: idx === positionen.length - 1 ? 'var(--bf-text-muted)' : 'var(--bf-text-soft)', fontSize:9, lineHeight:1, padding:0}}>▼</button>
                       </div>
                       <div style={{flex:1, minWidth:80, position:'relative'}}>
-                        <textarea style={{...inputStyle, resize:'vertical', overflow:'auto', lineHeight:'20px', minHeight:38, display:'block'}}
+                        <textarea className="bf-autogrow" style={{...inputStyle, resize:'vertical', overflow:'hidden', lineHeight:'20px', minHeight:38, display:'block'}}
                           placeholder="Beschreibung..."
                           rows={1}
                           value={pos.beschreibung}
