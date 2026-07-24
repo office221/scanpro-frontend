@@ -9,7 +9,7 @@
 
 GitHub-Zugang eingerichtet (gh als office221, `gh auth setup-git` konfiguriert).
 
-**Design-Umbau (Hell/Dunkel-Tokens, Emojis raus, einheitliche Buttons) — 16.07.2026 abgeschlossen:** Alle 18 Seiten in src/seiten/ auf DESIGN-TOKENS.md umgestellt (zuletzt ImmoObjektDetail.tsx, KMBuch.tsx + Rest-Aufräumer). `tsc --noEmit` und `npm run build` fehlerfrei. Preview-Deploy: https://frontend-mkwkq93ra-office221s-projects.vercel.app . Änderungen liegen NUR im Working Tree (nicht committet/gepusht, nicht in Prod).
+**Design-Umbau (Hell/Dunkel-Tokens, Emojis raus, einheitliche Buttons) — 16.07.2026 abgeschlossen, 17.07.2026 LIVE:** Alle 18 Seiten in src/seiten/ auf DESIGN-TOKENS.md umgestellt (zuletzt ImmoObjektDetail.tsx, KMBuch.tsx + Rest-Aufräumer). `tsc --noEmit` und `npm run build` fehlerfrei. Commit b5edf45 auf Branch fix/auto-logout-401 (lokal, noch NICHT nach origin gepusht). Production-Deploy 17.07.2026 (frontend-c6t32fh0w) → live auf frontend-phi-six-46.vercel.app. Enthält auch den bisherigen Branch-Stand (401-Auto-Logout, Dashboard-Finanzkarte, Kunden-Häkchen nameAufRechnung).
 
 **Wartet auf Freigabe des Users (Deploy-Reihenfolge: erst Backend, dann Frontend):**
 1. Backend-Branch `feature/name-auf-rechnung` (gepusht) → auf main mergen → Railway deployt automatisch, sequelize.sync legt Spalte `nameAufRechnung` an
