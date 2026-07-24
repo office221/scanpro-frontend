@@ -96,6 +96,10 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   const [projektAdresse, setProjektAdresse] = useState('')
   const [datum, setDatum] = useState(new Date().toISOString().split('T')[0])
   const [faelligBis, setFaelligBis] = useState('')
+  // Leistungsdatum / -zeitraum (Pflichtangabe § 11 UStG)
+  const [leistungVon, setLeistungVon] = useState('')
+  const [leistungBis, setLeistungBis] = useState('')
+  const [toast, setToast] = useState('')
   const [istKleinunternehmer, setIstKleinunternehmer] = useState(true)
   const [positionen, setPositionen] = useState<Position[]>([
     { typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }
@@ -196,8 +200,10 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     setSelectedKunde(null)
     setProjektName('')
     setProjektAdresse('')
-    setFaelligBis('')
+    setFaelligBis(faelligkeitBerechnen(new Date().toISOString().split('T')[0], 'standard'))
     setDatum(new Date().toISOString().split('T')[0])
+    setLeistungVon('')
+    setLeistungBis('')
     setPositionen([{ uid: newUid(), typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
     setRabattProzent(0)
     setSkontoAktiv(false)
@@ -206,6 +212,19 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     setZahlungsModus('standard')
     setZahlungsEigenText('')
     setBearbeitenId(null)
+  }
+
+  // Fälligkeit automatisch aus Rechnungsdatum + Zahlungsziel berechnen
+  const ZAHLUNGS_TAGE: Record<string, number> = { standard: 14, '7tage': 7, '14tage': 14, '30tage': 30, sofort: 0 }
+  const faelligkeitBerechnen = (basisDatum: string, modus: string): string => {
+    const tage = ZAHLUNGS_TAGE[modus]
+    if (tage === undefined || !basisDatum) return ''
+    // lokal rechnen, kein toISOString (das würde bei UTC+2 einen Tag zurückspringen)
+    const [j, m, t] = basisDatum.split('-').map(Number)
+    if (!j || !m || !t) return ''
+    const d = new Date(j, m - 1, t + tage)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   }
 
   const zahlungsModusErkennen = (wert: string | null) => {
@@ -226,7 +245,10 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setProjektName(r.projektName || '')
       setProjektAdresse(r.projektAdresse || '')
       setDatum(r.datum?.split('T')[0] || new Date().toISOString().split('T')[0])
-      setFaelligBis(r.faelligBis?.split('T')[0] || '')
+      const zmVorab = zahlungsModusErkennen(r.zahlungshinweis)
+      setFaelligBis(r.faelligBis?.split('T')[0] || faelligkeitBerechnen(r.datum?.split('T')[0] || '', zmVorab.modus))
+      setLeistungVon(r.leistungVon?.split('T')[0] || '')
+      setLeistungBis(r.leistungBis?.split('T')[0] || '')
       setIstKleinunternehmer(r.istKleinunternehmer)
       setRabattProzent(r.rabattProzent || 0)
       setSkontoAktiv(r.skontoProzent > 0)
@@ -254,7 +276,12 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setProjektAdresse(rechnung.projektAdresse || '')
       setIstKleinunternehmer(rechnung.istKleinunternehmer)
       setDatum(new Date().toISOString().split('T')[0])
-      setFaelligBis('')
+      const zmDup = zahlungsModusErkennen(rechnung.zahlungshinweis)
+      setZahlungsModus(zmDup.modus)
+      setZahlungsEigenText(zmDup.eigen)
+      setFaelligBis(faelligkeitBerechnen(new Date().toISOString().split('T')[0], zmDup.modus))
+      setLeistungVon('')
+      setLeistungBis('')
       setRabattProzent(rechnung.rabattProzent || 0)
       setSkontoAktiv(rechnung.skontoProzent > 0)
       setSkontoProzent(rechnung.skontoProzent || 2)
@@ -517,9 +544,12 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
         projektAdresse,
         datum,
         faelligBis: faelligBis || null,
+        leistungVon: leistungVon || null,
+        leistungBis: leistungBis || null,
         gueltigBis: null,
         istKleinunternehmer,
-        status: 'Entwurf',
+        // Status nur bei Neuanlage setzen — beim Bearbeiten nicht auf Entwurf zurückwerfen
+        ...(bearbeitenId ? {} : { status: 'Entwurf' }),
         rabattProzent: rabattProzent || 0,
         skontoProzent: skontoAktiv ? skontoProzent : 0,
         skontoTage: skontoAktiv ? skontoTage : 0,
@@ -532,14 +562,19 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
           zahlungsEigenText,
         positionen
       }
+      let meldung = ''
       if (bearbeitenId) {
         await api.put(`/rechnungen/${bearbeitenId}`, daten)
+        meldung = 'Rechnung aktualisiert ✓'
       } else {
-        await api.post('/rechnungen', daten)
+        const res = await api.post('/rechnungen', daten)
+        meldung = `Rechnung ${res.data?.nummer || ''} gespeichert ✓`.replace('  ', ' ')
       }
       setFormOffen(false)
       formLeeren()
       rechnungenLaden()
+      setToast(meldung)
+      setTimeout(() => setToast(''), 3500)
     } catch (fehler: any) {
       alert('Fehler: ' + (fehler.response?.data?.fehler || fehler.message))
     }
@@ -550,6 +585,11 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      {toast && (
+        <div style={{position:'fixed', bottom:24, right:24, background:'#10b981', color:'white', padding:'12px 20px', borderRadius:10, fontSize:13, fontWeight:600, zIndex:20000, boxShadow:'0 8px 24px rgba(0,0,0,0.25)', display:'flex', alignItems:'center', gap:8}}>
+          {toast}
+        </div>
+      )}
 
       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
         <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'var(--bf-text-muted)'}}>Alle Rechnungen</div>
@@ -798,18 +838,36 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                 <div>
                   <label style={labelStyle}>Datum</label>
                   <input style={inputStyle} type="date"
-                    value={datum} onChange={e => setDatum(e.target.value)} />
+                    value={datum} onChange={e => {
+                      setDatum(e.target.value)
+                      const neu = faelligkeitBerechnen(e.target.value, zahlungsModus)
+                      if (neu) setFaelligBis(neu)
+                    }} />
                 </div>
                 <div>
                   <label style={labelStyle}>Fällig bis</label>
                   <input style={inputStyle} type="date"
                     value={faelligBis} onChange={e => setFaelligBis(e.target.value)} />
                 </div>
+                <div>
+                  <label style={labelStyle}>Leistungsdatum / Zeitraum von</label>
+                  <input style={inputStyle} type="date"
+                    value={leistungVon} onChange={e => setLeistungVon(e.target.value)} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Leistungszeitraum bis (optional)</label>
+                  <input style={inputStyle} type="date"
+                    value={leistungBis} onChange={e => setLeistungBis(e.target.value)} />
+                </div>
                 <div style={{gridColumn:'1 / -1'}}>
                   <label style={labelStyle}>Zahlungsbedingungen im PDF</label>
                   <select style={{...inputStyle, background:'var(--bf-input-bg)'}}
                     value={zahlungsModus}
-                    onChange={e => setZahlungsModus(e.target.value)}>
+                    onChange={e => {
+                      setZahlungsModus(e.target.value)
+                      const neu = faelligkeitBerechnen(datum, e.target.value)
+                      if (neu) setFaelligBis(neu)
+                    }}>
                     <option value="standard">Standard – 14 Tage nach Rechnungserhalt</option>
                     <option value="7tage">7 Tage nach Rechnungserhalt</option>
                     <option value="14tage">14 Tage nach Rechnungserhalt</option>
