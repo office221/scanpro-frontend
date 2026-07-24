@@ -234,6 +234,15 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     '--bf-shadow':       D ? '0 8px 32px rgba(0,0,0,0.3)' : '0 4px 24px rgba(0,0,0,0.07)',
   } as React.CSSProperties
 
+  // Tokens zusätzlich auf <html> setzen, damit auch Portale (createPortal →
+  // document.body, z. B. das Rechnungs-Formular) die Variablen erben —
+  // sonst fällt var(--bf-card) dort auf transparent zurück.
+  useEffect(() => {
+    const root = document.documentElement
+    Object.entries(bfVars).forEach(([k, v]) => root.style.setProperty(k, String(v)))
+    return () => { Object.keys(bfVars).forEach(k => root.style.removeProperty(k)) }
+  }, [D]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const statusChip = (status: string) => {
     const s = (theme.statusCfg as any)[status] || (theme.statusCfg as any)['Entwurf']
     return (
