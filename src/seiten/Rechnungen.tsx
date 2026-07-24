@@ -99,6 +99,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
   // Leistungsdatum / -zeitraum (Pflichtangabe § 11 UStG)
   const [leistungVon, setLeistungVon] = useState('')
   const [leistungBis, setLeistungBis] = useState('')
+  const [projektAdresseAnzeigen, setProjektAdresseAnzeigen] = useState(true)
   const [toast, setToast] = useState('')
   const [istKleinunternehmer, setIstKleinunternehmer] = useState(true)
   const [positionen, setPositionen] = useState<Position[]>([
@@ -204,6 +205,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
     setDatum(new Date().toISOString().split('T')[0])
     setLeistungVon('')
     setLeistungBis('')
+    setProjektAdresseAnzeigen(true)
     setPositionen([{ uid: newUid(), typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
     setRabattProzent(0)
     setSkontoAktiv(false)
@@ -249,6 +251,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setFaelligBis(r.faelligBis?.split('T')[0] || faelligkeitBerechnen(r.datum?.split('T')[0] || '', zmVorab.modus))
       setLeistungVon(r.leistungVon?.split('T')[0] || '')
       setLeistungBis(r.leistungBis?.split('T')[0] || '')
+      setProjektAdresseAnzeigen(r.projektAdresseAnzeigen !== false)
       setIstKleinunternehmer(r.istKleinunternehmer)
       setRabattProzent(r.rabattProzent || 0)
       setSkontoAktiv(r.skontoProzent > 0)
@@ -276,6 +279,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
       setProjektAdresse(rechnung.projektAdresse || '')
       setIstKleinunternehmer(rechnung.istKleinunternehmer)
       setDatum(new Date().toISOString().split('T')[0])
+      setProjektAdresseAnzeigen(rechnung.projektAdresseAnzeigen !== false)
       const zmDup = zahlungsModusErkennen(rechnung.zahlungshinweis)
       setZahlungsModus(zmDup.modus)
       setZahlungsEigenText(zmDup.eigen)
@@ -546,6 +550,7 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
         faelligBis: faelligBis || null,
         leistungVon: leistungVon || null,
         leistungBis: leistungBis || null,
+        projektAdresseAnzeigen,
         gueltigBis: null,
         istKleinunternehmer,
         // Status nur bei Neuanlage setzen — beim Bearbeiten nicht auf Entwurf zurückwerfen
@@ -834,6 +839,11 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                   <label style={labelStyle}>Projektadresse</label>
                   <input style={inputStyle} placeholder="Straße, PLZ Ort"
                     value={projektAdresse} onChange={e => setProjektAdresse(e.target.value)} />
+                  <label style={{display:'flex', alignItems:'center', gap:6, marginTop:6, fontSize:11.5, color:'var(--bf-text-muted)', cursor:'pointer', userSelect:'none'}}>
+                    <input type="checkbox" checked={projektAdresseAnzeigen}
+                      onChange={e => setProjektAdresseAnzeigen(e.target.checked)} />
+                    📍 Adresse im PDF anzeigen (aus, wenn sie schon im Projektnamen steht)
+                  </label>
                 </div>
                 <div>
                   <label style={labelStyle}>Datum</label>

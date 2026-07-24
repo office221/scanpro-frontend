@@ -67,6 +67,7 @@ export default function Angebote() {
   const [selectedKunde, setSelectedKunde] = useState<number | null>(null)
   const [projektName, setProjektName] = useState('')
   const [projektAdresse, setProjektAdresse] = useState('')
+  const [projektAdresseAnzeigen, setProjektAdresseAnzeigen] = useState(true)
   const [datum, setDatum] = useState(new Date().toISOString().split('T')[0])
   const [gueltigBis, setGueltigBis] = useState('')
   const [toast, setToast] = useState('')
@@ -149,6 +150,7 @@ export default function Angebote() {
     setSelectedKunde(null)
     setProjektName('')
     setProjektAdresse('')
+    setProjektAdresseAnzeigen(true)
     setGueltigBis(datumPlusTage(new Date().toISOString().split('T')[0], 14))
     setDatum(new Date().toISOString().split('T')[0])
     setPositionen([{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
@@ -312,6 +314,7 @@ export default function Angebote() {
         kundeId: selectedKunde,
         projektName,
         projektAdresse,
+        projektAdresseAnzeigen,
         datum,
         gueltigBis: gueltigBis || null,
         faelligBis: null,
@@ -370,6 +373,7 @@ export default function Angebote() {
         kundeId: angebot.kundeId,
         projektName: angebot.projektName,
         projektAdresse: angebot.projektAdresse,
+        projektAdresseAnzeigen: angebot.projektAdresseAnzeigen !== false,
         datum: heuteStr,
         faelligBis: datumPlusTage(heuteStr, zielTage),
         gueltigBis: null,
@@ -411,6 +415,7 @@ export default function Angebote() {
       setSelectedKunde(a.kundeId)
       setProjektName(a.projektName || '')
       setProjektAdresse(a.projektAdresse || '')
+      setProjektAdresseAnzeigen(a.projektAdresseAnzeigen !== false)
       setDatum(a.datum?.split('T')[0] || new Date().toISOString().split('T')[0])
       setGueltigBis(a.gueltigBis?.split('T')[0] || '')
       setIstKleinunternehmer(a.istKleinunternehmer)
@@ -646,6 +651,11 @@ export default function Angebote() {
                   <label style={labelStyle}>Projektadresse</label>
                   <input style={inputStyle} placeholder="Straße, PLZ Ort"
                     value={projektAdresse} onChange={e => setProjektAdresse(e.target.value)} />
+                  <label style={{display:'flex', alignItems:'center', gap:6, marginTop:6, fontSize:11.5, color:'var(--bf-text-muted)', cursor:'pointer', userSelect:'none'}}>
+                    <input type="checkbox" checked={projektAdresseAnzeigen}
+                      onChange={e => setProjektAdresseAnzeigen(e.target.checked)} />
+                    📍 Adresse im PDF anzeigen (aus, wenn sie schon im Projektnamen steht)
+                  </label>
                 </div>
                 <div>
                   <label style={labelStyle}>Datum</label>
