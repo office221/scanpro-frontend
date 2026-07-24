@@ -69,6 +69,7 @@ export default function Angebote() {
   const [projektAdresse, setProjektAdresse] = useState('')
   const [datum, setDatum] = useState(new Date().toISOString().split('T')[0])
   const [gueltigBis, setGueltigBis] = useState('')
+  const [toast, setToast] = useState('')
   const [istKleinunternehmer, setIstKleinunternehmer] = useState(true)
   const [positionen, setPositionen] = useState<Position[]>([
     { typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }
@@ -135,11 +136,20 @@ export default function Angebote() {
     setAngebote(r.data.filter((x: any) => x.typ === 'Angebot'))
   }
 
+  // Datum + n Tage, lokal gerechnet (kein toISOString — Zeitzonen-Falle)
+  const datumPlusTage = (basisDatum: string, tage: number): string => {
+    const [j, m, t] = basisDatum.split('-').map(Number)
+    if (!j || !m || !t) return ''
+    const d = new Date(j, m - 1, t + tage)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+
   const formLeeren = () => {
     setSelectedKunde(null)
     setProjektName('')
     setProjektAdresse('')
-    setGueltigBis('')
+    setGueltigBis(datumPlusTage(new Date().toISOString().split('T')[0], 14))
     setDatum(new Date().toISOString().split('T')[0])
     setPositionen([{ typ: 'Normal', beschreibung: '', menge: 1, einheit: 'PA', einzelpreis: 0 }])
     setRabattProzent(0)
@@ -306,7 +316,8 @@ export default function Angebote() {
         gueltigBis: gueltigBis || null,
         faelligBis: null,
         istKleinunternehmer,
-        status: 'Entwurf',
+        // Status nur bei Neuanlage setzen — beim Bearbeiten nicht auf Entwurf zurückwerfen
+        ...(bearbeitenId ? {} : { status: 'Entwurf' }),
         rabattProzent: rabattProzent || 0,
         rabattBeschreibung: rabattBeschreibung || 'Rabatt',
         sonderangebot,
@@ -318,14 +329,19 @@ export default function Angebote() {
         abschlusstext,
         positionen
       }
+      let meldung = ''
       if (bearbeitenId) {
         await api.put(`/rechnungen/${bearbeitenId}`, daten)
+        meldung = 'Angebot aktualisiert ✓'
       } else {
-        await api.post('/rechnungen', daten)
+        const res = await api.post('/rechnungen', daten)
+        meldung = `Angebot ${res.data?.nummer || ''} gespeichert ✓`.replace('  ', ' ')
       }
       setFormOffen(false)
       formLeeren()
       angeboteLaden()
+      setToast(meldung)
+      setTimeout(() => setToast(''), 3500)
     } catch (fehler: any) {
       alert('Fehler: ' + (fehler.response?.data?.fehler || fehler.message))
     }
@@ -345,20 +361,33 @@ export default function Angebote() {
     if (!window.confirm(`Angebot ${angebot.nummer} zu Rechnung konvertieren?`)) return
     try {
       const posRes = await api.get(`/rechnungen/${angebot.id}/positionen`)
-      await api.post('/rechnungen', {
+      // Zahlungsziel des Angebots übernehmen und Fälligkeit daraus berechnen
+      const zmKonv = zahlungsModusErkennen(angebot.zahlungshinweis)
+      const zielTage = zmKonv.modus === '7tage' ? 7 : 14
+      const heuteStr = new Date().toISOString().split('T')[0]
+      const neu = await api.post('/rechnungen', {
         typ: 'Rechnung',
         kundeId: angebot.kundeId,
         projektName: angebot.projektName,
         projektAdresse: angebot.projektAdresse,
-        datum: new Date().toISOString().split('T')[0],
-        faelligBis: null,
+        datum: heuteStr,
+        faelligBis: datumPlusTage(heuteStr, zielTage),
         gueltigBis: null,
         istKleinunternehmer: angebot.istKleinunternehmer,
         status: 'Offen',
+        // Konditionen des Angebots mitnehmen — sonst stimmt der Rechnungsbetrag nicht
+        rabattProzent: angebot.rabattProzent || 0,
+        rabattBeschreibung: angebot.rabattBeschreibung || 'Rabatt',
+        sonderangebot: angebot.sonderangebot || false,
+        skontoProzent: angebot.skontoProzent || 0,
+        skontoTage: angebot.skontoTage || 0,
+        zahlungshinweis: angebot.zahlungshinweis || '',
+        abschlusstext: angebot.abschlusstext || '',
         positionen: posRes.data
       })
       await statusAendern(angebot.id, 'Angenommen')
-      alert('Rechnung wurde erstellt!')
+      setToast(`Rechnung ${neu.data?.nummer || ''} erstellt ✓`.replace('  ', ' '))
+      setTimeout(() => setToast(''), 3500)
       angeboteLaden()
     } catch (e: any) {
       alert('Fehler: ' + e.message)
@@ -441,6 +470,11 @@ export default function Angebote() {
 
   return (
     <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
+      {toast && (
+        <div style={{position:'fixed', bottom:24, right:24, background:'#10b981', color:'white', padding:'12px 20px', borderRadius:10, fontSize:13, fontWeight:600, zIndex:20000, boxShadow:'0 8px 24px rgba(0,0,0,0.25)', display:'flex', alignItems:'center', gap:8}}>
+          {toast}
+        </div>
+      )}
 
       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:16}}>
         <div style={{flex:1, fontFamily:'Syne, sans-serif', fontSize:13, color:'var(--bf-text-muted)'}}>Alle Angebote</div>
@@ -616,7 +650,11 @@ export default function Angebote() {
                 <div>
                   <label style={labelStyle}>Datum</label>
                   <input style={inputStyle} type="date"
-                    value={datum} onChange={e => setDatum(e.target.value)} />
+                    value={datum} onChange={e => {
+                      setDatum(e.target.value)
+                      const neu = datumPlusTage(e.target.value, 14)
+                      if (neu) setGueltigBis(neu)
+                    }} />
                 </div>
                 <div>
                   <label style={labelStyle}>Gültig bis</label>
