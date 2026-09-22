@@ -34,6 +34,21 @@ const MIME_NACH_ENDUNG: Record<string, string> = {
   pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
 }
 const SHARE_MAX_ALTER_MS = 24 * 60 * 60 * 1000
+const ERLAUBTE_TYPEN = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+
+// Manche Apps teilen PDFs als "application/octet-stream" oder ohne Typ – das Backend
+// nimmt aber nur echte PDF/JPG/PNG/WEBP an. Typ daher aus Endung bzw. Dateikopf bestimmen.
+const dateityp = async (blob: Blob, name: string): Promise<string> => {
+  if (ERLAUBTE_TYPEN.includes(blob.type)) return blob.type
+  const nachEndung = MIME_NACH_ENDUNG[name.split('.').pop()?.toLowerCase() || '']
+  if (nachEndung) return nachEndung
+  const k = new Uint8Array(await blob.slice(0, 12).arrayBuffer())
+  if (k[0] === 0x25 && k[1] === 0x50 && k[2] === 0x44 && k[3] === 0x46) return 'application/pdf'
+  if (k[0] === 0xff && k[1] === 0xd8) return 'image/jpeg'
+  if (k[0] === 0x89 && k[1] === 0x50 && k[2] === 0x4e && k[3] === 0x47) return 'image/png'
+  if (k[8] === 0x57 && k[9] === 0x45 && k[10] === 0x42 && k[11] === 0x50) return 'image/webp'
+  return blob.type
+}
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
@@ -318,7 +333,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
       }
       const blob = await res.blob()
       const name = decodeURIComponent(res.headers.get('X-Filename') || 'shared-file')
-      const typ  = blob.type || MIME_NACH_ENDUNG[name.split('.').pop()?.toLowerCase() || ''] || ''
+      const typ  = await dateityp(blob, name)
       const file = new File([blob], name, { type: typ })
       await cache.delete('/shared-file') // einmalig – danach gelöscht
       setSharedFile(file)
