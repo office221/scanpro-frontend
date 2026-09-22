@@ -122,6 +122,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [guvDaten,        setGuvDaten]        = useState<any[]>([])
   const [navExpObjekte,  setNavExpObjekte]  = useState(true)
   const [sharedFile,  setSharedFile]  = useState<File | null>(null)
+  const [shareHinweis, setShareHinweis] = useState<string | null>(null)
   const [belegTransfer, setBelegTransfer] = useState<{ datei: File; vorschlag: any } | null>(null)
   const [sucheOffen,  setSucheOffen]  = useState(false)
   const [sucheText,   setSucheText]   = useState('')
@@ -293,6 +294,19 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     // Sie bleibt liegen und wird nach dem Login hier wieder abgeholt.
     if (!tokenGueltig()) return
     caches.open('belegfix-share-v1').then(async (cache) => {
+      // Teilen ohne Datei (z. B. nur ein Link) nicht still ins Dashboard fallen lassen
+      const info = await cache.match('/shared-info')
+      if (info) {
+        await cache.delete('/shared-info')
+        const i = await info.json().catch(() => null)
+        if (i && !i.datei && Date.now() - (i.am || 0) < SHARE_MAX_ALTER_MS) {
+          setAktivNav('Belegscanner')
+          setShareHinweis('Beim Teilen ist keine Datei angekommen' +
+            (i.felder?.length ? ' – nur: ' + i.felder.join(' · ') : '') +
+            '. Bitte das PDF über „Teilen → Kopie senden“ (nicht als Link) an BelegFix schicken.')
+          return
+        }
+      }
       const res = await cache.match('/shared-file')
       if (!res) return
       const geteiltAm = Number(res.headers.get('X-Shared-At') || 0)
@@ -1008,6 +1022,15 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           {aktivNav === 'Angebote'          && <div style={{ flex: 1, overflow: 'auto' }}><Angebote /></div>}
           {aktivNav === 'Stunden'           && <div style={{ flex: 1, overflow: 'auto' }}><Stunden onNavigate={seite => setAktivNav(seite)} /></div>}
           {aktivNav === 'Positionsvorlagen' && <div style={{ flex: 1, overflow: 'auto' }}><Vorlagen /></div>}
+          {aktivNav === 'Belegscanner' && shareHinweis && (
+            <div style={{ margin: '0 0 12px', padding: '12px 14px', borderRadius: 10, fontSize: 13, lineHeight: 1.5,
+              background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', color: 'var(--bf-text)',
+              display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ flex: 1, overflowWrap: 'anywhere' }}>{shareHinweis}</span>
+              <button onClick={() => setShareHinweis(null)} aria-label="Hinweis schließen"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bf-text-muted)', fontSize: 16, lineHeight: 1 }}>×</button>
+            </div>
+          )}
           {aktivNav === 'Belegscanner'     && <div style={{ flex: 1, overflow: 'auto' }}><Belegscanner initialDatei={sharedFile || belegTransfer?.datei || null} belegVorschlag={belegTransfer?.vorschlag || null} onSharedFileUsed={() => { setSharedFile(null); setBelegTransfer(null) }} /></div>}
           {aktivNav === 'BuchDashboard'       && <div style={{ flex: 1, overflow: 'auto' }}><KMGuvDashboard /></div>}
           {aktivNav === 'G&V Abrechnung'   && <div style={{ flex: 1, overflow: 'auto' }}><GUV /></div>}

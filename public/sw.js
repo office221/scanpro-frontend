@@ -1,4 +1,4 @@
-// BelegFix Service Worker v1.2
+// BelegFix Service Worker v1.3
 const CACHE_NAME = 'belegfix-v1'
 const SHARE_CACHE = 'belegfix-share-v1'
 
@@ -7,6 +7,14 @@ async function handleShare(request) {
   try {
     const formData = await request.formData()
     const file = formData.get('datei')
+    const cache = await caches.open(SHARE_CACHE)
+    // Was ist angekommen? Hilft, wenn statt einer Datei nur ein Link geteilt wurde
+    const felder = []
+    for (const [k, v] of formData.entries()) {
+      felder.push(typeof v === 'string' ? `${k}: ${v.slice(0, 200)}` : `${k}: Datei "${v.name}" (${v.type || 'ohne Typ'}, ${v.size} Bytes)`)
+    }
+    await cache.put('/shared-info', new Response(JSON.stringify({ felder, am: Date.now(), datei: !!(file && file.size > 0) }),
+      { headers: { 'Content-Type': 'application/json' } }))
     if (file && file.size > 0) {
       const buf = await file.arrayBuffer()
       const response = new Response(new Blob([buf], { type: file.type }), {
@@ -16,7 +24,6 @@ async function handleShare(request) {
           'X-Shared-At': String(Date.now())
         }
       })
-      const cache = await caches.open(SHARE_CACHE)
       await cache.put('/shared-file', response)
     }
   } catch (err) {
