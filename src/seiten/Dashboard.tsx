@@ -17,6 +17,7 @@ import ImmoVertraege from './ImmoVertraege'
 import ImmoBetriebskosten from './ImmoBetriebskosten'
 import ImmoObjektDetail from './ImmoObjektDetail'
 import Stunden from './Stunden'
+import Statistik from './Statistik'
 
 // Login-Token vorhanden und noch mindestens eine Minute gültig?
 const tokenGueltig = () => {
@@ -63,6 +64,7 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   Vorlagen:         <Icon d="M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5" />,
   Positionsvorlagen:<Icon d="M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01" />,
   'G&V Abrechnung': <Icon d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20" />,
+  Statistik:        <Icon d="M3 3v18h18 M7 14l4-4 3 3 5-6" />,
   'KM-Buch':        <Icon d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5a2 2 0 0 1-2 2h-2 M7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0 M15 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0" />,
   Reisekosten:      <Icon d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 2 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M12 22V12 M3.27 6.96L12 12.01l8.73-5.05 M12 2.1v9.91" />,
   BuchDashboard:     <Icon d="M18 20V10 M12 20V4 M6 20v-6 M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5" />,
@@ -102,6 +104,7 @@ const NAV_GRUPPEN = [
   ]},
   { gruppe: 'Buchhaltung', items: [
     { name: 'BuchDashboard', label: 'Dashboard', badge: null, rot: false, ki: false, children: [] },
+    { name: 'Statistik',      badge: null, rot: false, ki: false, children: [] },
     { name: 'G&V Abrechnung', badge: null, rot: false, ki: false, children: [] },
     { name: 'KM-Buch',        badge: null, rot: false, ki: false, children: [] },
     { name: 'Reisekosten',    badge: null, rot: false, ki: false, children: [] },
@@ -1051,6 +1054,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           {aktivNav === 'Belegscanner'     && <div style={{ flex: 1, overflow: 'auto' }}><Belegscanner initialDatei={sharedFile || belegTransfer?.datei || null} belegVorschlag={belegTransfer?.vorschlag || null} onSharedFileUsed={() => { setSharedFile(null); setBelegTransfer(null) }} /></div>}
           {aktivNav === 'BuchDashboard'       && <div style={{ flex: 1, overflow: 'auto' }}><KMGuvDashboard /></div>}
           {aktivNav === 'G&V Abrechnung'   && <div style={{ flex: 1, overflow: 'auto' }}><GUV /></div>}
+          {aktivNav === 'Statistik'        && <div style={{ flex: 1, overflow: 'auto' }}><Statistik /></div>}
           {aktivNav === 'KM-Buch'          && <div style={{ flex: 1, overflow: 'auto' }}><KMBuch /></div>}
           {aktivNav === 'Reisekosten'       && <div style={{ flex: 1, overflow: 'auto' }}><Reisekosten /></div>}
           {aktivNav === 'Einstellungen'     && <div style={{ flex: 1, overflow: 'auto', padding: '4px 0' }}><Einstellungen /></div>}

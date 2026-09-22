@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import api from '../services/api'
-import { StatusChip, btnPrimary, btnSecondary } from '../ui/theme'
+import { btnPrimary, btnSecondary } from '../ui/theme'
 
 let _uidSeq = 0
 const newUid = () => ++_uidSeq
@@ -27,7 +27,7 @@ interface Kunde {
 
 const STATUS_OPTIONEN = [
   { wert: 'Entwurf',   label: 'Entwurf',    bg: '#f0f0f0', text: '#666' },
-  { wert: 'Gesendet',  label: 'Gesendet',   bg: '#dbeafe', text: '#1e40af' },
+  { wert: 'Gesendet',  label: 'Offen (gesendet)',   bg: '#dbeafe', text: '#1e40af' },
   { wert: 'Bezahlt',   label: 'Bezahlt',    bg: '#d1f5e0', text: '#2d6a4f' },
   { wert: 'Mahnung 1', label: 'Mahnung 1',  bg: '#fef3c7', text: '#92400e' },
   { wert: 'Mahnung 2', label: 'Mahnung 2',  bg: '#fde8e6', text: '#c0392b' },
@@ -630,7 +630,16 @@ export default function Rechnungen({ onTransferBeleg }: RechnungenProps = {}) {
                 <div key={r.id} style={{padding:'12px 16px', borderBottom:'1px solid var(--bf-divider)', background: r.id%2===0 ? 'var(--bf-soft)' : 'var(--bf-card)'}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6}}>
                     <div style={{fontFamily:'Syne, sans-serif', fontWeight:700, fontSize:13}}>{r.nummer}</div>
-                    <StatusChip status={ueberfaellig && r.status === 'Gesendet' ? 'Überfällig' : r.status} label={r.status} />
+                    <select
+                      aria-label="Status ändern"
+                      style={{fontSize:13, fontWeight:700, padding:'8px 10px', minHeight:38, borderRadius:8, border:'none',
+                        background: statusFarbe(r.status, ueberfaellig).bg, color: statusFarbe(r.status, ueberfaellig).text, cursor:'pointer'}}
+                      value={r.status}
+                      onChange={e => statusAendern(r.id, e.target.value)}>
+                      {STATUS_OPTIONEN.map(s => (
+                        <option key={s.wert} value={s.wert}>{s.label}</option>
+                      ))}
+                    </select>
                   </div>
                   <div style={{fontSize:13, color:'var(--bf-text)', marginBottom:4}}>{kundenName}</div>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
