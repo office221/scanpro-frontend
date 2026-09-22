@@ -250,6 +250,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     const root = document.documentElement
     Object.entries(bfVars).forEach(([k, v]) => root.style.setProperty(k, String(v)))
+    root.style.colorScheme = D ? 'dark' : 'light'
     return () => { Object.keys(bfVars).forEach(k => root.style.removeProperty(k)) }
   }, [D]) // eslint-disable-line react-hooks/exhaustive-deps
 
