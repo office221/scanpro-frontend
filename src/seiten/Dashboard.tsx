@@ -18,6 +18,16 @@ import ImmoBetriebskosten from './ImmoBetriebskosten'
 import ImmoObjektDetail from './ImmoObjektDetail'
 import Stunden from './Stunden'
 
+// Login-Token vorhanden und noch mindestens eine Minute gültig?
+const tokenGueltig = () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return false
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return !payload.exp || payload.exp * 1000 > Date.now() + 60_000
+  } catch { return false }
+}
+
 // ── Icons ──────────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -267,12 +277,17 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
       window.history.replaceState({}, '', window.location.pathname)
     }
     if (!('caches' in window)) return
+    // Bei abgelaufenem Login die Datei NICHT anfassen: der 401-Interceptor schickt
+    // sonst gleich auf /login und die schon aus dem Cache geholte Datei ist weg.
+    // Sie bleibt liegen und wird nach dem Login hier wieder abgeholt.
+    if (!tokenGueltig()) return
     caches.open('belegfix-share-v1').then(async (cache) => {
       const res = await cache.match('/shared-file')
       if (!res) return
       const blob = await res.blob()
       const name = decodeURIComponent(res.headers.get('X-Filename') || 'shared-file')
-      const file = new File([blob], name, { type: blob.type })
+      const typ  = blob.type || (name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : '')
+      const file = new File([blob], name, { type: typ })
       await cache.delete('/shared-file') // einmalig – danach gelöscht
       setSharedFile(file)
       setAktivNav('Belegscanner')

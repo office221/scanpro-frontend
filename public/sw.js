@@ -1,4 +1,4 @@
-// BelegFix Service Worker v1.1
+// BelegFix Service Worker v1.2
 const CACHE_NAME = 'belegfix-v1'
 const SHARE_CACHE = 'belegfix-share-v1'
 
@@ -47,7 +47,8 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      // Share-Cache stehen lassen – darin kann eine geteilte Datei auf den Login warten
+      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== SHARE_CACHE).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   )
 })
