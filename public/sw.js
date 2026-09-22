@@ -1,4 +1,4 @@
-// BelegFix Service Worker v1.3
+// BelegFix Service Worker v1.4
 const CACHE_NAME = 'belegfix-v1'
 const SHARE_CACHE = 'belegfix-share-v1'
 
@@ -13,6 +13,7 @@ async function handleShare(request) {
     for (const [k, v] of formData.entries()) {
       felder.push(typeof v === 'string' ? `${k}: ${v.slice(0, 200)}` : `${k}: Datei "${v.name}" (${v.type || 'ohne Typ'}, ${v.size} Bytes)`)
     }
+    fetch('/api/diag', { method: 'POST', body: 'sw-share ' + JSON.stringify(felder) }).catch(() => {})
     await cache.put('/shared-info', new Response(JSON.stringify({ felder, am: Date.now(), datei: !!(file && file.size > 0) }),
       { headers: { 'Content-Type': 'application/json' } }))
     if (file && file.size > 0) {

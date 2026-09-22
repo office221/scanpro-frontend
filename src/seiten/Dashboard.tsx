@@ -286,6 +286,8 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   useEffect(() => {
     // URL-Parameter bereinigen falls vorhanden
     if (window.location.search.includes('share=1')) {
+      const diag = { start: 'share=1', sw: navigator.serviceWorker?.controller?.scriptURL || 'kein SW', login: tokenGueltig() }
+      fetch('/api/diag', { method: 'POST', body: 'app ' + JSON.stringify(diag), keepalive: true }).catch(() => {})
       window.history.replaceState({}, '', window.location.pathname)
     }
     if (!('caches' in window)) return
