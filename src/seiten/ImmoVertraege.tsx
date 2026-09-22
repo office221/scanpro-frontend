@@ -76,14 +76,14 @@ export default function ImmoVertraege() {
   const gefiltert = vertraege.filter(v => statusFilter === 'Alle' || v.status === statusFilter)
 
   return (
-    <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? 0 : 24, maxWidth: 1100, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: 'var(--bf-text)' }}>Mietverträge</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 18 : 22, fontWeight: 800, color: 'var(--bf-text)', overflowWrap: 'break-word', hyphens: 'auto' }}>Mietverträge</div>
           <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>{vertraege.filter(v => v.status === 'Aktiv').length} aktive Verträge</div>
         </div>
-        <button onClick={() => oeffnen()} style={{ ...btnPrimary, padding: '10px 20px', fontSize: 13 }}>
+        <button onClick={() => oeffnen()} style={{ ...btnPrimary, padding: isMobile ? '9px 14px' : '10px 20px', fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0 }}>
           + Neuer Vertrag
         </button>
       </div>

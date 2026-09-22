@@ -77,21 +77,21 @@ export default function ImmoBetriebskosten() {
   const jahre = Array.from({ length: 6 }, (_, i) => (new Date().getFullYear() - i).toString())
 
   return (
-    <div style={{ padding: 24, maxWidth: 1000, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? 0 : 24, maxWidth: 1000, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: 'var(--bf-text)' }}>Betriebskostenabrechnung</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 18 : 22, fontWeight: 800, color: 'var(--bf-text)', overflowWrap: 'break-word', hyphens: 'auto' }}>Betriebskostenabrechnung</div>
           <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>Nebenkosten je Objekt und Jahr</div>
         </div>
-        <button onClick={() => oeffnen()} style={{ ...btnPrimary, padding: '10px 20px', fontSize: 13 }}>
+        <button onClick={() => oeffnen()} style={{ ...btnPrimary, padding: isMobile ? '9px 14px' : '10px 20px', fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0 }}>
           + Neuer Eintrag
         </button>
       </div>
 
       {/* Filter */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <select value={filterObjekt} onChange={e => setFilterObjekt(e.target.value)} style={{ padding: '9px 12px', border: '1px solid var(--bf-input-border)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'var(--bf-input-bg)', color: 'var(--bf-text)', minWidth: 200 }}>
+        <select value={filterObjekt} onChange={e => setFilterObjekt(e.target.value)} style={{ padding: '9px 12px', border: '1px solid var(--bf-input-border)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'var(--bf-input-bg)', color: 'var(--bf-text)', minWidth: isMobile ? 0 : 200, flex: isMobile ? 1 : undefined }}>
           <option value=''>Alle Objekte</option>
           {objekte.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>

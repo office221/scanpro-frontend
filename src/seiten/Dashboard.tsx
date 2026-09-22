@@ -23,10 +23,17 @@ const tokenGueltig = () => {
   try {
     const token = localStorage.getItem('token')
     if (!token) return false
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0))))
     return !payload.exp || payload.exp * 1000 > Date.now() + 60_000
   } catch { return false }
 }
+
+// Dateityp aus der Endung, falls die teilende App keinen mitliefert
+const MIME_NACH_ENDUNG: Record<string, string> = {
+  pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+}
+const SHARE_MAX_ALTER_MS = 24 * 60 * 60 * 1000
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 16 }: { d: string; size?: number }) => (
@@ -251,7 +258,10 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     const root = document.documentElement
     Object.entries(bfVars).forEach(([k, v]) => root.style.setProperty(k, String(v)))
     root.style.colorScheme = D ? 'dark' : 'light'
-    return () => { Object.keys(bfVars).forEach(k => root.style.removeProperty(k)) }
+    return () => {
+      Object.keys(bfVars).forEach(k => root.style.removeProperty(k))
+      root.style.removeProperty('color-scheme')
+    }
   }, [D]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const statusChip = (status: string) => {
@@ -285,9 +295,14 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     caches.open('belegfix-share-v1').then(async (cache) => {
       const res = await cache.match('/shared-file')
       if (!res) return
+      const geteiltAm = Number(res.headers.get('X-Shared-At') || 0)
+      if (geteiltAm && Date.now() - geteiltAm > SHARE_MAX_ALTER_MS) {
+        await cache.delete('/shared-file') // zu alt – nicht mehr ungefragt öffnen
+        return
+      }
       const blob = await res.blob()
       const name = decodeURIComponent(res.headers.get('X-Filename') || 'shared-file')
-      const typ  = blob.type || (name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : '')
+      const typ  = blob.type || MIME_NACH_ENDUNG[name.split('.').pop()?.toLowerCase() || ''] || ''
       const file = new File([blob], name, { type: typ })
       await cache.delete('/shared-file') // einmalig – danach gelöscht
       setSharedFile(file)
@@ -576,7 +591,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
             <div style={{ fontSize: 12, fontWeight: 600, color: theme.userCardText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{benutzer.vorname} {benutzer.nachname}</div>
             <div style={{ fontSize: 10, color: theme.userCardSub, marginTop: 1 }}>Administrator</div>
           </div>
-          <button onClick={() => { authService.logout(); onLogout() }}
+          <button onClick={() => { if ('caches' in window) caches.delete('belegfix-share-v1').catch(() => {}); authService.logout(); onLogout() }}
             style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: theme.userCardLogout, padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center' }} title="Abmelden">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9"/>
@@ -733,7 +748,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
               </h1>
 
               {/* Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: isMobile ? 10 : 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(5, 1fr)', gap: isMobile ? 10 : 14 }}>
                 {STAT_CARDS.map((s, i) => (
                   <div key={i} onClick={() => setAktivNav(s.nav)}
                     style={{ ...theme.glass, padding: 22, cursor: 'pointer', transition: 'all 0.25s', position: 'relative', overflow: 'hidden' }}
@@ -751,13 +766,13 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
               </div>
 
               {/* Main grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: 18, flex: 1, minHeight: 0 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : '1fr 340px', gap: 18, flex: 1, minHeight: 0 }}>
 
                 {/* Left column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 }}>
 
                   {/* Chart */}
-                  <div style={{ ...theme.glass, padding: 28 }}>
+                  <div style={{ ...theme.glass, padding: isMobile ? 18 : 28 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
                       <div>
                         <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 700, color: theme.textStrong, marginBottom: 4 }}>Rechnungsvolumen</div>
@@ -794,7 +809,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                   </div>
 
                   {/* Activity */}
-                  <div style={{ ...theme.glass, padding: 28, flex: 1 }}>
+                  <div style={{ ...theme.glass, padding: isMobile ? 18 : 28, flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                       <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 700, color: theme.textStrong }}>Letzte Aktivität</div>
                       <div style={{ display: 'flex', gap: 3, background: theme.filterBg, padding: 4, borderRadius: 24 }}>

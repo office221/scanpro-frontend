@@ -563,7 +563,7 @@ export default function GUV() {
 
   return (
     <div style={{
-      padding: isMobile ? '16px' : '28px',
+      padding: isMobile ? '0' : '28px',
       fontFamily: 'DM Sans, sans-serif',
       maxWidth: 960,
       margin: '0 auto',
@@ -601,7 +601,7 @@ export default function GUV() {
       {/* ── Karten oben ────────────────────────────────────────────────────── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+        gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)',
         gap: 12,
         marginBottom: 20,
       }}>
@@ -869,7 +869,7 @@ export default function GUV() {
                   return (
                     <>
                       {/* 3 Kennzahlen-Karten */}
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
                         <div style={{ background: `${GRUEN}12`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${GRUEN}22` }}>
                           <div style={{ fontSize: 10, color: GRUEN, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>↑ Einnahmen</div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: GRUEN }}>€ {fmt(mDat.einnahmen)}</div>

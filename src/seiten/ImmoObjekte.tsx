@@ -80,14 +80,14 @@ export default function ImmoObjekte({ selectedId, onChanged, onNavigate }: { sel
   const f = (key: string, val: string) => setForm(p => ({ ...p, [key]: val }))
 
   return (
-    <div style={{ padding: 24, maxWidth: 1000, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? 0 : 24, maxWidth: 1000, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: 'var(--bf-text)' }}>Objekte / Wohnungen</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: isMobile ? 18 : 22, fontWeight: 800, color: 'var(--bf-text)', overflowWrap: 'break-word', hyphens: 'auto' }}>Objekte / Wohnungen</div>
           <div style={{ fontSize: 12, color: 'var(--bf-text-muted)', marginTop: 2 }}>{objekte.length} Objekt{objekte.length !== 1 ? 'e' : ''}</div>
         </div>
-        <button onClick={() => oeffnen()} style={{ ...btnPrimary, padding: '10px 20px', fontSize: 13 }}>
+        <button onClick={() => oeffnen()} style={{ ...btnPrimary, padding: isMobile ? '9px 14px' : '10px 20px', fontSize: 13, whiteSpace: 'nowrap', flexShrink: 0 }}>
           + Neues Objekt
         </button>
       </div>

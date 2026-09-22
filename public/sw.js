@@ -12,7 +12,8 @@ async function handleShare(request) {
       const response = new Response(new Blob([buf], { type: file.type }), {
         headers: {
           'Content-Type': file.type,
-          'X-Filename': encodeURIComponent(file.name || 'shared-file')
+          'X-Filename': encodeURIComponent(file.name || 'shared-file'),
+          'X-Shared-At': String(Date.now())
         }
       })
       const cache = await caches.open(SHARE_CACHE)

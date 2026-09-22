@@ -738,7 +738,7 @@ export default function KMBuch() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: isMobile ? '16px' : '28px', fontFamily: 'DM Sans, sans-serif', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '0' : '28px', fontFamily: 'DM Sans, sans-serif', maxWidth: 960, margin: '0 auto' }}>
 
       {/* Toast */}
       {toast && (
@@ -777,7 +777,7 @@ export default function KMBuch() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
         {[
           { label: 'Gesamt km',  value: `${fmtKm(totalKm)} km`, sub: 'gefahren',               color: GOLD  },
           { label: 'KM-Geld',    value: `€ ${fmt(totalBetrag)}`, sub: `${fmtKm(totalKm)} × ${kmSatz.toFixed(2)}`, color: BLAU  },
@@ -1001,7 +1001,7 @@ export default function KMBuch() {
                   return (
                     <>
                       {/* 3 Kennzahlen-Karten */}
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
                         <div style={{ background: `${BLAU}10`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${BLAU}22` }}>
                           <div style={{ fontSize: 10, color: BLAU, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>km gesamt</div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: BLAU, fontVariantNumeric: 'tabular-nums' }}>{Number(mDat.km).toFixed(1)} km</div>

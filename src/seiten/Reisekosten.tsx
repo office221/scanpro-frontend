@@ -367,7 +367,7 @@ export default function Reisekosten() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: isMobile ? '16px' : '28px', fontFamily: 'DM Sans, sans-serif', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '0' : '28px', fontFamily: 'DM Sans, sans-serif', maxWidth: 960, margin: '0 auto' }}>
 
       {/* Toast */}
       {toast && (
@@ -405,7 +405,7 @@ export default function Reisekosten() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
         {[
           { label: 'KM-Geld',     value: `€ ${fmt(totalKmGeld)}`,  sub: `${totalKmEinfach.toFixed(0)} km gesamt`, color: BLAU  },
           { label: 'Taggeld',      value: `€ ${fmt(totalTaggeld)}`, sub: 'Diäten',                                 color: GRUEN },
@@ -534,7 +534,7 @@ export default function Reisekosten() {
                   const maxBetrag = Math.max(...monatEintraege.map(e => Number(e.gesamt)), 1)
                   return (
                     <>
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
                         <div style={{ background: `${BLAU}10`, borderRadius: 12, padding: '12px 16px', border: `1px solid ${BLAU}22` }}>
                           <div style={{ fontSize: 10, color: BLAU, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>KM-Geld</div>
                           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 18, fontWeight: 800, color: BLAU }}>€ {fmt(mDat.km_geld)}</div>

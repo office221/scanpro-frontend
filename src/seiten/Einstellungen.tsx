@@ -411,13 +411,13 @@ export default function Einstellungen() {
           Firmenlogo
         </div>
 
-        <div style={{display:'flex', alignItems:'flex-start', gap:20, marginBottom:16}}>
+        <div style={{display:'flex', alignItems:'flex-start', gap:20, marginBottom:16, flexWrap:'wrap'}}>
 
           {/* Vorschau Box */}
           <div
             onClick={() => logoRef.current?.click()}
             style={{
-              width: 200, height: 120,
+              width: 200, maxWidth: '100%', height: 120,
               border:'2px dashed var(--bf-border)', borderRadius:10,
               display:'flex', alignItems:'center', justifyContent:'center',
               cursor:'pointer', overflow:'hidden', background:'var(--bf-soft)', flexShrink:0
@@ -441,7 +441,7 @@ export default function Einstellungen() {
           </div>
 
           {/* Buttons */}
-          <div style={{flex:1}}>
+          <div style={{flex:1, minWidth:150}}>
             <button
               onClick={() => logoRef.current?.click()}
               style={{...btnSecondary, marginBottom:8, display:'block', width:'100%'}}>
