@@ -141,6 +141,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [navExpObjekte,  setNavExpObjekte]  = useState(true)
   const [sharedFile,  setSharedFile]  = useState<File | null>(null)
   const [shareHinweis, setShareHinweis] = useState<string | null>(null)
+  const [shareName,    setShareName]    = useState<string | null>(null)
   const [belegTransfer, setBelegTransfer] = useState<{ datei: File; vorschlag: any } | null>(null)
   const [sucheOffen,  setSucheOffen]  = useState(false)
   const [sucheText,   setSucheText]   = useState('')
@@ -320,10 +321,11 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
         await cache.delete('/shared-info')
         const i = await info.json().catch(() => null)
         if (i && !i.datei && Date.now() - (i.am || 0) < SHARE_MAX_ALTER_MS) {
+          const titel = (i.felder || []).find((f: string) => f.startsWith('title: '))?.slice(7).replace(/^Anlagen\s+/, '') || ''
           setAktivNav('Belegscanner')
-          setShareHinweis('Beim Teilen ist keine Datei angekommen' +
-            (i.felder?.length ? ' – nur: ' + i.felder.join(' · ') : '') +
-            '. Bitte das PDF über „Teilen → Kopie senden“ (nicht als Link) an BelegFix schicken.')
+          setShareName(titel || ' ')
+          setShareHinweis('Die teilende App hat nur den Namen' + (titel ? ` „${titel}“` : '') +
+            ' mitgeschickt, nicht die Datei. Bitte oben im Formular auf das Feld „Foto / PDF“ tippen und die Datei auswählen.')
           return
         }
       }
@@ -1051,7 +1053,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bf-text-muted)', fontSize: 16, lineHeight: 1 }}>×</button>
             </div>
           )}
-          {aktivNav === 'Belegscanner'     && <div style={{ flex: 1, overflow: 'auto' }}><Belegscanner initialDatei={sharedFile || belegTransfer?.datei || null} belegVorschlag={belegTransfer?.vorschlag || null} onSharedFileUsed={() => { setSharedFile(null); setBelegTransfer(null) }} /></div>}
+          {aktivNav === 'Belegscanner'     && <div style={{ flex: 1, overflow: 'auto' }}><Belegscanner initialDatei={sharedFile || belegTransfer?.datei || null} belegVorschlag={belegTransfer?.vorschlag || null} leerMitBeschreibung={shareName} onSharedFileUsed={() => { setSharedFile(null); setBelegTransfer(null); setShareName(null) }} /></div>}
           {aktivNav === 'BuchDashboard'       && <div style={{ flex: 1, overflow: 'auto' }}><KMGuvDashboard /></div>}
           {aktivNav === 'G&V Abrechnung'   && <div style={{ flex: 1, overflow: 'auto' }}><GUV /></div>}
           {aktivNav === 'Statistik'        && <div style={{ flex: 1, overflow: 'auto' }}><Statistik /></div>}

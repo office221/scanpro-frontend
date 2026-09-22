@@ -69,10 +69,12 @@ const inputStyle: React.CSSProperties = {
 interface BelegscannerProps {
   initialDatei?: File | null
   onSharedFileUsed?: () => void
+  // Geteilt wurde nur ein Name ohne Datei: Formular trotzdem öffnen, Datei wählt der Nutzer
+  leerMitBeschreibung?: string | null
   belegVorschlag?: { beschreibung: string; betrag: string; datum: string; rechnungsnummer: string; kategorie: string; lieferant: string } | null
 }
 
-export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVorschlag }: BelegscannerProps = {}) {
+export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVorschlag, leerMitBeschreibung }: BelegscannerProps = {}) {
   const [belege, setBelege]               = useState<Beleg[]>([])
   const [laden, setLaden]                 = useState(false)
   const [formOffen, setFormOffen]         = useState(false)
@@ -119,6 +121,16 @@ export default function Belegscanner({ initialDatei, onSharedFileUsed, belegVors
     setFormOffen(true)
     onSharedFileUsed?.()
   }, [initialDatei]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!leerMitBeschreibung) return
+    setEditBeleg(null)
+    setForm({ ...emptyForm(), beschreibung: leerMitBeschreibung })
+    setDatei(null)
+    setDateiVorschau(null)
+    setFormOffen(true)
+    onSharedFileUsed?.()
+  }, [leerMitBeschreibung]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const ladeBelege = async () => {
     setLaden(true)
