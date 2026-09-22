@@ -43,7 +43,7 @@
       "text":  "text",
       "files": [{
         "name":   "datei",
-        "accept": ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+        "accept": ["application/pdf", ".pdf", "image/*", ".jpg", ".jpeg", ".png", ".webp", "application/octet-stream", "*/*"]
       }]
     }
   }
