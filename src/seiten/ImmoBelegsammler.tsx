@@ -141,6 +141,43 @@ export default function ImmoBelegsammler({ objektId }: { objektId?: number }) {
     } catch { alert('Datei konnte nicht geladen werden') }
   }
 
+  // ── Export ────────────────────────────────────────────────────────────────
+  const [exportLaeuft, setExportLaeuft] = useState(false)
+  const speichereDatei = (blob: Blob, name: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = name
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 2000)
+  }
+  const exportPdf = async () => {
+    setExportLaeuft(true)
+    try {
+      const q = new URLSearchParams()
+      const oid = objektId ? String(objektId) : filterObjekt
+      if (oid) q.set('objektId', oid)
+      if (filterJahr) q.set('jahr', filterJahr)
+      if (filterKat) q.set('kategorie', filterKat)
+      const r = await api.get(`/immo/belege-export?${q}`, { responseType: 'blob' })
+      const objName = oid ? objektName(parseInt(oid)) : 'Immobilien'
+      speichereDatei(r.data, `Belege_${objName}_${filterJahr || 'gesamt'}.pdf`.replace(/[^\wÄÖÜäöüß.-]+/g, '-'))
+    } catch (e: any) {
+      let msg = 'Export fehlgeschlagen'
+      try { msg = JSON.parse(await e.response.data.text()).fehler || msg } catch {}
+      alert(msg)
+    }
+    setExportLaeuft(false)
+  }
+  const exportCsv = () => {
+    const zelle = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const zeilen = [['Nr.', 'Datum', 'Firma', 'Wofür', 'Kategorie', 'Objekt', 'Betrag brutto', 'Notiz', 'Datei']]
+    ;[...gefiltert].sort((a, b) => (a.datum ? 0 : 1) - (b.datum ? 0 : 1) || String(a.datum || '').localeCompare(String(b.datum || '')) || a.id - b.id).forEach((b, i) => zeilen.push([
+      String(i + 1), datumAT(b.datum), b.lieferant || '', b.beschreibung || '', b.kategorie || '',
+      objektName(b.objektId), (parseFloat(b.betrag) || 0).toFixed(2).replace('.', ','), b.notiz || '', b.dateiname || '',
+    ]))
+    const csv = '\ufeff' + zeilen.map(z => z.map(zelle).join(';')).join('\r\n')
+    speichereDatei(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `Belege_${filterJahr || 'gesamt'}.csv`)
+  }
+
   // ── Auswertung ────────────────────────────────────────────────────────────
   const jahre = Array.from(new Set(belege.map(b => b.datum ? String(b.datum).slice(0, 4) : '').filter(Boolean))).sort().reverse()
   const gefiltert = belege.filter(b => {
@@ -263,6 +300,13 @@ export default function ImmoBelegsammler({ objektId }: { objektId?: number }) {
           {IMMO_BELEG_KATEGORIEN.map(k => <option key={k} value={k}>{k}</option>)}
         </select>
         <input value={suche} onChange={e => setSuche(e.target.value)} placeholder="Suchen (Firma, Text) …" style={{ ...sel, flex: '1 1 180px' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button onClick={exportPdf} disabled={exportLaeuft || !gefiltert.length} style={{ ...btnPrimary, opacity: exportLaeuft || !gefiltert.length ? 0.6 : 1 }}>
+          {exportLaeuft ? 'PDF wird erstellt …' : 'PDF fürs Finanzamt'}
+        </button>
+        <button onClick={exportCsv} disabled={!gefiltert.length} style={btnSecondary}>Liste als Excel (CSV)</button>
+        <span style={{ fontSize: 11, color: 'var(--bf-text-muted)' }}>Aufstellung mit Summen + alle Belege, nach den gewählten Filtern{suche ? ' (Suchtext gilt nur für die CSV)' : ''}</span>
       </div>
 
       {/* Liste */}
