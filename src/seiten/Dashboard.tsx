@@ -16,6 +16,7 @@ import ImmoMieter from './ImmoMieter'
 import ImmoVertraege from './ImmoVertraege'
 import ImmoBetriebskosten from './ImmoBetriebskosten'
 import ImmoObjektDetail from './ImmoObjektDetail'
+import ImmoBelegsammler from './ImmoBelegsammler'
 import Stunden from './Stunden'
 import Statistik from './Statistik'
 
@@ -113,6 +114,7 @@ const NAV_GRUPPEN = [
   { gruppe: 'Immobilien', items: [
     { name: 'ImmoHub', label: 'Immobilien', badge: null, rot: false, ki: false, children: [
       { name: 'Objekte' },
+      { name: 'Belegsammler' },
       { name: 'Mieter' },
       { name: 'Mietverträge' },
       { name: 'Betriebskosten' },
@@ -1061,6 +1063,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           {aktivNav === 'Reisekosten'       && <div style={{ flex: 1, overflow: 'auto' }}><Reisekosten /></div>}
           {aktivNav === 'Einstellungen'     && <div style={{ flex: 1, overflow: 'auto', padding: '4px 0' }}><Einstellungen /></div>}
           {aktivNav === 'Objekte'           && <div style={{ flex: 1, overflow: 'auto' }}><ImmoObjekte onChanged={ladeImmoObjekte} onNavigate={id => setAktivNav(`ImmoObj_${id}`)} /></div>}
+          {aktivNav === 'Belegsammler'      && <div style={{ flex: 1, overflow: 'auto' }}><ImmoBelegsammler /></div>}
           {aktivNav === 'Mieter'            && <div style={{ flex: 1, overflow: 'auto' }}><ImmoMieter /></div>}
           {aktivNav === 'Mietverträge'      && <div style={{ flex: 1, overflow: 'auto' }}><ImmoVertraege /></div>}
           {aktivNav === 'Betriebskosten'    && <div style={{ flex: 1, overflow: 'auto' }}><ImmoBetriebskosten /></div>}

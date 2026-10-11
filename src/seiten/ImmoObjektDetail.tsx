@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
 import KalkulationTab from './KalkulationTab'
+import ImmoBelegsammler from './ImmoBelegsammler'
 import { btnPrimary, btnSecondary, ACCENT } from '../ui/theme'
 
 const btnDanger: React.CSSProperties = { ...btnSecondary, color: '#ef4444', borderColor: 'rgba(239,68,68,0.35)' }
@@ -20,6 +21,7 @@ const fmt = (n: number) => n.toLocaleString('de-AT', { minimumFractionDigits: 2,
 
 const TABS = [
   { id: 'uebersicht',      label: 'Übersicht' },
+  { id: 'belege',          label: 'Belegsammler' },
   { id: 'kaufpreis',       label: 'Kaufpreis & Nebenkosten' },
   { id: 'planungskosten',  label: 'Planungskosten' },
   { id: 'baukosten',       label: 'Baukosten' },
@@ -476,6 +478,8 @@ export default function ImmoObjektDetail({ objektId, initialObjekt, onChanged }:
 
       {/* KALKULATION / LV */}
       {aktTab === 'kalkulation' && <KalkulationTab objektId={objektId} />}
+
+      {aktTab === 'belege' && <ImmoBelegsammler objektId={objektId} />}
 
       {/* KOSTENRECHNER */}
       {aktTab === 'kostenrechner' && <KostenrechnerTab objektId={objektId} kaufpreis={objekt?.kaufpreis ? parseFloat(objekt.kaufpreis) : 0} vertraege={vertraege} darlehen={darlehen} bkBelege={bkBelege} bkJahr={bkJahr} />}
